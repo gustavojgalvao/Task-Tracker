@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ascend — Análises</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/pages/analytics.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="dashboard.html" class="nav-logo">
+                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
+                <span>Ascend</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="habits.html" class="nav-link">Hábitos</a>
+                <a href="analytics.html" class="nav-link active">Análises</a>
+                <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
+            </div>
+            <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+                <i class="fa-solid fa-bars" id="hamburger-icon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="nav-mobile-menu" id="nav-mobile-menu">
+        <a href="dashboard.html" class="nav-mobile-link">
+            <i class="fa-solid fa-gauge"></i> Dashboard
+        </a>
+        <a href="habits.html" class="nav-mobile-link">
+            <i class="fa-solid fa-bolt"></i> Hábitos
+        </a>
+        <a href="analytics.html" class="nav-mobile-link active">
+            <i class="fa-solid fa-chart-bar"></i> Análises
+        </a>
+        <div class="nav-mobile-divider"></div>
+        <button class="nav-mobile-signout" onclick="Auth.signOut()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+        </button>
+    </div>
+
+    <div class="page-wrapper analytics-page">
+        <div class="container">
+
+            <div class="analytics-header animate-slide-up">
+                <h1>Análises</h1>
+                <p>Constância visível em dados.</p>
+            </div>
+
+            <!-- Top Stats -->
+            <div class="analytics-stats animate-slide-up delay-100">
+                <div class="card analytics-stat-card stat-box">
+                    <div class="stat-label">Score total</div>
+                    <div class="stat-value gradient-text" id="stat-total">0</div>
+                </div>
+                <div class="card analytics-stat-card stat-box">
+                    <div class="stat-label">Média diária</div>
+                    <div class="stat-value" id="stat-avg">0</div>
+                </div>
+                <div class="card analytics-stat-card stat-box">
+                    <div class="stat-label">Melhor dia</div>
+                    <div class="stat-value gradient-text-gold" id="stat-best">0</div>
+                </div>
+                <div class="card analytics-stat-card stat-box">
+                    <div class="stat-label">Dias ativos</div>
+                    <div class="stat-value" id="stat-active">0</div>
+                </div>
+            </div>
+
+            <!-- Annual Heatmap -->
+            <div class="card heatmap-card animate-slide-up delay-200" style="margin-bottom:24px;">
+                <div class="card-header">
+                    <span class="card-title">Heatmap Anual <span id="heatmap-year"></span></span>
+                    <div class="badge badge-accent" id="heatmap-max-note">Calculando...</div>
+                </div>
+                <div id="heatmap-container"></div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid animate-slide-up delay-300">
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <span class="card-title">Score Mensal</span>
+                        <select class="form-select" id="month-select" onchange="renderMonthChart()"
+                            style="width:auto;padding:6px 12px;font-size:0.8rem;"></select>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="chart-monthly"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <span class="card-title">Desempenho Semanal</span>
+                        <span class="badge badge-green">Últimas 12 semanas</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="chart-weekly"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <span class="card-title">Cumprimento por Hábito</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="chart-habits"></canvas>
+                    </div>
+                </div>
+
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <span class="card-title">Tendência Mensal</span>
+                        <span class="badge badge-accent">Score médio/dia</span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="chart-trend"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Habit breakdown table -->
+            <div class="card habit-table-card animate-slide-up delay-400">
+                <div class="card-header">
+                    <span class="card-title">Detalhamento por Hábito</span>
+                    <span class="text-sm text-muted">Últimos 30 dias</span>
+                </div>
+                <table class="habit-table" id="habit-table">
+                    <thead>
+                        <tr>
+                            <th>Hábito</th>
+                            <th>Concluídos</th>
+                            <th>Streak atual</th>
+                            <th>Pontos totais</th>
+                            <th>Cumprimento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="habit-table-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
+                                Carregando...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-gauge"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-chart-bar"></i>
+            <span>Análises</span>
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/habits.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/score.js"></script>
+    <script src="js/streak.js"></script>
+    <script src="js/heatmap.js"></script>
+    <script src="js/charts.js"></script>
+    <script>
+        let allHabits = [];
+        let yearLogs = [];
+
+        const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+        function renderIcon(icon) {
+            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
+            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
+            return icon;
+        }
+
+        async function init() {
+            const ok = await Router.init();
+            if (!ok) return;
+
+            document.getElementById('heatmap-year').textContent = new Date().getFullYear();
+
+            const [habits, logs] = await Promise.all([
+                Habits.getAll(),
+                Logs.getRange(UI.getStartOfYear(), new Date())
+            ]);
+
+            allHabits = habits;
+            yearLogs = logs;
+
+            renderStats();
+            renderHeatmap();
+            buildMonthSelect();
+            renderMonthChart();
+            renderWeeklyChart();
+            renderHabitTable();
+            renderHabitDoughnut();
+            renderTrendChart();
+        }
+
+        function renderStats() {
+            const daily = Score.aggregateByDay(yearLogs);
+            const weekly = Score.aggregateByWeek(yearLogs);
+            const monthly = Score.aggregateByMonth(yearLogs);
+            const summary = Score.getSummary(daily, weekly, monthly);
+            UI.animateNumber(document.getElementById('stat-total'), summary.totalAllTime);
+            document.getElementById('stat-avg').textContent = summary.avgDaily.toFixed(1);
+            UI.animateNumber(document.getElementById('stat-best'), summary.bestDay);
+            UI.animateNumber(document.getElementById('stat-active'), summary.activeDays);
+        }
+
+        function renderHeatmap() {
+            const scoreMap = Logs.buildScoreMap(yearLogs);
+            const maxScore = Math.max(1, ...Object.values(scoreMap));
+            document.getElementById('heatmap-max-note').textContent = `Máx: ${maxScore} pts/dia`;
+            Heatmap.render(document.getElementById('heatmap-container'), scoreMap, new Date().getFullYear());
+        }
+
+        function buildMonthSelect() {
+            const select = document.getElementById('month-select');
+            const now = new Date();
+            for (let m = 0; m <= now.getMonth(); m++) {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = MONTH_NAMES[m];
+                if (m === now.getMonth()) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function renderMonthChart() {
+            const month = parseInt(document.getElementById('month-select').value);
+            const year = new Date().getFullYear();
+            const start = new Date(year, month, 1);
+            const end = new Date(year, month + 1, 0);
+            const monthLogs = yearLogs.filter(l => l.date >= UI.dateStr(start) && l.date <= UI.dateStr(end));
+            const daily = Score.aggregateByDay(monthLogs);
+            const allDays = [];
+            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                const ds = UI.dateStr(new Date(d));
+                const found = daily.find(x => x.date === ds);
+                allDays.push({ date: ds, score: found ? found.score : 0 });
+            }
+            Charts.renderMonthly('chart-monthly', allDays);
+        }
+
+        function renderWeeklyChart() {
+            Charts.renderWeekly('chart-weekly', Score.aggregateByWeek(yearLogs));
+        }
+
+        function renderHabitDoughnut() {
+            const logs30 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
+            const rates = Score.calcHabitCompletionRates(allHabits, logs30);
+            if (rates.length > 0) Charts.renderHabitDoughnut('chart-habits', rates);
+        }
+
+        function renderTrendChart() {
+            Charts.renderTrend('chart-trend', Score.aggregateByMonth(yearLogs));
+        }
+
+        function renderHabitTable() {
+            const logs30 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
+            const rates = Score.calcHabitCompletionRates(allHabits, logs30);
+            const tbody = document.getElementById('habit-table-body');
+
+            if (rates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum dado disponível.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = rates.map(r => {
+                const streak = Streak.calcHabitStreak(r.habit.id, yearLogs);
+                const color = r.habit.color || '#6366f1';
+                return `
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:1.1rem;color:${color}">${renderIcon(r.habit.icon)}</span>
+                <span style="font-weight:600;color:var(--text-primary);">${r.habit.name}</span>
+                <div class="badge badge-accent" style="background:${color}22;color:${color};border-color:${color}44;">
+                  ${r.habit.weight} pt${r.habit.weight > 1 ? 's' : ''}
+                </div>
+              </div>
+            </td>
+            <td>${r.completedDays} / ${r.totalDays} dias</td>
+            <td>
+              ${streak > 0
+                        ? `<span class="badge badge-streak"><i class="fa-solid fa-fire"></i> ${streak}</span>`
+                        : `<span style="color:var(--text-muted);">—</span>`}
+            </td>
+            <td style="color:var(--text-primary);font-weight:600;">${r.totalScore} pts</td>
+            <td>
+              <div class="completion-bar-cell">
+                <div class="completion-bar-mini">
+                  <div class="completion-bar-fill-mini" style="width:${r.pct}%;background:linear-gradient(90deg,${color},${color}99);"></div>
+                </div>
+                <span class="completion-pct">${r.pct}%</span>
+              </div>
+            </td>
+          </tr>`;
+            }).join('');
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('nav-mobile-menu');
+            const icon = document.getElementById('hamburger-icon');
+            const isOpen = menu.classList.toggle('open');
+            icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

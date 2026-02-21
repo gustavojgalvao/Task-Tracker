@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ascend — Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/pages/dashboard.css" />
+</head>
+
+<body>
+
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="dashboard.html" class="nav-logo">
+                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
+                <span>Ascend</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="habits.html" class="nav-link">Hábitos</a>
+                <a href="analytics.html" class="nav-link">Análises</a>
+                <div id="nav-streak-badge" class="badge badge-streak" style="margin-left:8px;"><i
+                        class="fa-solid fa-fire"></i> 0</div>
+                <button class="btn btn-ghost btn-sm" onclick="handleSignOut()" style="margin-left:8px;">Sair</button>
+            </div>
+            <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+                <i class="fa-solid fa-bars" id="hamburger-icon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="nav-mobile-menu" id="nav-mobile-menu">
+        <a href="dashboard.html" class="nav-mobile-link active">
+            <i class="fa-solid fa-gauge"></i> Dashboard
+        </a>
+        <a href="habits.html" class="nav-mobile-link">
+            <i class="fa-solid fa-bolt"></i> Hábitos
+        </a>
+        <a href="analytics.html" class="nav-mobile-link">
+            <i class="fa-solid fa-chart-bar"></i> Análises
+        </a>
+        <div class="nav-mobile-divider"></div>
+        <button class="nav-mobile-signout" onclick="handleSignOut()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+        </button>
+    </div>
+
+    <div class="page-wrapper dashboard-page">
+        <div class="container">
+            <div class="dashboard-grid">
+
+                <!-- MAIN -->
+                <div class="dashboard-main">
+
+                    <!-- Score Hero -->
+                    <div class="score-hero animate-slide-up">
+                        <div class="score-hero-left">
+                            <div class="score-date" id="today-date">Carregando...</div>
+                            <div class="score-headline">Score de Disciplina Hoje</div>
+                            <div class="score-value-big gradient-text" id="daily-score">0</div>
+                            <div class="score-sublabel" id="score-sublabel">0 de 0 pontos possíveis</div>
+                        </div>
+                        <div class="score-hero-right">
+                            <div class="progress-ring-container">
+                                <svg width="110" height="110" viewBox="0 0 110 110" class="progress-ring">
+                                    <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.06)"
+                                        stroke-width="8" />
+                                    <circle id="progress-ring-circle" cx="55" cy="55" r="46" fill="none"
+                                        stroke="url(#ring-gradient)" stroke-width="8" stroke-linecap="round"
+                                        transform="rotate(-90 55 55)"
+                                        style="stroke-dasharray:289.027;stroke-dashoffset:289.027;transition:stroke-dashoffset 0.8s cubic-bezier(0,0,0.2,1)" />
+                                    <defs>
+                                        <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stop-color="#6366f1" />
+                                            <stop offset="100%" stop-color="#22c55e" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                                <div class="progress-ring-text-center">
+                                    <span class="progress-ring-pct" id="ring-pct">0%</span>
+                                    <span class="progress-ring-sub">feito</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Habits -->
+                    <div class="animate-slide-up delay-200">
+                        <div class="section-header">
+                            <h2 class="section-title">Hábitos de hoje</h2>
+                            <a href="habits.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-plus"></i>
+                                Gerenciar</a>
+                        </div>
+                        <div class="habits-list" id="habits-list">
+                            <div class="empty-state">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Score Summary Row -->
+                    <div class="score-summary animate-slide-up delay-300">
+                        <div class="score-summary-item">
+                            <div class="score-summary-val gradient-text" id="weekly-score">0</div>
+                            <div class="score-summary-label">Esta semana</div>
+                        </div>
+                        <div class="score-summary-item">
+                            <div class="score-summary-val" id="monthly-score">0</div>
+                            <div class="score-summary-label">Este mês</div>
+                        </div>
+                        <div class="score-summary-item">
+                            <div class="score-summary-val gradient-text-gold" id="total-score">0</div>
+                            <div class="score-summary-label">Total geral</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SIDEBAR -->
+                <div class="dashboard-sidebar animate-slide-up delay-400">
+
+                    <!-- Identity Card -->
+                    <div class="identity-card">
+                        <div class="card-title" style="margin-bottom:12px;">Identidade</div>
+                        <div class="identity-quote" id="identity-quote">Defina sua versão futura</div>
+                        <div class="identity-alignment">
+                            <span>Alinhamento</span>
+                            <span class="identity-pct" id="identity-pct">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" id="identity-bar" style="width:0%"></div>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;" id="identity-label">—
+                        </div>
+                        <button class="btn btn-ghost identity-edit-btn" onclick="openIdentityModal()">
+                            <i class="fa-solid fa-pen"></i> Editar identidade
+                        </button>
+                    </div>
+
+                    <!-- Streak Widget -->
+                    <div class="card">
+                        <div class="card-title">Streaks</div>
+                        <div class="streak-widget" style="margin-top:12px;">
+                            <div class="streak-item">
+                                <div class="streak-fire"><i class="fa-solid fa-fire"></i></div>
+                                <div class="streak-number" id="global-streak">0</div>
+                                <div class="streak-label">Streak global</div>
+                            </div>
+                            <div class="streak-item">
+                                <div class="streak-fire"><i class="fa-solid fa-bolt"></i></div>
+                                <div class="streak-number gradient-text" id="best-habit-streak">0</div>
+                                <div class="streak-label">Melhor hábito</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini Heatmap -->
+                    <div class="card mini-heatmap">
+                        <div class="card-header">
+                            <span class="card-title">Últimas 4 semanas</span>
+                            <a href="analytics.html" class="btn btn-icon" title="Ver heatmap completo"><i
+                                    class="fa-solid fa-chart-bar"></i></a>
+                        </div>
+                        <div class="mini-heatmap-grid" id="mini-heatmap"></div>
+                    </div>
+
+                    <!-- Notifications Toggle -->
+                    <div class="card">
+                        <div class="toggle-wrapper">
+                            <div class="settings-label-group">
+                                <span class="card-title">Notificações</span>
+                                <span class="settings-sub">Lembretes de hábitos</span>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="notif-toggle" onchange="toggleNotifications(this.checked)" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Identity Modal -->
+    <div class="modal-overlay" id="identity-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">Sua Identidade</h3>
+                <button class="modal-close" onclick="closeIdentityModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="form-group" style="margin-bottom:24px;">
+                <label class="form-label">Quem você está se tornando?</label>
+                <input class="form-input" type="text" id="future-version-input"
+                    placeholder="Ex: Desenvolvedor de elite. Shape forte. Estudante top." />
+                <span class="form-helper">Seja específico. Essa identidade vai guiar seus hábitos.</span>
+            </div>
+            <div class="form-group" style="margin-bottom:24px;">
+                <div class="toggle-wrapper">
+                    <div class="settings-label-group">
+                        <span class="form-label" style="font-weight:600;">Modo Rigoroso Global</span>
+                        <span class="settings-sub">3 dias seguidos sem completar = streak zera</span>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="strict-mode-input" />
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:24px;">
+                <div class="toggle-wrapper">
+                    <div class="settings-label-group">
+                        <span class="form-label" style="font-weight:600;">Perfil Público</span>
+                        <span class="settings-sub">Mostre seu heatmap e streak para todos</span>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" id="public-profile-input" onchange="onPublicToggle(this.checked)" />
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            <div id="public-link-section" style="display:none;margin-bottom:24px;">
+                <label class="form-label">Seu link público</label>
+                <div class="public-link-row">
+                    <input class="public-link-input" type="text" id="public-link-display" readonly />
+                    <button class="btn btn-ghost btn-sm" onclick="copyPublicLink()"><i
+                            class="fa-solid fa-clipboard"></i> Copiar</button>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;" id="btn-save-identity" onclick="saveIdentity()">
+                Salvar identidade
+            </button>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-gauge"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-bar"></i>
+            <span>Análises</span>
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/habits.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/score.js"></script>
+    <script src="js/streak.js"></script>
+    <script src="js/identity.js"></script>
+    <script src="js/heatmap.js"></script>
+    <script src="js/notifications.js"></script>
+    <script>
+        let todayHabits = [];
+        let todayLogs = [];
+        let allLogs = [];
+        let profile = null;
+
+        async function init() {
+            const ok = await Router.init();
+            if (!ok) return;
+            UI.setText('#today-date', UI.formatDatePT(new Date()));
+            try {
+                await loadDashboard();
+            } catch (err) {
+                console.error('Dashboard init error:', err);
+                UI.toast('Erro ao carregar dashboard.', 'error');
+            }
+        }
+
+        async function loadDashboard() {
+            const today = new Date();
+            const startYear = UI.getStartOfYear();
+            const [habits, todayL, yearLogs, prof] = await Promise.all([
+                Habits.getForDate(today),
+                Logs.getForDate(today),
+                Logs.getRange(startYear, today),
+                Identity.getProfile(),
+            ]);
+            todayHabits = habits;
+            todayLogs = todayL;
+            allLogs = yearLogs;
+            profile = prof;
+            renderHabitsList();
+            updateScores();
+            updateStreaks();
+            updateIdentity();
+            renderMiniHeatmap();
+            setupNotifications();
+        }
+
+        // Helper: renders a FA icon OR falls back if it's a legacy emoji string
+        function renderIcon(icon) {
+            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
+            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
+            return icon; // legacy emoji fallback
+        }
+
+        function renderHabitsList() {
+            const container = document.getElementById('habits-list');
+            const completedIds = new Set(todayLogs.filter(l => l.completed).map(l => l.habit_id));
+
+            if (todayHabits.length === 0) {
+                container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-bolt fa-2x"></i></div>
+            <div class="empty-title">Nenhum hábito para hoje</div>
+            <p class="empty-desc">Crie seus primeiros hábitos para começar a medir sua disciplina.</p>
+            <a href="habits.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Criar hábito</a>
+          </div>`;
+                return;
+            }
+
+            const sorted = [...todayHabits].sort((a, b) => {
+                const aDone = completedIds.has(a.id);
+                const bDone = completedIds.has(b.id);
+                if (aDone !== bDone) return aDone ? 1 : -1;
+                if (a.ideal_time && b.ideal_time) return a.ideal_time.localeCompare(b.ideal_time);
+                return 0;
+            });
+
+            container.innerHTML = sorted.map(habit => {
+                const done = completedIds.has(habit.id);
+                const dots = Array.from({ length: 5 }, (_, i) =>
+                    `<div class="habit-weight-dot ${i < habit.weight ? 'active' : ''}"></div>`
+                ).join('');
+                const timeLabel = habit.ideal_time ? `<span class="habit-meta-item"><i class="fa-regular fa-clock"></i> ${UI.formatTime(habit.ideal_time)}</span>` : '';
+                const strictLabel = habit.strict_mode ? `<span class="habit-meta-item"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : '';
+                return `
+          <div class="habit-item ${done ? 'completed' : ''}" id="habit-item-${habit.id}" onclick="toggleHabit('${habit.id}', ${done})">
+            <input type="checkbox" class="habit-checkbox" ${done ? 'checked' : ''} readonly onclick="event.stopPropagation();toggleHabit('${habit.id}', ${done})" />
+            <div class="habit-icon" style="background:${habit.color}22;color:${habit.color}">${renderIcon(habit.icon)}</div>
+            <div class="habit-info">
+              <div class="habit-name">${habit.name}</div>
+              <div class="habit-meta">
+                <div class="habit-weight">${dots}</div>
+                <span class="habit-meta-item">${habit.weight} pt${habit.weight > 1 ? 's' : ''}</span>
+                ${timeLabel}${strictLabel}
+              </div>
+            </div>
+          </div>`;
+            }).join('');
+        }
+
+        async function toggleHabit(habitId, currentlyDone) {
+            const habit = todayHabits.find(h => h.id === habitId);
+            if (!habit) return;
+            try {
+                if (currentlyDone) {
+                    await Logs.uncomplete(habitId, new Date());
+                    todayLogs = todayLogs.map(l => l.habit_id === habitId ? { ...l, completed: false, score_earned: 0 } : l);
+                } else {
+                    const log = await Logs.complete(habitId, new Date(), habit);
+                    const idx = todayLogs.findIndex(l => l.habit_id === habitId);
+                    if (idx >= 0) todayLogs[idx] = log;
+                    else todayLogs.push(log);
+                    UI.toast(`${habit.name} concluído! +${log.score_earned} pts`, 'success', 2000);
+                }
+                renderHabitsList();
+                updateScores();
+                updateStreaks();
+            } catch (err) {
+                UI.toast('Erro ao salvar. Tente novamente.', 'error');
+            }
+        }
+
+        function updateScores() {
+            const dailyScore = Score.calcDaily(todayLogs);
+            const maxDaily = Score.calcMaxDaily(todayHabits);
+            const pct = Score.calcDailyPercent(todayLogs, todayHabits);
+            UI.animateNumber(document.getElementById('daily-score'), dailyScore);
+            UI.setText('#score-sublabel', `${dailyScore} de ${maxDaily} pontos possíveis`);
+            UI.setProgressRing(document.getElementById('progress-ring-circle'), pct);
+            UI.setText('#ring-pct', `${pct}%`);
+            const weekStart = UI.getStartOfWeek();
+            const monthStart = UI.getStartOfMonth();
+            const weekLogs = allLogs.filter(l => l.date >= UI.dateStr(weekStart));
+            const monthLogs = allLogs.filter(l => l.date >= UI.dateStr(monthStart));
+            UI.animateNumber(document.getElementById('weekly-score'), Score.calcDaily(weekLogs));
+            UI.animateNumber(document.getElementById('monthly-score'), Score.calcDaily(monthLogs));
+            UI.animateNumber(document.getElementById('total-score'), Score.calcDaily(allLogs));
+        }
+
+        function updateStreaks() {
+            const globalStreak = Streak.calcGlobalStreak(allLogs, todayHabits);
+            UI.animateNumber(document.getElementById('global-streak'), globalStreak);
+            document.getElementById('nav-streak-badge').innerHTML = `<i class="fa-solid fa-fire"></i> ${globalStreak}`;
+            let best = 0;
+            for (const habit of todayHabits) {
+                const s = Streak.calcHabitStreak(habit.id, allLogs);
+                if (s > best) best = s;
+            }
+            UI.animateNumber(document.getElementById('best-habit-streak'), best);
+        }
+
+        function updateIdentity() {
+            if (!profile) return;
+            if (profile.future_version) UI.setText('#identity-quote', `"${profile.future_version}"`);
+            const last30 = allLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
+            const pct = Score.calcAlignmentPercent(todayHabits, last30);
+            UI.setText('#identity-pct', `${pct}%`);
+            document.getElementById('identity-bar').style.width = `${pct}%`;
+            const { label, emoji } = Identity.getAlignmentLabel(pct);
+            UI.setText('#identity-label', `${label}`);
+        }
+
+        function renderMiniHeatmap() {
+            const scoreMap = Logs.buildScoreMap(allLogs);
+            Heatmap.renderMini(document.getElementById('mini-heatmap'), scoreMap, 28);
+        }
+
+        async function setupNotifications() {
+            if (Notifications.isEnabled()) {
+                document.getElementById('notif-toggle').checked = true;
+                const globalStreak = Streak.calcGlobalStreak(allLogs, todayHabits);
+                Notifications.scheduleDailyReminders(todayHabits, todayLogs);
+                Notifications.scheduleStreakAlert(todayHabits, todayLogs, globalStreak);
+            }
+        }
+
+        async function toggleNotifications(enabled) {
+            if (enabled) {
+                const granted = await Notifications.requestPermission();
+                if (!granted) {
+                    document.getElementById('notif-toggle').checked = false;
+                    UI.toast('Permissão de notificação negada.', 'error');
+                    return;
+                }
+                setupNotifications();
+                UI.toast('Notificações ativadas!', 'success');
+            } else {
+                Notifications.clearAll();
+                UI.toast('Notificações desativadas.', 'info');
+            }
+        }
+
+        function openIdentityModal() {
+            if (profile) {
+                document.getElementById('future-version-input').value = profile.future_version || '';
+                document.getElementById('strict-mode-input').checked = profile.strict_mode_global || false;
+                document.getElementById('public-profile-input').checked = profile.public_profile || false;
+                onPublicToggle(profile.public_profile);
+                if (profile.public_slug) {
+                    document.getElementById('public-link-display').value = `${window.location.origin}/profile.html?u=${profile.public_slug}`;
+                }
+            }
+            document.getElementById('identity-modal').classList.add('open');
+        }
+
+        function closeIdentityModal() {
+            document.getElementById('identity-modal').classList.remove('open');
+        }
+
+        function onPublicToggle(checked) {
+            document.getElementById('public-link-section').style.display = checked ? 'block' : 'none';
+            if (checked && profile && !profile.public_slug) {
+                const slug = Identity.generateSlug(profile.username);
+                document.getElementById('public-link-display').value = `${window.location.origin}/profile.html?u=${slug}`;
+            }
+        }
+
+        async function saveIdentity() {
+            const btn = document.getElementById('btn-save-identity');
+            const futureVersion = document.getElementById('future-version-input').value.trim();
+            const strictMode = document.getElementById('strict-mode-input').checked;
+            const publicProfile = document.getElementById('public-profile-input').checked;
+            let slug = profile?.public_slug;
+            if (publicProfile && !slug) slug = Identity.generateSlug(profile?.username);
+            await UI.handleSubmit(btn, async () => {
+                profile = await Identity.save(futureVersion, { strictMode, publicProfile, publicSlug: slug });
+                closeIdentityModal();
+                updateIdentity();
+                UI.toast('Identidade salva!', 'success');
+            });
+        }
+
+        function copyPublicLink() {
+            const val = document.getElementById('public-link-display').value;
+            navigator.clipboard.writeText(val).then(() => UI.toast('Link copiado!', 'success'));
+        }
+
+        async function handleSignOut() { await Auth.signOut(); }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('nav-mobile-menu');
+            const icon = document.getElementById('hamburger-icon');
+            const isOpen = menu.classList.toggle('open');
+            icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        }
+
+        document.getElementById('identity-modal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeIdentityModal();
+        });
+
+        init();
+    </script>
+</body>
+
+</html>

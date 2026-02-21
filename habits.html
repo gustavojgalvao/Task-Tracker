@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ascend — Gerenciar Hábitos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/pages/habits.css" />
+</head>
+
+<body>
+
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="dashboard.html" class="nav-logo">
+                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
+                <span>Ascend</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="habits.html" class="nav-link active">Hábitos</a>
+                <a href="analytics.html" class="nav-link">Análises</a>
+                <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
+            </div>
+            <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
+                <i class="fa-solid fa-bars" id="hamburger-icon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Navigation Menu -->
+    <div class="nav-mobile-menu" id="nav-mobile-menu">
+        <a href="dashboard.html" class="nav-mobile-link">
+            <i class="fa-solid fa-gauge"></i> Dashboard
+        </a>
+        <a href="habits.html" class="nav-mobile-link active">
+            <i class="fa-solid fa-bolt"></i> Hábitos
+        </a>
+        <a href="analytics.html" class="nav-mobile-link">
+            <i class="fa-solid fa-chart-bar"></i> Análises
+        </a>
+        <div class="nav-mobile-divider"></div>
+        <button class="nav-mobile-signout" onclick="Auth.signOut()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+        </button>
+    </div>
+
+    <div class="page-wrapper habits-page">
+        <div class="container">
+
+            <div class="habits-header animate-slide-up">
+                <div class="habits-header-left">
+                    <h1>Seus Hábitos</h1>
+                    <p class="habits-header-sub">Gerencie, ajuste e evolua seus hábitos.</p>
+                </div>
+                <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Novo
+                    hábito</button>
+            </div>
+
+            <div class="habits-full-list animate-slide-up delay-100" id="habits-full-list">
+                <div class="empty-state">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Habit Modal -->
+    <div class="modal-overlay" id="habit-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modal-title">Novo Hábito</h3>
+                <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <form class="habit-form" onsubmit="event.preventDefault(); saveHabit();">
+                <input type="hidden" id="habit-id" />
+
+                <!-- Name + Icon -->
+                <div class="habit-form-row">
+                    <div class="form-group">
+                        <label class="form-label">Nome<span>*</span></label>
+                        <input class="form-input" type="text" id="habit-name" placeholder="Ex: Academia, Leitura..."
+                            required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Ícone</label>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <button type="button" id="selected-icon-btn" class="btn btn-ghost"
+                                style="font-size:1.1rem;width:44px;height:44px;padding:0;" onclick="toggleIconPicker()">
+                                <i class="fa-solid fa-bolt" id="selected-icon-preview"></i>
+                            </button>
+                            <div id="icon-picker" class="icon-grid" style="display:none;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weight (slider) -->
+                <div class="form-group">
+                    <label class="form-label">Peso (impacto no score)</label>
+                    <input class="form-range" type="range" id="habit-weight" min="1" max="5" value="1"
+                        oninput="updateWeightDisplay(this.value)" />
+                    <div class="weight-display">
+                        <span id="weight-label">Leve</span>
+                        <span class="weight-points"><span id="weight-val">1</span> ponto por dia</span>
+                    </div>
+                </div>
+
+                <!-- Color -->
+                <div class="form-group">
+                    <label class="form-label">Cor</label>
+                    <div class="color-row" id="color-row"></div>
+                </div>
+
+                <!-- Frequency -->
+                <div class="form-group">
+                    <label class="form-label">Frequência</label>
+                    <select class="form-select" id="habit-frequency" onchange="onFrequencyChange(this.value)">
+                        <option value="daily">Todo dia</option>
+                        <option value="weekly">Dias específicos da semana</option>
+                    </select>
+                </div>
+
+                <!-- Days of week -->
+                <div class="form-group" id="days-group" style="display:none;">
+                    <label class="form-label">Dias da semana</label>
+                    <div class="days-selector" id="days-selector">
+                        <button type="button" class="day-btn" data-day="0">Dom</button>
+                        <button type="button" class="day-btn" data-day="1">Seg</button>
+                        <button type="button" class="day-btn" data-day="2">Ter</button>
+                        <button type="button" class="day-btn" data-day="3">Qua</button>
+                        <button type="button" class="day-btn" data-day="4">Qui</button>
+                        <button type="button" class="day-btn" data-day="5">Sex</button>
+                        <button type="button" class="day-btn" data-day="6">Sáb</button>
+                    </div>
+                </div>
+
+                <!-- Ideal time + Strict mode -->
+                <div class="habit-form-row">
+                    <div class="form-group">
+                        <label class="form-label">Horário ideal</label>
+                        <input class="form-input" type="time" id="habit-time" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Modo rigoroso</label>
+                        <div class="toggle-wrapper" style="margin-top:12px;">
+                            <span class="settings-sub">Perde 50% fora do horário</span>
+                            <label class="toggle">
+                                <input type="checkbox" id="habit-strict" />
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="btn-save-habit" style="width:100%;margin-top:8px;">
+                    Salvar hábito
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete confirm modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal" style="max-width:380px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Excluir hábito?</h3>
+                <button class="modal-close" onclick="closeDeleteModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p style="color:var(--text-secondary);margin-bottom:24px;">
+                O hábito <strong id="delete-habit-name"></strong> e seus dados históricos serão removidos. Esta ação não
+                pode ser desfeita.
+            </p>
+            <div style="display:flex;gap:12px;">
+                <button class="btn btn-ghost" style="flex:1;" onclick="closeDeleteModal()">Cancelar</button>
+                <button class="btn btn-danger" style="flex:1;" id="btn-confirm-delete" onclick="confirmDelete()">
+                    <i class="fa-solid fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-gauge"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-bar"></i>
+            <span>Análises</span>
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/habits.js"></script>
+    <script>
+        let allHabits = [];
+        let selectedIcon = 'fa-solid fa-bolt';
+        let selectedColor = '#6366f1';
+        let selectedDays = [];
+        let deleteTargetId = null;
+
+        const WEIGHT_LABELS = ['', 'Leve', 'Moderado', 'Importante', 'Alto', 'Crítico'];
+
+        function renderIcon(icon) {
+            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
+            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
+            return icon; // legacy emoji fallback
+        }
+
+        async function init() {
+            const ok = await Router.init();
+            if (!ok) return;
+            buildIconPicker();
+            buildColorPicker();
+            setupDayButtons();
+            await loadHabits();
+        }
+
+        async function loadHabits() {
+            allHabits = await Habits.getAll();
+            renderHabits();
+        }
+
+        function renderHabits() {
+            const container = document.getElementById('habits-full-list');
+            if (allHabits.length === 0) {
+                container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-bolt fa-2x"></i></div>
+            <div class="empty-title">Nenhum hábito ainda</div>
+            <p class="empty-desc">Crie seu primeiro hábito e comece a medir sua consistência.</p>
+            <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Criar hábito</button>
+          </div>`;
+                return;
+            }
+
+            container.innerHTML = allHabits.map(h => {
+                const freqLabel = h.frequency === 'daily' ? 'Todo dia' :
+                    (h.days_of_week || []).map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d]).join(', ');
+                const dots = Array.from({ length: 5 }, (_, i) =>
+                    `<div class="habit-weight-dot ${i < h.weight ? 'active' : ''}"></div>`
+                ).join('');
+
+                return `
+          <div class="habit-manage-item animate-fade-in" id="hm-${h.id}">
+            <div class="habit-icon" style="background:${h.color}22;color:${h.color};font-size:1.2rem;width:48px;height:48px;">
+              ${renderIcon(h.icon)}
+            </div>
+            <div class="habit-manage-info">
+              <div class="habit-manage-name">${h.name}</div>
+              <div class="habit-manage-meta">
+                <span class="habit-manage-tag">
+                  <div class="habit-weight">${dots}</div>
+                  ${h.weight} pt${h.weight > 1 ? 's' : ''}
+                </span>
+                <span class="habit-manage-tag"><i class="fa-regular fa-calendar"></i> ${freqLabel}</span>
+                ${h.ideal_time ? `<span class="habit-manage-tag"><i class="fa-regular fa-clock"></i> ${UI.formatTime(h.ideal_time)}</span>` : ''}
+                ${h.strict_mode ? `<span class="habit-manage-tag"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : ''}
+              </div>
+            </div>
+            <div class="habit-manage-actions">
+              <button class="btn btn-icon" onclick="openModal('${h.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
+              <button class="btn btn-icon" onclick="openDeleteModal('${h.id}', '${h.name.replace(/'/g, "\\'")}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </div>`;
+            }).join('');
+        }
+
+        function openModal(habitId = null) {
+            document.getElementById('modal-title').textContent = habitId ? 'Editar Hábito' : 'Novo Hábito';
+            document.getElementById('habit-id').value = habitId || '';
+
+            if (habitId) {
+                const h = allHabits.find(h => h.id === habitId);
+                if (!h) return;
+                document.getElementById('habit-name').value = h.name;
+                document.getElementById('habit-weight').value = h.weight;
+                updateWeightDisplay(h.weight);
+                document.getElementById('habit-time').value = h.ideal_time || '';
+                document.getElementById('habit-strict').checked = h.strict_mode;
+                document.getElementById('habit-frequency').value = h.frequency;
+                onFrequencyChange(h.frequency);
+                selectedIcon = h.icon;
+                selectedColor = h.color;
+                updateIconPreview();
+                selectedDays = h.days_of_week || [];
+                updateDayButtons();
+                updateColorPicker();
+            } else {
+                document.getElementById('habit-name').value = '';
+                document.getElementById('habit-weight').value = 1;
+                updateWeightDisplay(1);
+                document.getElementById('habit-time').value = '';
+                document.getElementById('habit-strict').checked = false;
+                document.getElementById('habit-frequency').value = 'daily';
+                onFrequencyChange('daily');
+                selectedIcon = 'fa-solid fa-bolt';
+                selectedColor = '#6366f1';
+                updateIconPreview();
+                selectedDays = [];
+                updateDayButtons();
+                updateColorPicker();
+            }
+            document.getElementById('habit-modal').classList.add('open');
+        }
+
+        function updateIconPreview() {
+            document.getElementById('selected-icon-preview').className = selectedIcon;
+        }
+
+        function closeModal() {
+            document.getElementById('habit-modal').classList.remove('open');
+            document.getElementById('icon-picker').style.display = 'none';
+        }
+
+        async function saveHabit() {
+            const btn = document.getElementById('btn-save-habit');
+            const name = document.getElementById('habit-name').value.trim();
+            if (!name) { UI.toast('Nome é obrigatório.', 'error'); return; }
+            const frequency = document.getElementById('habit-frequency').value;
+            if (frequency === 'weekly' && selectedDays.length === 0) {
+                UI.toast('Selecione ao menos um dia da semana.', 'error'); return;
+            }
+            const data = {
+                name,
+                weight: parseInt(document.getElementById('habit-weight').value),
+                frequency,
+                days_of_week: frequency === 'weekly' ? selectedDays : null,
+                ideal_time: document.getElementById('habit-time').value || null,
+                strict_mode: document.getElementById('habit-strict').checked,
+                icon: selectedIcon,
+                color: selectedColor,
+            };
+            const id = document.getElementById('habit-id').value;
+            await UI.handleSubmit(btn, async () => {
+                if (id) {
+                    await Habits.update(id, data);
+                    UI.toast('Hábito atualizado!', 'success');
+                } else {
+                    await Habits.create(data);
+                    UI.toast('Hábito criado!', 'success');
+                }
+                closeModal();
+                await loadHabits();
+            });
+        }
+
+        function openDeleteModal(id, name) {
+            deleteTargetId = id;
+            document.getElementById('delete-habit-name').textContent = name;
+            document.getElementById('delete-modal').classList.add('open');
+        }
+
+        function closeDeleteModal() {
+            deleteTargetId = null;
+            document.getElementById('delete-modal').classList.remove('open');
+        }
+
+        async function confirmDelete() {
+            if (!deleteTargetId) return;
+            const btn = document.getElementById('btn-confirm-delete');
+            await UI.handleSubmit(btn, async () => {
+                await Habits.remove(deleteTargetId);
+                closeDeleteModal();
+                UI.toast('Hábito removido.', 'info');
+                await loadHabits();
+            });
+        }
+
+        function updateWeightDisplay(val) {
+            document.getElementById('weight-val').textContent = val;
+            document.getElementById('weight-label').textContent = WEIGHT_LABELS[val] || '';
+        }
+
+        function onFrequencyChange(val) {
+            document.getElementById('days-group').style.display = val === 'weekly' ? 'block' : 'none';
+        }
+
+        function setupDayButtons() {
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const day = parseInt(btn.dataset.day);
+                    if (selectedDays.includes(day)) selectedDays = selectedDays.filter(d => d !== day);
+                    else selectedDays.push(day);
+                    updateDayButtons();
+                });
+            });
+        }
+
+        function updateDayButtons() {
+            document.querySelectorAll('.day-btn').forEach(btn => {
+                btn.classList.toggle('selected', selectedDays.includes(parseInt(btn.dataset.day)));
+            });
+        }
+
+        function buildIconPicker() {
+            const grid = document.getElementById('icon-picker');
+            grid.className = 'icon-grid';
+            Habits.ICONS.forEach(iconClass => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'icon-btn';
+                btn.innerHTML = `<i class="${iconClass}"></i>`;
+                btn.onclick = () => {
+                    selectedIcon = iconClass;
+                    updateIconPreview();
+                    document.querySelectorAll('#icon-picker .icon-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        function toggleIconPicker() {
+            const picker = document.getElementById('icon-picker');
+            picker.style.display = picker.style.display === 'none' ? 'grid' : 'none';
+        }
+
+        function buildColorPicker() {
+            const row = document.getElementById('color-row');
+            Habits.COLORS.forEach(color => {
+                const swatch = document.createElement('button');
+                swatch.type = 'button';
+                swatch.className = 'color-swatch';
+                swatch.style.background = color;
+                swatch.dataset.color = color;
+                swatch.onclick = () => { selectedColor = color; updateColorPicker(); };
+                row.appendChild(swatch);
+            });
+        }
+
+        function updateColorPicker() {
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.toggle('selected', s.dataset.color === selectedColor);
+            });
+        }
+
+        document.getElementById('habit-modal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeModal();
+        });
+        document.getElementById('delete-modal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) closeDeleteModal();
+        });
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('nav-mobile-menu');
+            const icon = document.getElementById('hamburger-icon');
+            const isOpen = menu.classList.toggle('open');
+            icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

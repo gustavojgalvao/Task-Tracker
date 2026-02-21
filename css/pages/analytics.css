@@ -1,0 +1,201 @@
+/* ============================================================
+   ASCEND — Analytics Page CSS
+   ============================================================ */
+
+.analytics-page {
+    padding: calc(var(--nav-height) + var(--space-8)) 0 var(--space-12);
+}
+
+.analytics-header {
+    margin-bottom: var(--space-8);
+}
+
+/* ── Heatmap ──────────────────────────────────────────────────── */
+.heatmap-card {
+    padding: var(--space-8);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: var(--space-4);
+    justify-content: flex-end;
+}
+
+.heatmap-legend-samples {
+    display: flex;
+    gap: 3px;
+}
+
+.heatmap-legend-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+.heatmap-months {
+    display: flex;
+    gap: 0;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-2);
+    padding-left: 28px;
+}
+
+.heatmap-weekdays {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-right: var(--space-2);
+    padding-top: 2px;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.heatmap-outer {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-1);
+    min-width: 700px;
+}
+
+.heatmap-grid {
+    display: grid;
+    grid-template-rows: repeat(7, 13px);
+    grid-auto-flow: column;
+    gap: 3px;
+}
+
+/* ── Analytics Stat Row ───────────────────────────────────────── */
+.analytics-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.analytics-stat-card {
+    padding: var(--space-5) var(--space-6);
+}
+
+/* ── Charts Grid ──────────────────────────────────────────────── */
+.charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+    margin-bottom: var(--space-6);
+}
+
+.chart-card {
+    padding: var(--space-6);
+}
+
+.chart-canvas-wrapper {
+    margin-top: var(--space-5);
+    height: 220px;
+}
+
+/* ── Habit Table ──────────────────────────────────────────────── */
+.habit-table-card {
+    padding: var(--space-6);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.habit-table {
+    width: 100%;
+    min-width: 500px;
+    border-collapse: collapse;
+    margin-top: var(--space-5);
+    font-size: 0.875rem;
+}
+
+.habit-table th {
+    text-align: left;
+    padding: var(--space-3) var(--space-4);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+
+.habit-table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary);
+}
+
+.habit-table tr:last-child td {
+    border-bottom: none;
+}
+
+.habit-table tr:hover td {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.completion-bar-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.completion-bar-mini {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.completion-bar-fill-mini {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    border-radius: var(--radius-full);
+}
+
+.completion-pct {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    min-width: 36px;
+    text-align: right;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+    .analytics-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .analytics-stats {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .heatmap-card {
+        padding: var(--space-4);
+    }
+
+    .analytics-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .chart-canvas-wrapper {
+        height: 180px;
+    }
+}
