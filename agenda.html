@@ -48,46 +48,74 @@
                 </div>
             </div>
 
-            <!-- Date Navigator -->
-            <div class="agenda-date-nav animate-slide-up delay-100">
-                <button class="agenda-date-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)" title="Dia anterior">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <span class="agenda-date-label" id="date-nav-label">Hoje</span>
-                <button class="agenda-date-nav-btn" id="next-day-btn" onclick="navigateDay(1)" title="Dia seguinte"
-                    disabled>
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
+            <!-- 2-column layout wrapper -->
+            <div class="agenda-layout">
 
-            <!-- Score Bar -->
-            <div class="agenda-score-bar animate-slide-up delay-200" id="agenda-score-bar">
-                <div class="agenda-score-stat">
-                    <div class="agenda-score-val gradient-text" id="agenda-score">0</div>
-                    <div class="agenda-score-stat-label">Pontos</div>
-                </div>
-                <div class="agenda-score-progress">
-                    <div
-                        style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;">
-                        <span id="agenda-done-count">0 feitos</span>
-                        <span id="agenda-total-count">0 total</span>
-                    </div>
-                    <div class="agenda-progress-bar">
-                        <div class="agenda-progress-fill" id="agenda-progress-fill" style="width:0%"></div>
-                    </div>
-                </div>
-                <div class="agenda-score-stat">
-                    <div class="agenda-score-val" id="agenda-max-score">0</div>
-                    <div class="agenda-score-stat-label">Possível</div>
-                </div>
-            </div>
+                <!-- LEFT: Calendar col (sticky on desktop) -->
+                <div class="agenda-calendar-col">
 
-            <!-- Timeline -->
-            <div class="agenda-timeline animate-slide-up delay-300" id="agenda-timeline">
-                <div class="empty-state">
-                    <div class="spinner"></div>
-                </div>
-            </div>
+                    <!-- Interactive Calendar -->
+                    <div class="agenda-calendar animate-slide-up delay-100" id="agenda-calendar">
+                        <div class="cal-header">
+                            <button class="cal-nav-btn" id="cal-prev-month" onclick="calNavMonth(-1)"
+                                title="Mês anterior">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <span class="cal-month-label" id="cal-month-label"></span>
+                            <button class="cal-nav-btn" id="cal-next-month" onclick="calNavMonth(1)"
+                                title="Próximo mês">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="cal-dow-row">
+                            <span>Dom</span><span>Seg</span><span>Ter</span>
+                            <span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                        </div>
+                        <div class="cal-grid" id="cal-grid"></div>
+                    </div>
+
+                    <!-- Selected date label -->
+                    <div class="agenda-date-nav">
+                        <span class="agenda-date-label" id="date-nav-label">Hoje</span>
+                    </div>
+
+                </div><!-- /.agenda-calendar-col -->
+
+                <!-- RIGHT: Score + Timeline col -->
+                <div class="agenda-timeline-col">
+
+                    <!-- Score Bar -->
+                    <div class="agenda-score-bar animate-slide-up delay-200" id="agenda-score-bar">
+                        <div class="agenda-score-stat">
+                            <div class="agenda-score-val gradient-text" id="agenda-score">0</div>
+                            <div class="agenda-score-stat-label">Pontos</div>
+                        </div>
+                        <div class="agenda-score-progress">
+                            <div
+                                style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;">
+                                <span id="agenda-done-count">0 feitos</span>
+                                <span id="agenda-total-count">0 total</span>
+                            </div>
+                            <div class="agenda-progress-bar">
+                                <div class="agenda-progress-fill" id="agenda-progress-fill" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="agenda-score-stat">
+                            <div class="agenda-score-val" id="agenda-max-score">0</div>
+                            <div class="agenda-score-stat-label">Possível</div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline -->
+                    <div class="agenda-timeline animate-slide-up delay-300" id="agenda-timeline">
+                        <div class="empty-state">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+
+                </div><!-- /.agenda-timeline-col -->
+
+            </div><!-- /.agenda-layout -->
 
         </div>
     </div>
@@ -163,6 +191,7 @@
             const ok = await Router.init();
             if (!ok) return;
             selectedDateStr = UI.todayStr();
+            calInit();
             updateDateNav();
             try {
                 await loadAgenda();
@@ -353,6 +382,81 @@
             document.getElementById('agenda-progress-fill').style.width = `${pct}%`;
         }
 
+        // ── Calendar State ────────────────────────────────────────
+        let calYear, calMonth; // currently displayed month
+
+        function calInit() {
+            const today = new Date();
+            calYear = today.getFullYear();
+            calMonth = today.getMonth();
+            renderCalendar();
+        }
+
+        function calNavMonth(delta) {
+            const today = new Date();
+            calMonth += delta;
+            if (calMonth < 0) { calMonth = 11; calYear--; }
+            if (calMonth > 11) { calMonth = 0; calYear++; }
+            // Don't go to future months beyond current month
+            if (calYear > today.getFullYear() ||
+                (calYear === today.getFullYear() && calMonth > today.getMonth())) {
+                calMonth = today.getMonth();
+                calYear = today.getFullYear();
+            }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const today = new Date();
+            const todayStr = UI.todayStr();
+
+            // Month label
+            const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            document.getElementById('cal-month-label').textContent =
+                `${monthNames[calMonth]} ${calYear}`;
+
+            // Disable next-month btn if we're already at current month
+            const atCurrentMonth = (calYear === today.getFullYear() && calMonth === today.getMonth());
+            document.getElementById('cal-next-month').disabled = atCurrentMonth;
+
+            // Build grid
+            const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+            const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+
+            let html = '';
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                html += `<div class="cal-cell cal-empty"></div>`;
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const mm = String(calMonth + 1).padStart(2, '0');
+                const dd = String(d).padStart(2, '0');
+                const dateStr = `${calYear}-${mm}-${dd}`;
+                const isFuture = dateStr > todayStr;
+                const isToday = dateStr === todayStr;
+                const isSelected = dateStr === selectedDateStr;
+
+                let cls = 'cal-cell';
+                if (isFuture) cls += ' cal-future';
+                if (isToday) cls += ' cal-today';
+                if (isSelected) cls += ' cal-selected';
+
+                const clickAttr = isFuture ? '' : `onclick="selectCalDay('${dateStr}')"`;
+                html += `<div class="${cls}" ${clickAttr}>${d}</div>`;
+            }
+
+            document.getElementById('cal-grid').innerHTML = html;
+        }
+
+        function selectCalDay(dateStr) {
+            selectedDateStr = dateStr;
+            updateDateNav();
+            renderCalendar();
+            loadAgenda();
+        }
+
         // ── Date Navigation ──────────────────────────────────────────
         function navigateDay(delta) {
             const [y, mo, d] = selectedDateStr.split('-').map(Number);
@@ -362,14 +466,17 @@
             const todayStr = UI.todayStr();
             if (newStr > todayStr) return;
             selectedDateStr = newStr;
+            // Sync calendar view month to selected date
+            calYear = date.getFullYear();
+            calMonth = date.getMonth();
             updateDateNav();
+            renderCalendar();
             loadAgenda();
         }
 
         function updateDateNav() {
             const todayStr = UI.todayStr();
             const isToday = selectedDateStr === todayStr;
-            document.getElementById('next-day-btn').disabled = isToday;
 
             let label;
             if (isToday) {
