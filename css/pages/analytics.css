@@ -6,6 +6,12 @@
     padding: calc(var(--nav-height) + var(--space-8)) 0 var(--space-12);
 }
 
+@media (max-width: 768px) {
+    .analytics-page {
+        padding: var(--space-6) 0 var(--space-12);
+    }
+}
+
 .analytics-header {
     margin-bottom: var(--space-8);
 }

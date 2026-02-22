@@ -35,7 +35,17 @@
     </div>
   </nav>
 
-  <div class="page-wrapper profile-page" style="padding-top:calc(var(--nav-height) + 24px);">
+  <!-- Mobile-only header for profile public page -->
+  <div class="profile-mobile-header">
+    <a href="index.html" class="profile-mobile-back">
+      <div class="nav-logo-icon" style="width:28px;height:28px;font-size:0.85rem;"><i
+          class="fa-solid fa-chevron-up"></i></div>
+      <span style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;">Ascend</span>
+    </a>
+    <a href="auth.html?tab=signup" class="btn btn-primary btn-sm">Criar conta</a>
+  </div>
+
+  <div class="page-wrapper profile-page">
     <div class="container" id="profile-content">
       <div class="empty-state">
         <div class="spinner" style="width:32px;height:32px;"></div>

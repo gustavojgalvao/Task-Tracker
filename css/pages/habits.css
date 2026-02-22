@@ -7,6 +7,12 @@
     padding: calc(var(--nav-height) + var(--space-8)) 0 var(--space-12);
 }
 
+@media (max-width: 768px) {
+    .habits-page {
+        padding: var(--space-6) 0 var(--space-12);
+    }
+}
+
 .habits-header {
     display: flex;
     align-items: center;
@@ -165,6 +171,39 @@
     padding: var(--space-12) 0;
 }
 
+/* Mobile-only top bar for public profile */
+.profile-mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-4) var(--space-5);
+    background: rgba(8, 12, 20, 0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.profile-mobile-back {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+@media (max-width: 768px) {
+    .profile-page {
+        padding: var(--space-6) 0;
+    }
+
+    .profile-mobile-header {
+        display: flex;
+    }
+}
+
 .profile-hero {
     text-align: center;
     padding: var(--space-12) var(--space-6);
@@ -278,6 +317,7 @@
     .habits-header {
         flex-direction: column;
         align-items: flex-start;
+        gap: var(--space-3);
     }
 
     .habits-header .btn {
@@ -286,15 +326,28 @@
     }
 
     .habit-manage-item {
-        flex-wrap: wrap;
+        align-items: flex-start;
         padding: var(--space-4);
         gap: var(--space-3);
     }
 
     .habit-manage-actions {
-        flex: 0 0 100%;
-        justify-content: flex-end;
-        margin-top: var(--space-2);
+        display: flex;
+        gap: var(--space-2);
+        flex-shrink: 0;
+        align-self: flex-start;
+    }
+
+    /* Icon and color pickers bigger on mobile */
+    .icon-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 1.2rem;
+    }
+
+    .color-swatch {
+        width: 36px;
+        height: 36px;
     }
 }
 

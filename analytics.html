@@ -34,28 +34,10 @@
                 <a href="analytics.html" class="nav-link active">Análises</a>
                 <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
             </div>
-            <button class="nav-hamburger" id="nav-hamburger" onclick="toggleMobileMenu()" aria-label="Menu">
-                <i class="fa-solid fa-bars" id="hamburger-icon"></i>
-            </button>
         </div>
     </nav>
 
-    <!-- Mobile Navigation Menu -->
-    <div class="nav-mobile-menu" id="nav-mobile-menu">
-        <a href="dashboard.html" class="nav-mobile-link">
-            <i class="fa-solid fa-gauge"></i> Dashboard
-        </a>
-        <a href="habits.html" class="nav-mobile-link">
-            <i class="fa-solid fa-bolt"></i> Hábitos
-        </a>
-        <a href="analytics.html" class="nav-mobile-link active">
-            <i class="fa-solid fa-chart-bar"></i> Análises
-        </a>
-        <div class="nav-mobile-divider"></div>
-        <button class="nav-mobile-signout" onclick="Auth.signOut()">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
-        </button>
-    </div>
+
 
     <div class="page-wrapper analytics-page">
         <div class="container">
@@ -333,12 +315,7 @@
             }).join('');
         }
 
-        function toggleMobileMenu() {
-            const menu = document.getElementById('nav-mobile-menu');
-            const icon = document.getElementById('hamburger-icon');
-            const isOpen = menu.classList.toggle('open');
-            icon.className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
-        }
+
 
         init();
     </script>

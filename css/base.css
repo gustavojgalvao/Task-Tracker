@@ -79,7 +79,7 @@
   /* Layout */
   --max-width: 1200px;
   --nav-height: 64px;
-  --bottom-nav-height: 64px;
+  --bottom-nav-height: 70px;
 }
 
 /* ── Reset ──────────────────────────────────────────────────── */
@@ -575,9 +575,10 @@ p {
     display: flex !important;
   }
 
-  /* Extra bottom padding so content isn't hidden by bottom nav */
+  /* Remove top nav spacing — nav is hidden on mobile */
   .page-wrapper {
-    padding-bottom: calc(var(--bottom-nav-height) + var(--space-6));
+    padding-top: var(--space-5);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + var(--space-6));
   }
 }
 

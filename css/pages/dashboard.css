@@ -6,6 +6,12 @@
     padding: calc(var(--nav-height) + var(--space-8)) 0 var(--space-12);
 }
 
+@media (max-width: 768px) {
+    .dashboard-page {
+        padding: var(--space-5) 0 var(--space-12);
+    }
+}
+
 /* ── Dashboard Grid ───────────────────────────────────────────── */
 .dashboard-grid {
     display: grid;
@@ -26,6 +32,13 @@
     gap: var(--space-4);
     position: sticky;
     top: calc(var(--nav-height) + var(--space-8));
+}
+
+@media (max-width: 768px) {
+    .dashboard-sidebar {
+        position: static;
+        top: auto;
+    }
 }
 
 /* ── Score Hero ───────────────────────────────────────────────── */
