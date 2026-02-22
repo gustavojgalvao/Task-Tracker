@@ -143,15 +143,71 @@
                 <!-- Cycle options -->
                 <div class="form-group" id="cycle-group" style="display:none;">
                     <label class="form-label">Configuração do ciclo</label>
-                    <div class="habit-form-row">
+                    <!-- Cycle type radios -->
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                        <label style="cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
+                            <input type="radio" name="cycle-type" id="cycle-type-active" value="active" checked
+                                onchange="onCycleTypeChange('active')" style="margin-top:3px;" />
+                            <span>
+                                <span style="font-size:0.85rem;font-weight:500;">Fazer a cada N dias</span>
+                                <p class="settings-sub" style="margin:2px 0 0;">Hábito aparece 1x a cada N dias</p>
+                            </span>
+                        </label>
+                        <label style="cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
+                            <input type="radio" name="cycle-type" id="cycle-type-rest" value="rest"
+                                onchange="onCycleTypeChange('rest')" style="margin-top:3px;" />
+                            <span>
+                                <span style="font-size:0.85rem;font-weight:500;">Descansar a cada N dias</span>
+                                <p class="settings-sub" style="margin:2px 0 0;">Aparece todo dia, exceto a cada N dias
+                                </p>
+                            </span>
+                        </label>
+                        <label style="cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
+                            <input type="radio" name="cycle-type" id="cycle-type-pattern" value="pattern"
+                                onchange="onCycleTypeChange('pattern')" style="margin-top:3px;" />
+                            <span>
+                                <span style="font-size:0.85rem;font-weight:500;">Sequência progressiva de
+                                    descansos</span>
+                                <p class="settings-sub" style="margin:2px 0 0;">Ex: 7, 9, 5 → faz 7 dias, descansa, faz
+                                    9, descansa, faz 5, descansa, repete</p>
+                            </span>
+                        </label>
+                    </div>
+
+                    <!-- Simple N-days input (active / rest) -->
+                    <div id="cycle-simple-inputs" class="habit-form-row">
                         <div class="form-group" style="margin:0">
-                            <label class="form-label" style="font-size:0.8rem;">Repetir a cada (dias)</label>
-                            <input class="form-input" type="number" id="habit-cycle-days" min="2" max="365" value="2"
-                                placeholder="Ex: 2, 7, 15" />
+                            <label class="form-label" style="font-size:0.8rem;" id="cycle-days-label">Intervalo
+                                (dias)</label>
+                            <input class="form-input" type="number" id="habit-cycle-days" min="2" max="365" value="7"
+                                placeholder="Ex: 7" />
                         </div>
                         <div class="form-group" style="margin:0">
                             <label class="form-label" style="font-size:0.8rem;">Data de início</label>
                             <input class="form-input" type="date" id="habit-cycle-start" />
+                        </div>
+                    </div>
+
+                    <!-- Pattern input (progressive) -->
+                    <div id="cycle-pattern-inputs" style="display:none;">
+                        <label class="form-label" style="font-size:0.8rem;">Sequência de dias ativos (separados por
+                            vírgula)</label>
+                        <input class="form-input" type="text" id="habit-cycle-pattern" placeholder="Ex: 7, 9, 5"
+                            style="margin-top:6px;" />
+                        <p class="settings-sub" style="margin-top:6px;">Informe quantos dias seguidos você faz o hábito
+                            antes de cada descanso.</p>
+                        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                            <button type="button" class="badge badge-accent" onclick="setPattern('7, 7')">7 · 7</button>
+                            <button type="button" class="badge badge-accent" onclick="setPattern('5, 7, 5')">5 · 7 ·
+                                5</button>
+                            <button type="button" class="badge badge-accent" onclick="setPattern('7, 9, 5')">7 · 9 ·
+                                5</button>
+                            <button type="button" class="badge badge-accent" onclick="setPattern('6, 8, 6, 10')">6 · 8 ·
+                                6 · 10</button>
+                        </div>
+                        <div class="form-group" style="margin-top:12px;">
+                            <label class="form-label" style="font-size:0.8rem;">Data de início</label>
+                            <input class="form-input" type="date" id="habit-cycle-pattern-start" />
                         </div>
                     </div>
                 </div>
@@ -388,8 +444,13 @@
                 updateDayButtons();
                 updateColorPicker();
                 // Cycle
-                document.getElementById('habit-cycle-days').value = h.cycle_days || 2;
+                const ctype = h.cycle_type || 'active';
+                document.querySelector(`input[name="cycle-type"][value="${ctype}"]`).checked = true;
+                onCycleTypeChange(ctype);
+                document.getElementById('habit-cycle-days').value = h.cycle_days || 7;
                 document.getElementById('habit-cycle-start').value = h.cycle_start || UI.todayStr();
+                document.getElementById('habit-cycle-pattern').value = h.cycle_pattern || '';
+                document.getElementById('habit-cycle-pattern-start').value = h.cycle_start || UI.todayStr();
                 // Goal
                 const hasGoal = !!(h.goal_value);
                 document.getElementById('habit-goal-toggle').checked = hasGoal;
@@ -411,8 +472,12 @@
                 updateDayButtons();
                 updateColorPicker();
                 // Cycle defaults
-                document.getElementById('habit-cycle-days').value = 2;
+                document.getElementById('cycle-type-active').checked = true;
+                onCycleTypeChange('active');
+                document.getElementById('habit-cycle-days').value = 7;
                 document.getElementById('habit-cycle-start').value = UI.todayStr();
+                document.getElementById('habit-cycle-pattern').value = '';
+                document.getElementById('habit-cycle-pattern-start').value = UI.todayStr();
                 // Goal defaults
                 document.getElementById('habit-goal-toggle').checked = false;
                 document.getElementById('habit-goal-value').value = '';
@@ -439,8 +504,14 @@
             if (frequency === 'weekly' && selectedDays.length === 0) {
                 UI.toast('Selecione ao menos um dia da semana.', 'error'); return;
             }
-            if (frequency === 'cycle' && !document.getElementById('habit-cycle-days').value) {
-                UI.toast('Informe o número de dias do ciclo.', 'error'); return;
+            if (frequency === 'cycle') {
+                const ctype = document.querySelector('input[name="cycle-type"]:checked')?.value || 'active';
+                if (ctype !== 'pattern' && !document.getElementById('habit-cycle-days').value) {
+                    UI.toast('Informe o número de dias do ciclo.', 'error'); return;
+                }
+                if (ctype === 'pattern' && !document.getElementById('habit-cycle-pattern').value.trim()) {
+                    UI.toast('Informe a sequência de dias do ciclo.', 'error'); return;
+                }
             }
 
             const hasGoal = document.getElementById('habit-goal-toggle').checked;
@@ -449,6 +520,9 @@
             if (hasGoal && (!goalValue || goalValue <= 0)) {
                 UI.toast('Informe a quantidade alvo da meta.', 'error'); return;
             }
+
+            const cycleType = frequency === 'cycle' ? (document.querySelector('input[name="cycle-type"]:checked')?.value || 'active') : null;
+            const isPattern = cycleType === 'pattern';
 
             const data = {
                 name,
@@ -461,8 +535,16 @@
                 color: selectedColor,
                 goal_value: goalValue,
                 goal_unit: goalUnit,
-                cycle_days: frequency === 'cycle' ? parseInt(document.getElementById('habit-cycle-days').value) : null,
-                cycle_start: frequency === 'cycle' ? (document.getElementById('habit-cycle-start').value || UI.todayStr()) : null,
+                cycle_days: (frequency === 'cycle' && !isPattern) ? parseInt(document.getElementById('habit-cycle-days').value) : null,
+                cycle_start: frequency === 'cycle' ? (
+                    isPattern
+                        ? (document.getElementById('habit-cycle-pattern-start').value || UI.todayStr())
+                        : (document.getElementById('habit-cycle-start').value || UI.todayStr())
+                ) : null,
+                cycle_type: cycleType,
+                cycle_pattern: (frequency === 'cycle' && isPattern)
+                    ? document.getElementById('habit-cycle-pattern').value.trim()
+                    : null,
             };
             const id = document.getElementById('habit-id').value;
             await UI.handleSubmit(btn, async () => {
@@ -520,6 +602,22 @@
         function onFrequencyChange(val) {
             document.getElementById('days-group').style.display = val === 'weekly' ? 'block' : 'none';
             document.getElementById('cycle-group').style.display = val === 'cycle' ? 'block' : 'none';
+        }
+
+        function onCycleTypeChange(type) {
+            const simple = document.getElementById('cycle-simple-inputs');
+            const pattern = document.getElementById('cycle-pattern-inputs');
+            if (type === 'pattern') {
+                simple.style.display = 'none';
+                pattern.style.display = 'block';
+            } else {
+                simple.style.display = '';
+                pattern.style.display = 'none';
+            }
+        }
+
+        function setPattern(val) {
+            document.getElementById('habit-cycle-pattern').value = val;
         }
 
         function onGoalToggle(enabled) {

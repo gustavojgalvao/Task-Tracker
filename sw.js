@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ascend-v2';
+const CACHE_NAME = 'ascend-v5';
 
 // Assets to cache on install (app shell)
 const PRECACHE_URLS = [

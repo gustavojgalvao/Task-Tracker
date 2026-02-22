@@ -99,11 +99,12 @@ const Habits = (() => {
                 strict_mode: data.strict_mode || false,
                 color: data.color || '#6366f1',
                 icon: data.icon || 'fa-solid fa-bolt',
-                // New fields
                 goal_value: data.goal_value || null,
                 goal_unit: data.goal_unit || null,
                 cycle_days: data.cycle_days || null,
                 cycle_start: data.cycle_start || null,
+                cycle_type: data.cycle_type || null,
+                cycle_pattern: data.cycle_pattern || null,
             })
             .select()
             .single();
@@ -127,11 +128,12 @@ const Habits = (() => {
                 strict_mode: data.strict_mode,
                 color: data.color,
                 icon: data.icon,
-                // New fields
                 goal_value: data.goal_value || null,
                 goal_unit: data.goal_unit || null,
                 cycle_days: data.cycle_days || null,
                 cycle_start: data.cycle_start || null,
+                cycle_type: data.cycle_type || null,
+                cycle_pattern: data.cycle_pattern || null,
             })
             .eq('id', id)
             .select()
@@ -210,7 +212,7 @@ const Habits = (() => {
      */
     async function getForDate(date) {
         const all = await getAll();
-        const dayOfWeek = date.getDay(); // 0=Sun .. 6=Sat
+        const dayOfWeek = date.getDay();
         const dateStr = UI.toBRTDateStr(date);
 
         return all.filter(habit => {
@@ -218,12 +220,41 @@ const Habits = (() => {
             if (habit.frequency === 'weekly' && Array.isArray(habit.days_of_week)) {
                 return habit.days_of_week.includes(dayOfWeek);
             }
-            if (habit.frequency === 'cycle' && habit.cycle_days && habit.cycle_start) {
-                // Count calendar days between cycle_start and the target date
+            if (habit.frequency === 'cycle' && habit.cycle_start) {
                 const start = new Date(habit.cycle_start + 'T00:00:00');
                 const target = new Date(dateStr + 'T00:00:00');
                 const diffDays = Math.round((target - start) / (1000 * 60 * 60 * 24));
-                return diffDays >= 0 && diffDays % habit.cycle_days === 0;
+                if (diffDays < 0) return false;
+
+                const type = habit.cycle_type || 'active';
+
+                // ── Progressive pattern: e.g. "7,9,5" ────────────────
+                if (type === 'pattern' && habit.cycle_pattern) {
+                    const phases = habit.cycle_pattern
+                        .split(',')
+                        .map(s => parseInt(s.trim()))
+                        .filter(n => !isNaN(n) && n > 0);
+                    if (phases.length === 0) return true;
+
+                    // Total cycle length = sum of (active_days + 1 rest day) per phase
+                    const totalCycle = phases.reduce((sum, n) => sum + n + 1, 0);
+                    const pos = diffDays % totalCycle; // position within cycle
+
+                    let accum = 0;
+                    for (const n of phases) {
+                        accum += n; // end of active block
+                        if (pos === accum) return false; // this is a rest day
+                        accum += 1; // skip the rest day
+                        if (pos < accum) return true;  // still in active block
+                    }
+                    return true;
+                }
+
+                // ── Simple cycle ─────────────────────────────────────
+                if (!habit.cycle_days) return false;
+                const isNthDay = diffDays % habit.cycle_days === 0;
+                if (type === 'active') return isNthDay;
+                if (type === 'rest') return !isNthDay;
             }
             return false;
         });
