@@ -95,6 +95,7 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 body {
@@ -248,6 +249,7 @@ p {
 .page-wrapper {
   min-height: 100vh;
   padding-top: var(--nav-height);
+  overflow-x: hidden;
 }
 
 .grid {

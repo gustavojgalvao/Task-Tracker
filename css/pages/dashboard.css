@@ -132,6 +132,17 @@
     letter-spacing: 0.05em;
 }
 
+@media (max-width: 768px) {
+    .progress-ring-container svg {
+        width: 88px;
+        height: 88px;
+    }
+
+    .progress-ring-pct {
+        font-size: 1.3rem;
+    }
+}
+
 /* ── Habits Section ───────────────────────────────────────────── */
 .section-header {
     display: flex;
@@ -276,57 +287,103 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────── */
-@media (max-width: 900px) {
+
+/* Tablet: sidebar vira coluna única embaixo */
+@media (max-width: 1024px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
     }
 
     .dashboard-sidebar {
         position: static;
+        top: auto;
         display: grid;
         grid-template-columns: 1fr 1fr;
+        gap: var(--space-4);
     }
 }
 
-@media (max-width: 600px) {
+/* Mobile puro */
+@media (max-width: 768px) {
+
+    /* Score hero: layout mais compacto — score + ring lado a lado */
     .score-hero {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
         padding: var(--space-5) var(--space-5);
         gap: var(--space-4);
     }
 
+    .score-hero-left {
+        flex: 1;
+        min-width: 0;
+    }
+
     .score-hero-right {
-        align-self: center;
-        width: 100%;
-        display: flex;
-        justify-content: center;
+        flex-shrink: 0;
     }
 
     .score-value-big {
-        font-size: clamp(2.25rem, 12vw, 4rem);
+        font-size: clamp(2.5rem, 14vw, 4rem);
     }
 
+    .score-headline {
+        font-size: 0.85rem;
+        margin-bottom: var(--space-2);
+    }
+
+    /* Sidebar: coluna única no mobile */
     .dashboard-sidebar {
         grid-template-columns: 1fr;
     }
 
+    /* Score summary: 3 colunas compactas */
     .score-summary {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-2);
+    }
+
+    .score-summary-item {
+        padding: var(--space-3) var(--space-2);
+    }
+
+    .score-summary-val {
+        font-size: 1.25rem;
+    }
+
+    .score-summary-label {
+        font-size: 0.65rem;
     }
 
     .section-header {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: var(--space-3);
+        align-items: center;
+    }
+
+    /* Mini heatmap: conter dentro da tela */
+    .mini-heatmap-grid {
+        overflow: hidden;
+    }
+
+    /* Identity edit button */
+    .identity-edit-btn {
+        min-height: 44px;
     }
 }
 
+/* Telas bem pequenas */
 @media (max-width: 400px) {
-    .streak-widget {
-        grid-template-columns: 1fr;
+    .score-summary {
+        grid-template-columns: repeat(3, 1fr);
     }
 
-    .score-summary {
-        grid-template-columns: 1fr;
+    .streak-widget {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .score-value-big {
+        font-size: clamp(2rem, 16vw, 3rem);
     }
 }
