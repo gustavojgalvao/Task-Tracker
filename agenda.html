@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ascend — Agenda do Dia</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Ascend" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/pages/agenda.css" />
+</head>
+
+<body>
+
+    <nav class="nav">
+        <div class="nav-inner">
+            <a href="dashboard.html" class="nav-logo">
+                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
+                <span>Ascend</span>
+            </a>
+            <div class="nav-links">
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="habits.html" class="nav-link">Hábitos</a>
+                <a href="agenda.html" class="nav-link active">Agenda</a>
+                <a href="analytics.html" class="nav-link">Análises</a>
+                <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-wrapper agenda-page">
+        <div class="container">
+
+            <!-- Header -->
+            <div class="agenda-header animate-slide-up">
+                <div class="agenda-header-left">
+                    <h1>Agenda</h1>
+                    <p class="agenda-header-sub">Acompanhe seus hábitos cronologicamente.</p>
+                </div>
+            </div>
+
+            <!-- Date Navigator -->
+            <div class="agenda-date-nav animate-slide-up delay-100">
+                <button class="agenda-date-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)" title="Dia anterior">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <span class="agenda-date-label" id="date-nav-label">Hoje</span>
+                <button class="agenda-date-nav-btn" id="next-day-btn" onclick="navigateDay(1)" title="Dia seguinte"
+                    disabled>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Score Bar -->
+            <div class="agenda-score-bar animate-slide-up delay-200" id="agenda-score-bar">
+                <div class="agenda-score-stat">
+                    <div class="agenda-score-val gradient-text" id="agenda-score">0</div>
+                    <div class="agenda-score-stat-label">Pontos</div>
+                </div>
+                <div class="agenda-score-progress">
+                    <div
+                        style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--text-muted);margin-bottom:6px;">
+                        <span id="agenda-done-count">0 feitos</span>
+                        <span id="agenda-total-count">0 total</span>
+                    </div>
+                    <div class="agenda-progress-bar">
+                        <div class="agenda-progress-fill" id="agenda-progress-fill" style="width:0%"></div>
+                    </div>
+                </div>
+                <div class="agenda-score-stat">
+                    <div class="agenda-score-val" id="agenda-max-score">0</div>
+                    <div class="agenda-score-stat-label">Possível</div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="agenda-timeline animate-slide-up delay-300" id="agenda-timeline">
+                <div class="empty-state">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Goal Progress Modal -->
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal" style="max-width:360px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="goal-modal-title">Registrar progresso</h3>
+                <button class="modal-close" onclick="document.getElementById('goal-modal').classList.remove('open')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label class="form-label" id="goal-modal-label">Quantidade alcançada</label>
+                <input class="form-input" type="number" id="goal-modal-input" min="0" step="any" placeholder="0"
+                    style="margin-top:8px;" />
+                <p class="settings-sub" id="goal-modal-hint" style="margin-top:6px;"></p>
+            </div>
+            <div style="display:flex;gap:12px;">
+                <button class="btn btn-ghost" style="flex:1;"
+                    onclick="document.getElementById('goal-modal').classList.remove('open')">Cancelar</button>
+                <button class="btn btn-primary" style="flex:1;" id="btn-save-goal" onclick="saveGoalProgress()"><i
+                        class="fa-solid fa-check"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-gauge"></i>
+            <span>Dashboard</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item">
+            <i class="fa-solid fa-bolt"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="agenda.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Agenda</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-bar"></i>
+            <span>Análises</span>
+        </a>
+    </nav>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/habits.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/score.js"></script>
+    <script>
+        let agendaHabits = [];
+        let agendaLogs = [];
+        let selectedDateStr = UI.todayStr();
+
+        function selectedDateObj() {
+            const [y, mo, d] = selectedDateStr.split('-').map(Number);
+            return new Date(y, mo - 1, d);
+        }
+
+        function renderIcon(icon) {
+            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
+            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
+            return icon;
+        }
+
+        async function init() {
+            const ok = await Router.init();
+            if (!ok) return;
+            selectedDateStr = UI.todayStr();
+            updateDateNav();
+            try {
+                await loadAgenda();
+            } catch (err) {
+                console.error('Agenda init error:', err);
+                UI.toast('Erro ao carregar agenda.', 'error');
+            }
+        }
+
+        async function loadAgenda() {
+            const selDate = selectedDateObj();
+            const [habits, logs] = await Promise.all([
+                Habits.getForDate(selDate),
+                Logs.getForDate(selDate),
+            ]);
+            agendaHabits = habits;
+            agendaLogs = logs;
+            renderTimeline();
+            updateScoreBar();
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('agenda-timeline');
+            const logMap = {};
+            agendaLogs.forEach(l => { logMap[l.habit_id] = l; });
+
+            if (agendaHabits.length === 0) {
+                container.innerHTML = `
+                  <div class="agenda-empty">
+                    <div class="agenda-empty-icon"><i class="fa-solid fa-calendar-xmark"></i></div>
+                    <div class="agenda-empty-title">Nenhum hábito para este dia</div>
+                    <p style="font-size:0.85rem;">Crie hábitos ou navegue para outro dia.</p>
+                    <a href="habits.html" class="btn btn-primary" style="margin-top:16px;"><i class="fa-solid fa-plus"></i> Criar hábito</a>
+                  </div>`;
+                return;
+            }
+
+            // Separate habits with and without ideal_time
+            const withTime = agendaHabits
+                .filter(h => h.ideal_time)
+                .sort((a, b) => a.ideal_time.localeCompare(b.ideal_time));
+            const withoutTime = agendaHabits.filter(h => !h.ideal_time);
+
+            let html = '';
+
+            if (withTime.length > 0) {
+                html += `<div class="agenda-timeline-section">
+                  <div class="agenda-section-label"><i class="fa-regular fa-clock"></i> Horário agendado</div>`;
+                html += withTime.map(h => buildAgendaItem(h, logMap[h.id])).join('');
+                html += '</div>';
+            }
+
+            if (withoutTime.length > 0) {
+                html += `<div class="agenda-timeline-section">
+                  <div class="agenda-section-label"><i class="fa-solid fa-list"></i> Sem horário</div>`;
+                html += withoutTime.map(h => buildAgendaItem(h, logMap[h.id])).join('');
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function buildAgendaItem(habit, log) {
+            const done = log && log.completed;
+            const dots = Array.from({ length: 5 }, (_, i) =>
+                `<div class="agenda-weight-dot ${i < habit.weight ? 'active' : ''}"></div>`
+            ).join('');
+
+            const timeDisplay = habit.ideal_time
+                ? `<div class="agenda-time-text">${UI.formatTime(habit.ideal_time)}</div><div class="agenda-time-dot"></div>`
+                : `<div class="agenda-time-text" style="color:var(--text-muted);font-size:0.75rem;">–</div>`;
+
+            const strictTag = habit.strict_mode
+                ? `<span class="agenda-item-tag"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : '';
+            const weightTag = `<span class="agenda-item-tag">${habit.weight} pt${habit.weight > 1 ? 's' : ''}</span>`;
+
+            // Goal progress bar
+            let goalBar = '';
+            if (habit.goal_value) {
+                const logged = (log && log.value_logged) || 0;
+                const pct = Math.min(100, Math.round((logged / habit.goal_value) * 100));
+                const reached = logged >= habit.goal_value;
+                goalBar = `
+                  <div class="habit-goal-bar" style="margin-top:6px;">
+                    <div class="habit-goal-track"><div class="habit-goal-fill" style="width:${pct}%"></div></div>
+                    <span class="habit-goal-text ${reached ? 'reached' : ''}">${logged}/${habit.goal_value}${habit.goal_unit ? ' ' + habit.goal_unit : ''}</span>
+                  </div>`;
+            }
+
+            const clickAction = habit.goal_value
+                ? `openGoalModal('${habit.id}')`
+                : `toggleHabit('${habit.id}', ${done})`;
+
+            return `
+              <div class="agenda-item ${done ? 'completed' : ''}" id="ai-${habit.id}" onclick="${clickAction}">
+                <div class="agenda-item-time">${timeDisplay}</div>
+                <div class="agenda-item-icon" style="background:${habit.color}22;color:${habit.color};">${renderIcon(habit.icon)}</div>
+                <div class="agenda-item-body">
+                  <div class="agenda-item-name">${habit.name}</div>
+                  <div class="agenda-item-meta">
+                    <div class="agenda-weight">${dots}</div>
+                    ${weightTag}${strictTag}
+                  </div>
+                  ${goalBar}
+                </div>
+                <div class="agenda-item-check">
+                  <div class="agenda-check-circle">
+                    <i class="fa-solid fa-check"></i>
+                  </div>
+                </div>
+              </div>`;
+        }
+
+        async function toggleHabit(habitId, currentlyDone) {
+            const habit = agendaHabits.find(h => h.id === habitId);
+            if (!habit) return;
+            const selDate = selectedDateObj();
+            try {
+                if (currentlyDone) {
+                    await Logs.uncomplete(habitId, selDate);
+                    agendaLogs = agendaLogs.map(l =>
+                        l.habit_id === habitId ? { ...l, completed: false, score_earned: 0, value_logged: null } : l
+                    );
+                } else {
+                    const log = await Logs.complete(habitId, selDate, habit);
+                    const idx = agendaLogs.findIndex(l => l.habit_id === habitId);
+                    if (idx >= 0) agendaLogs[idx] = log;
+                    else agendaLogs.push(log);
+                    UI.toast(`${habit.name} concluído! +${log.score_earned} pts`, 'success', 2000);
+                }
+                renderTimeline();
+                updateScoreBar();
+            } catch (err) {
+                UI.toast('Erro ao salvar. Tente novamente.', 'error');
+            }
+        }
+
+        let _goalHabitId = null;
+
+        function openGoalModal(habitId) {
+            const habit = agendaHabits.find(h => h.id === habitId);
+            if (!habit) return;
+            const log = agendaLogs.find(l => l.habit_id === habitId);
+            _goalHabitId = habitId;
+            document.getElementById('goal-modal-title').textContent = habit.name;
+            document.getElementById('goal-modal-label').textContent =
+                `Quanto você fez? (meta: ${habit.goal_value} ${habit.goal_unit || ''})`;
+            document.getElementById('goal-modal-input').value = (log && log.value_logged) ? log.value_logged : '';
+            document.getElementById('goal-modal-hint').textContent =
+                `Meta: ${habit.goal_value} ${habit.goal_unit || ''}. Score proporcional ao progresso.`;
+            document.getElementById('goal-modal').classList.add('open');
+            setTimeout(() => document.getElementById('goal-modal-input').focus(), 100);
+        }
+
+        async function saveGoalProgress() {
+            if (!_goalHabitId) return;
+            const habit = agendaHabits.find(h => h.id === _goalHabitId);
+            if (!habit) return;
+            const val = parseFloat(document.getElementById('goal-modal-input').value);
+            if (isNaN(val) || val < 0) { UI.toast('Informe um valor válido.', 'error'); return; }
+            const btn = document.getElementById('btn-save-goal');
+            await UI.handleSubmit(btn, async () => {
+                const selDate = selectedDateObj();
+                const log = await Logs.logProgress(_goalHabitId, selDate, habit, val);
+                const idx = agendaLogs.findIndex(l => l.habit_id === _goalHabitId);
+                if (idx >= 0) agendaLogs[idx] = log;
+                else agendaLogs.push(log);
+                document.getElementById('goal-modal').classList.remove('open');
+                renderTimeline();
+                updateScoreBar();
+                if (log.completed) UI.toast(`Meta de ${habit.name} atingida! +${log.score_earned} pts`, 'success', 2500);
+                else UI.toast(`Progresso salvo: ${val} ${habit.goal_unit || ''}`, 'info', 2000);
+            });
+        }
+
+        function updateScoreBar() {
+            const completedLogs = agendaLogs.filter(l => l.completed);
+            const score = completedLogs.reduce((sum, l) => sum + (l.score_earned || 0), 0);
+            const maxScore = agendaHabits.reduce((sum, h) => sum + h.weight, 0);
+            const done = completedLogs.length;
+            const total = agendaHabits.length;
+            const pct = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
+
+            UI.animateNumber(document.getElementById('agenda-score'), score);
+            document.getElementById('agenda-max-score').textContent = maxScore;
+            document.getElementById('agenda-done-count').textContent = `${done} feito${done !== 1 ? 's' : ''}`;
+            document.getElementById('agenda-total-count').textContent = `${total} total`;
+            document.getElementById('agenda-progress-fill').style.width = `${pct}%`;
+        }
+
+        // ── Date Navigation ──────────────────────────────────────────
+        function navigateDay(delta) {
+            const [y, mo, d] = selectedDateStr.split('-').map(Number);
+            const date = new Date(y, mo - 1, d);
+            date.setDate(date.getDate() + delta);
+            const newStr = UI.dateStr(date);
+            const todayStr = UI.todayStr();
+            if (newStr > todayStr) return;
+            selectedDateStr = newStr;
+            updateDateNav();
+            loadAgenda();
+        }
+
+        function updateDateNav() {
+            const todayStr = UI.todayStr();
+            const isToday = selectedDateStr === todayStr;
+            document.getElementById('next-day-btn').disabled = isToday;
+
+            let label;
+            if (isToday) {
+                label = 'Hoje';
+            } else {
+                const ontem = new Date();
+                ontem.setDate(ontem.getDate() - 1);
+                const ontemStr = UI.dateStr(ontem);
+                if (selectedDateStr === ontemStr) {
+                    label = 'Ontem';
+                } else {
+                    label = UI.formatDatePT(selectedDateObj());
+                }
+            }
+            document.getElementById('date-nav-label').textContent = label;
+        }
+
+        init();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+
+</body>
+
+</html>

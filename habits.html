@@ -30,6 +30,7 @@
             <div class="nav-links">
                 <a href="dashboard.html" class="nav-link">Dashboard</a>
                 <a href="habits.html" class="nav-link active">Hábitos</a>
+                <a href="agenda.html" class="nav-link">Agenda</a>
                 <a href="analytics.html" class="nav-link">Análises</a>
                 <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
             </div>
@@ -54,6 +55,15 @@
                 <div class="empty-state">
                     <div class="spinner"></div>
                 </div>
+            </div>
+
+            <!-- Paused habits section -->
+            <div id="paused-section" style="display:none;margin-top:32px;">
+                <div
+                    style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">
+                    <i class="fa-solid fa-pause-circle"></i> Suspensos
+                </div>
+                <div class="habits-full-list" id="paused-habits-list"></div>
             </div>
 
         </div>
@@ -112,6 +122,7 @@
                     <select class="form-select" id="habit-frequency" onchange="onFrequencyChange(this.value)">
                         <option value="daily">Todo dia</option>
                         <option value="weekly">Dias específicos da semana</option>
+                        <option value="cycle">A cada N dias (ciclo)</option>
                     </select>
                 </div>
 
@@ -126,6 +137,56 @@
                         <button type="button" class="day-btn" data-day="4">Qui</button>
                         <button type="button" class="day-btn" data-day="5">Sex</button>
                         <button type="button" class="day-btn" data-day="6">Sáb</button>
+                    </div>
+                </div>
+
+                <!-- Cycle options -->
+                <div class="form-group" id="cycle-group" style="display:none;">
+                    <label class="form-label">Configuração do ciclo</label>
+                    <div class="habit-form-row">
+                        <div class="form-group" style="margin:0">
+                            <label class="form-label" style="font-size:0.8rem;">Repetir a cada (dias)</label>
+                            <input class="form-input" type="number" id="habit-cycle-days" min="2" max="365" value="2"
+                                placeholder="Ex: 2, 7, 15" />
+                        </div>
+                        <div class="form-group" style="margin:0">
+                            <label class="form-label" style="font-size:0.8rem;">Data de início</label>
+                            <input class="form-input" type="date" id="habit-cycle-start" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Meta / Goal -->
+                <div class="form-group">
+                    <div class="toggle-wrapper">
+                        <span class="form-label" style="margin:0">Meta quantitativa</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="habit-goal-toggle" onchange="onGoalToggle(this.checked)" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <p class="settings-sub" style="margin-top:4px;">Ex: beber 2 litros, ler 30 páginas</p>
+                </div>
+                <div class="form-group" id="goal-group" style="display:none;">
+                    <div class="habit-form-row">
+                        <div class="form-group" style="margin:0">
+                            <label class="form-label" style="font-size:0.8rem;">Quantidade alvo</label>
+                            <input class="form-input" type="number" id="habit-goal-value" min="1" placeholder="Ex: 2" />
+                        </div>
+                        <div class="form-group" style="margin:0">
+                            <label class="form-label" style="font-size:0.8rem;">Unidade</label>
+                            <input class="form-input" type="text" id="habit-goal-unit"
+                                placeholder="Ex: litros, páginas, km" />
+                        </div>
+                    </div>
+                    <div class="goal-unit-chips" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('litros')">litros</button>
+                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('ml')">ml</button>
+                        <button type="button" class="badge badge-accent"
+                            onclick="setGoalUnit('páginas')">páginas</button>
+                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('km')">km</button>
+                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('min')">min</button>
+                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('horas')">horas</button>
                     </div>
                 </div>
 
@@ -184,6 +245,10 @@
             <i class="fa-solid fa-bolt"></i>
             <span>Hábitos</span>
         </a>
+        <a href="agenda.html" class="bottom-nav-item">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Agenda</span>
+        </a>
         <a href="analytics.html" class="bottom-nav-item">
             <i class="fa-solid fa-chart-bar"></i>
             <span>Análises</span>
@@ -221,33 +286,33 @@
         }
 
         async function loadHabits() {
-            allHabits = await Habits.getAll();
+            allHabits = await Habits.getAllIncludingPaused();
             renderHabits();
         }
 
-        function renderHabits() {
-            const container = document.getElementById('habits-full-list');
-            if (allHabits.length === 0) {
-                container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fa-solid fa-bolt fa-2x"></i></div>
-            <div class="empty-title">Nenhum hábito ainda</div>
-            <p class="empty-desc">Crie seu primeiro hábito e comece a medir sua consistência.</p>
-            <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Criar hábito</button>
-          </div>`;
-                return;
-            }
+        function buildHabitCard(h, paused = false) {
+            let freqLabel;
+            if (h.frequency === 'daily') freqLabel = 'Todo dia';
+            else if (h.frequency === 'cycle') freqLabel = `A cada ${h.cycle_days || '?'} dias`;
+            else freqLabel = (h.days_of_week || []).map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d]).join(', ');
 
-            container.innerHTML = allHabits.map(h => {
-                const freqLabel = h.frequency === 'daily' ? 'Todo dia' :
-                    (h.days_of_week || []).map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d]).join(', ');
-                const dots = Array.from({ length: 5 }, (_, i) =>
-                    `<div class="habit-weight-dot ${i < h.weight ? 'active' : ''}"></div>`
-                ).join('');
+            const dots = Array.from({ length: 5 }, (_, i) =>
+                `<div class="habit-weight-dot ${i < h.weight ? 'active' : ''}"></div>`
+            ).join('');
 
-                return `
-          <div class="habit-manage-item animate-fade-in" id="hm-${h.id}">
-            <div class="habit-icon" style="background:${h.color}22;color:${h.color};font-size:1.2rem;width:48px;height:48px;">
+            const goalTag = h.goal_value
+                ? `<span class="habit-manage-tag"><i class="fa-solid fa-bullseye"></i> Meta: ${h.goal_value} ${h.goal_unit || ''}</span>` : '';
+
+            const escapedName = h.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const iconColor = paused ? 'var(--text-muted)' : h.color;
+
+            const pauseBtn = paused
+                ? `<button class="btn btn-icon" style="color:var(--green)" onclick="resumeHabit('${h.id}')" title="Reativar"><i class="fa-solid fa-play"></i></button>`
+                : `<button class="btn btn-icon" onclick="pauseHabit('${h.id}', '${escapedName}')" title="Suspender"><i class="fa-solid fa-pause"></i></button>`;
+
+            return `
+          <div class="habit-manage-item animate-fade-in ${paused ? 'habit-paused' : ''}" id="hm-${h.id}">
+            <div class="habit-icon" style="background:${h.color}22;color:${iconColor};font-size:1.2rem;width:48px;height:48px;">
               ${renderIcon(h.icon)}
             </div>
             <div class="habit-manage-info">
@@ -260,14 +325,46 @@
                 <span class="habit-manage-tag"><i class="fa-regular fa-calendar"></i> ${freqLabel}</span>
                 ${h.ideal_time ? `<span class="habit-manage-tag"><i class="fa-regular fa-clock"></i> ${UI.formatTime(h.ideal_time)}</span>` : ''}
                 ${h.strict_mode ? `<span class="habit-manage-tag"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : ''}
+                ${goalTag}
               </div>
             </div>
             <div class="habit-manage-actions">
-              <button class="btn btn-icon" onclick="openModal('${h.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn btn-icon" onclick="openDeleteModal('${h.id}', '${h.name.replace(/'/g, "\\'")}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+              ${!paused ? `<button class="btn btn-icon" onclick="openModal('${h.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>` : ''}
+              ${pauseBtn}
+              <button class="btn btn-icon" style="color:var(--red,#ef4444)" onclick="openDeleteModal('${h.id}', '${escapedName}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>`;
-            }).join('');
+        }
+
+        function renderHabits() {
+            const container = document.getElementById('habits-full-list');
+            const active = allHabits.filter(h => !h.is_paused);
+            const paused = allHabits.filter(h => h.is_paused);
+
+            if (allHabits.length === 0) {
+                container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fa-solid fa-bolt fa-2x"></i></div>
+            <div class="empty-title">Nenhum hábito ainda</div>
+            <p class="empty-desc">Crie seu primeiro hábito e comece a medir sua consistência.</p>
+            <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Criar hábito</button>
+          </div>`;
+                document.getElementById('paused-section').style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = active.length > 0
+                ? active.map(h => buildHabitCard(h, false)).join('')
+                : `<div style="padding:20px;color:var(--text-muted);text-align:center;">Todos os hábitos estão suspensos.</div>`;
+
+            const pausedSection = document.getElementById('paused-section');
+            const pausedList = document.getElementById('paused-habits-list');
+            if (paused.length > 0) {
+                pausedList.innerHTML = paused.map(h => buildHabitCard(h, true)).join('');
+                pausedSection.style.display = 'block';
+            } else {
+                pausedSection.style.display = 'none';
+            }
         }
 
         function openModal(habitId = null) {
@@ -290,6 +387,15 @@
                 selectedDays = h.days_of_week || [];
                 updateDayButtons();
                 updateColorPicker();
+                // Cycle
+                document.getElementById('habit-cycle-days').value = h.cycle_days || 2;
+                document.getElementById('habit-cycle-start').value = h.cycle_start || UI.todayStr();
+                // Goal
+                const hasGoal = !!(h.goal_value);
+                document.getElementById('habit-goal-toggle').checked = hasGoal;
+                document.getElementById('habit-goal-value').value = h.goal_value || '';
+                document.getElementById('habit-goal-unit').value = h.goal_unit || '';
+                onGoalToggle(hasGoal);
             } else {
                 document.getElementById('habit-name').value = '';
                 document.getElementById('habit-weight').value = 1;
@@ -304,6 +410,14 @@
                 selectedDays = [];
                 updateDayButtons();
                 updateColorPicker();
+                // Cycle defaults
+                document.getElementById('habit-cycle-days').value = 2;
+                document.getElementById('habit-cycle-start').value = UI.todayStr();
+                // Goal defaults
+                document.getElementById('habit-goal-toggle').checked = false;
+                document.getElementById('habit-goal-value').value = '';
+                document.getElementById('habit-goal-unit').value = '';
+                onGoalToggle(false);
             }
             document.getElementById('habit-modal').classList.add('open');
         }
@@ -325,6 +439,17 @@
             if (frequency === 'weekly' && selectedDays.length === 0) {
                 UI.toast('Selecione ao menos um dia da semana.', 'error'); return;
             }
+            if (frequency === 'cycle' && !document.getElementById('habit-cycle-days').value) {
+                UI.toast('Informe o número de dias do ciclo.', 'error'); return;
+            }
+
+            const hasGoal = document.getElementById('habit-goal-toggle').checked;
+            const goalValue = hasGoal ? parseFloat(document.getElementById('habit-goal-value').value) : null;
+            const goalUnit = hasGoal ? document.getElementById('habit-goal-unit').value.trim() : null;
+            if (hasGoal && (!goalValue || goalValue <= 0)) {
+                UI.toast('Informe a quantidade alvo da meta.', 'error'); return;
+            }
+
             const data = {
                 name,
                 weight: parseInt(document.getElementById('habit-weight').value),
@@ -334,6 +459,10 @@
                 strict_mode: document.getElementById('habit-strict').checked,
                 icon: selectedIcon,
                 color: selectedColor,
+                goal_value: goalValue,
+                goal_unit: goalUnit,
+                cycle_days: frequency === 'cycle' ? parseInt(document.getElementById('habit-cycle-days').value) : null,
+                cycle_start: frequency === 'cycle' ? (document.getElementById('habit-cycle-start').value || UI.todayStr()) : null,
             };
             const id = document.getElementById('habit-id').value;
             await UI.handleSubmit(btn, async () => {
@@ -347,6 +476,18 @@
                 closeModal();
                 await loadHabits();
             });
+        }
+
+        async function pauseHabit(id, name) {
+            await Habits.pause(id);
+            UI.toast(`"${name}" suspenso.`, 'info');
+            await loadHabits();
+        }
+
+        async function resumeHabit(id) {
+            await Habits.resume(id);
+            UI.toast('Hábito reativado!', 'success');
+            await loadHabits();
         }
 
         function openDeleteModal(id, name) {
@@ -378,6 +519,15 @@
 
         function onFrequencyChange(val) {
             document.getElementById('days-group').style.display = val === 'weekly' ? 'block' : 'none';
+            document.getElementById('cycle-group').style.display = val === 'cycle' ? 'block' : 'none';
+        }
+
+        function onGoalToggle(enabled) {
+            document.getElementById('goal-group').style.display = enabled ? 'block' : 'none';
+        }
+
+        function setGoalUnit(unit) {
+            document.getElementById('habit-goal-unit').value = unit;
         }
 
         function setupDayButtons() {

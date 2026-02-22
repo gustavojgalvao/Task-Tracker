@@ -7,14 +7,22 @@ const Logs = (() => {
     const db = () => window.supabaseClient;
 
     /**
-     * Format a Date as YYYY-MM-DD string
+     * Format a Date as YYYY-MM-DD string in BRT (UTC-3)
      */
     function toDateStr(date) {
-        return date.toISOString().split('T')[0];
+        return UI.toBRTDateStr(date);
     }
 
     /**
-     * Mark a habit as completed for a date.
+     * Calculate score for a goal-based habit (proportional, capped at weight)
+     */
+    function calcGoalScore(habit, valueLogged) {
+        const ratio = Math.min(1, valueLogged / habit.goal_value);
+        return Math.max(1, Math.floor(habit.weight * ratio));
+    }
+
+    /**
+     * Mark a boolean habit as completed for a date.
      * Applies strict mode penalty if applicable.
      *
      * @param {string} habitId
@@ -24,17 +32,18 @@ const Logs = (() => {
     async function complete(habitId, date, habit) {
         const { data: { user } } = await db().auth.getUser();
         const dateStr = toDateStr(date);
-        const now = new Date();
+        const now = UI.nowInBRT(); // use BRT "now" for correct strict-mode penalty
 
         let penaltyApplied = false;
         let scoreEarned = habit.weight;
 
-        // Strict mode: check if marking after ideal_time
+        // Strict mode: check if marking after ideal_time (all in BRT)
         if (habit.strict_mode && habit.ideal_time) {
             const [h, m] = habit.ideal_time.split(':').map(Number);
-            const idealDate = new Date(date);
-            idealDate.setHours(h, m, 0, 0);
-            if (now > idealDate) {
+            // Build the ideal datetime for the given date in BRT
+            const dateInBRT = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+            const idealDate = new Date(Date.UTC(dateInBRT.getUTCFullYear(), dateInBRT.getUTCMonth(), dateInBRT.getUTCDate(), h + 3, m, 0)); // convert BRT hours back to UTC
+            if (new Date() > idealDate) {
                 penaltyApplied = true;
                 scoreEarned = Math.max(1, Math.floor(scoreEarned * 0.5)); // -50%
             }
@@ -59,7 +68,55 @@ const Logs = (() => {
     }
 
     /**
-     * Unmark a habit as completed for a date
+     * Log progress for a goal-based habit.
+     * Marks as completed (and earns score) when valueLogged >= habit.goal_value.
+     *
+     * @param {string} habitId
+     * @param {Date} date
+     * @param {object} habit - full habit object
+     * @param {number} valueLogged - amount logged by the user
+     */
+    async function logProgress(habitId, date, habit, valueLogged) {
+        const { data: { user } } = await db().auth.getUser();
+        const dateStr = toDateStr(date);
+        const now = UI.nowInBRT();
+
+        const completed = valueLogged >= habit.goal_value;
+        let scoreEarned = completed ? calcGoalScore(habit, valueLogged) : 0;
+
+        // Strict mode penalty even on goal habits
+        let penaltyApplied = false;
+        if (completed && habit.strict_mode && habit.ideal_time) {
+            const [h, m] = habit.ideal_time.split(':').map(Number);
+            const dateInBRT = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+            const idealDate = new Date(Date.UTC(dateInBRT.getUTCFullYear(), dateInBRT.getUTCMonth(), dateInBRT.getUTCDate(), h + 3, m, 0));
+            if (new Date() > idealDate) {
+                penaltyApplied = true;
+                scoreEarned = Math.max(1, Math.floor(scoreEarned * 0.5));
+            }
+        }
+
+        const { data, error } = await db()
+            .from('habit_logs')
+            .upsert({
+                habit_id: habitId,
+                user_id: user.id,
+                date: dateStr,
+                completed,
+                completed_at: completed ? now.toISOString() : null,
+                penalty_applied: penaltyApplied,
+                score_earned: scoreEarned,
+                value_logged: valueLogged,
+            }, { onConflict: 'habit_id,date' })
+            .select()
+            .single();
+
+        if (error) throw error;
+        return data;
+    }
+
+    /**
+     * Unmark a habit as completed for a date (resets value_logged too)
      */
     async function uncomplete(habitId, date) {
         const { data: { user } } = await db().auth.getUser();
@@ -75,6 +132,7 @@ const Logs = (() => {
                 completed_at: null,
                 penalty_applied: false,
                 score_earned: 0,
+                value_logged: null,
             }, { onConflict: 'habit_id,date' })
             .select()
             .single();
@@ -154,7 +212,7 @@ const Logs = (() => {
         return map;
     }
 
-    return { complete, uncomplete, getForDate, getRange, getThisYear, buildScoreMap, buildCompletionMap, toDateStr };
+    return { complete, uncomplete, logProgress, getForDate, getRange, getThisYear, buildScoreMap, buildCompletionMap, toDateStr };
 })();
 
 window.Logs = Logs;

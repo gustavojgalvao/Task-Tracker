@@ -59,16 +59,37 @@ const UI = (() => {
     const WEEKDAYS_PT = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
     const MONTHS_SHORT = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
 
+    // BRT = UTC-3. All date strings MUST be in BRT to match the user's calendar day.
+    const BRT_OFFSET_MS = -3 * 60 * 60 * 1000;
+
+    /**
+     * Returns a Date object representing "now" in BRT.
+     * Useful for strict-mode time comparisons.
+     */
+    function nowInBRT() {
+        const utc = new Date();
+        return new Date(utc.getTime() + BRT_OFFSET_MS);
+    }
+
+    /**
+     * Converts any Date to a YYYY-MM-DD string in BRT (UTC-3).
+     */
+    function toBRTDateStr(date) {
+        const brt = new Date(date.getTime() + BRT_OFFSET_MS);
+        return brt.toISOString().split('T')[0];
+    }
+
     function formatDatePT(date) {
+        // date here is already a local/BRT-shifted date object used for display.
         return `${WEEKDAYS_PT[date.getDay()]}, ${date.getDate()} de ${MONTHS_PT[date.getMonth()]}`;
     }
 
     function todayStr() {
-        return new Date().toISOString().split('T')[0];
+        return toBRTDateStr(new Date());
     }
 
     function dateStr(date) {
-        return date.toISOString().split('T')[0];
+        return toBRTDateStr(date);
     }
 
     function getStartOfMonth(date = new Date()) {
@@ -192,7 +213,7 @@ const UI = (() => {
 
     return {
         toast, setLoading, handleSubmit, confirm,
-        formatDatePT, todayStr, dateStr,
+        formatDatePT, todayStr, dateStr, toBRTDateStr, nowInBRT,
         getStartOfMonth, getEndOfMonth, getStartOfWeek, getDaysAgo, getStartOfYear,
         MONTHS_PT, MONTHS_SHORT, WEEKDAYS_PT,
         qs, qsa, setText, animateNumber, setProgressRing, show, hide, formatTime

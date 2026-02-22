@@ -891,6 +891,52 @@
     opacity: 1;
 }
 
+/* ── Paused / Suspended Habits ───────────────────────────────── */
+.habit-paused {
+    opacity: 0.55;
+}
+
+.habit-paused .habit-manage-name,
+.habit-paused .habit-name {
+    text-decoration: line-through;
+    text-decoration-color: var(--text-muted);
+    color: var(--text-muted);
+}
+
+/* ── Goal Progress Bar (inline in habit cards) ───────────────── */
+.habit-goal-bar {
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.habit-goal-track {
+    flex: 1;
+    height: 5px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.habit-goal-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: linear-gradient(90deg, var(--accent), var(--green));
+    transition: width 0.5s var(--ease-out);
+}
+
+.habit-goal-text {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.habit-goal-text.reached {
+    color: var(--green-bright);
+    font-weight: 600;
+}
+
 /* ── Heatmap Cell ─────────────────────────────────────────────── */
 .heatmap-cell {
     border-radius: 3px;

@@ -30,6 +30,7 @@
             <div class="nav-links">
                 <a href="dashboard.html" class="nav-link active">Dashboard</a>
                 <a href="habits.html" class="nav-link">Hábitos</a>
+                <a href="agenda.html" class="nav-link">Agenda</a>
                 <a href="analytics.html" class="nav-link">Análises</a>
                 <div id="nav-streak-badge" class="badge badge-streak" style="margin-left:8px;"><i
                         class="fa-solid fa-fire"></i> 0</div>
@@ -83,9 +84,21 @@
                     <!-- Today's Habits -->
                     <div class="animate-slide-up delay-200">
                         <div class="section-header">
-                            <h2 class="section-title">Hábitos de hoje</h2>
+                            <h2 class="section-title" id="habits-section-title">Hábitos de hoje</h2>
                             <a href="habits.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-plus"></i>
                                 Gerenciar</a>
+                        </div>
+                        <!-- Date Navigator -->
+                        <div class="date-nav">
+                            <button class="date-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)"
+                                title="Dia anterior">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+                            <span class="date-nav-label" id="date-nav-label">Hoje</span>
+                            <button class="date-nav-btn" id="next-day-btn" onclick="navigateDay(1)" title="Dia seguinte"
+                                disabled>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
                         </div>
                         <div class="habits-list" id="habits-list">
                             <div class="empty-state">
@@ -230,6 +243,29 @@
         </div>
     </div>
 
+    <!-- Goal Progress Modal -->
+    <div class="modal-overlay" id="goal-modal">
+        <div class="modal" style="max-width:360px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="goal-modal-title">Registrar progresso</h3>
+                <button class="modal-close" onclick="document.getElementById('goal-modal').classList.remove('open')"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div style="margin-bottom:16px;">
+                <label class="form-label" id="goal-modal-label">Quantidade alcançada</label>
+                <input class="form-input" type="number" id="goal-modal-input" min="0" step="any" placeholder="0"
+                    style="margin-top:8px;" />
+                <p class="settings-sub" id="goal-modal-hint" style="margin-top:6px;"></p>
+            </div>
+            <div style="display:flex;gap:12px;">
+                <button class="btn btn-ghost" style="flex:1;"
+                    onclick="document.getElementById('goal-modal').classList.remove('open')">Cancelar</button>
+                <button class="btn btn-primary" style="flex:1;" id="btn-save-goal" onclick="saveGoalProgress()"><i
+                        class="fa-solid fa-check"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
         <a href="dashboard.html" class="bottom-nav-item active">
@@ -239,6 +275,10 @@
         <a href="habits.html" class="bottom-nav-item">
             <i class="fa-solid fa-bolt"></i>
             <span>Hábitos</span>
+        </a>
+        <a href="agenda.html" class="bottom-nav-item">
+            <i class="fa-solid fa-calendar-check"></i>
+            <span>Agenda</span>
         </a>
         <a href="analytics.html" class="bottom-nav-item">
             <i class="fa-solid fa-chart-bar"></i>
@@ -263,11 +303,20 @@
         let todayLogs = [];
         let allLogs = [];
         let profile = null;
+        // selectedDate is a YYYY-MM-DD string in BRT; starts as today
+        let selectedDateStr = UI.todayStr();
+        // Interpret selectedDateStr as a local midnight Date object for display
+        function selectedDateObj() {
+            const [y, mo, d] = selectedDateStr.split('-').map(Number);
+            return new Date(y, mo - 1, d);
+        }
 
         async function init() {
             const ok = await Router.init();
             if (!ok) return;
-            UI.setText('#today-date', UI.formatDatePT(new Date()));
+            selectedDateStr = UI.todayStr();
+            updateDateNav();
+            UI.setText('#today-date', UI.formatDatePT(selectedDateObj()));
             try {
                 await loadDashboard();
             } catch (err) {
@@ -277,12 +326,12 @@
         }
 
         async function loadDashboard() {
-            const today = new Date();
+            const selDate = selectedDateObj();
             const startYear = UI.getStartOfYear();
             const [habits, todayL, yearLogs, prof] = await Promise.all([
-                Habits.getForDate(today),
-                Logs.getForDate(today),
-                Logs.getRange(startYear, today),
+                Habits.getForDate(selDate),
+                Logs.getForDate(selDate),
+                Logs.getRange(startYear, new Date()),
                 Identity.getProfile(),
             ]);
             todayHabits = habits;
@@ -306,7 +355,8 @@
 
         function renderHabitsList() {
             const container = document.getElementById('habits-list');
-            const completedIds = new Set(todayLogs.filter(l => l.completed).map(l => l.habit_id));
+            const logMap = {};
+            todayLogs.forEach(l => { logMap[l.habit_id] = l; });
 
             if (todayHabits.length === 0) {
                 container.innerHTML = `
@@ -320,23 +370,48 @@
             }
 
             const sorted = [...todayHabits].sort((a, b) => {
-                const aDone = completedIds.has(a.id);
-                const bDone = completedIds.has(b.id);
+                const aLog = logMap[a.id];
+                const bLog = logMap[b.id];
+                const aDone = aLog && aLog.completed;
+                const bDone = bLog && bLog.completed;
                 if (aDone !== bDone) return aDone ? 1 : -1;
                 if (a.ideal_time && b.ideal_time) return a.ideal_time.localeCompare(b.ideal_time);
                 return 0;
             });
 
             container.innerHTML = sorted.map(habit => {
-                const done = completedIds.has(habit.id);
+                const log = logMap[habit.id];
+                const done = log && log.completed;
                 const dots = Array.from({ length: 5 }, (_, i) =>
                     `<div class="habit-weight-dot ${i < habit.weight ? 'active' : ''}"></div>`
                 ).join('');
                 const timeLabel = habit.ideal_time ? `<span class="habit-meta-item"><i class="fa-regular fa-clock"></i> ${UI.formatTime(habit.ideal_time)}</span>` : '';
                 const strictLabel = habit.strict_mode ? `<span class="habit-meta-item"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : '';
+
+                // Goal progress bar
+                let goalBar = '';
+                if (habit.goal_value) {
+                    const logged = (log && log.value_logged) || 0;
+                    const pct = Math.min(100, Math.round((logged / habit.goal_value) * 100));
+                    const reached = logged >= habit.goal_value;
+                    goalBar = `
+                      <div class="habit-goal-bar">
+                        <div class="habit-goal-track"><div class="habit-goal-fill" style="width:${pct}%"></div></div>
+                        <span class="habit-goal-text ${reached ? 'reached' : ''}">${logged}/${habit.goal_value}${habit.goal_unit ? ' ' + habit.goal_unit : ''}</span>
+                      </div>`;
+                }
+
+                const clickHandler = habit.goal_value
+                    ? `onclick="openGoalModal('${habit.id}', ${done})"`
+                    : `onclick="toggleHabit('${habit.id}', ${done})"`;
+
+                const checkboxHandler = habit.goal_value
+                    ? `onclick="event.stopPropagation();openGoalModal('${habit.id}', ${done})"`
+                    : `onclick="event.stopPropagation();toggleHabit('${habit.id}', ${done})"`;
+
                 return `
-          <div class="habit-item ${done ? 'completed' : ''}" id="habit-item-${habit.id}" onclick="toggleHabit('${habit.id}', ${done})">
-            <input type="checkbox" class="habit-checkbox" ${done ? 'checked' : ''} readonly onclick="event.stopPropagation();toggleHabit('${habit.id}', ${done})" />
+          <div class="habit-item ${done ? 'completed' : ''}" id="habit-item-${habit.id}" ${clickHandler}>
+            <input type="checkbox" class="habit-checkbox" ${done ? 'checked' : ''} readonly ${checkboxHandler} />
             <div class="habit-icon" style="background:${habit.color}22;color:${habit.color}">${renderIcon(habit.icon)}</div>
             <div class="habit-info">
               <div class="habit-name">${habit.name}</div>
@@ -345,6 +420,7 @@
                 <span class="habit-meta-item">${habit.weight} pt${habit.weight > 1 ? 's' : ''}</span>
                 ${timeLabel}${strictLabel}
               </div>
+              ${goalBar}
             </div>
           </div>`;
             }).join('');
@@ -353,12 +429,13 @@
         async function toggleHabit(habitId, currentlyDone) {
             const habit = todayHabits.find(h => h.id === habitId);
             if (!habit) return;
+            const selDate = selectedDateObj();
             try {
                 if (currentlyDone) {
-                    await Logs.uncomplete(habitId, new Date());
+                    await Logs.uncomplete(habitId, selDate);
                     todayLogs = todayLogs.map(l => l.habit_id === habitId ? { ...l, completed: false, score_earned: 0 } : l);
                 } else {
-                    const log = await Logs.complete(habitId, new Date(), habit);
+                    const log = await Logs.complete(habitId, selDate, habit);
                     const idx = todayLogs.findIndex(l => l.habit_id === habitId);
                     if (idx >= 0) todayLogs[idx] = log;
                     else todayLogs.push(log);
@@ -370,6 +447,89 @@
             } catch (err) {
                 UI.toast('Erro ao salvar. Tente novamente.', 'error');
             }
+        }
+
+        let _goalHabitId = null;
+        let _goalCurrentlyDone = false;
+
+        function openGoalModal(habitId, currentlyDone) {
+            const habit = todayHabits.find(h => h.id === habitId);
+            if (!habit) return;
+            const log = todayLogs.find(l => l.habit_id === habitId);
+            _goalHabitId = habitId;
+            _goalCurrentlyDone = currentlyDone;
+            document.getElementById('goal-modal-title').textContent = habit.name;
+            document.getElementById('goal-modal-label').textContent =
+                `Quanto você fez? (meta: ${habit.goal_value} ${habit.goal_unit || ''})`;
+            document.getElementById('goal-modal-input').value = (log && log.value_logged) ? log.value_logged : '';
+            document.getElementById('goal-modal-input').placeholder = `0 ${habit.goal_unit || ''}`;
+            document.getElementById('goal-modal-hint').textContent =
+                `Meta: ${habit.goal_value} ${habit.goal_unit || ''}. Score proporcional ao progresso.`;
+            document.getElementById('goal-modal').classList.add('open');
+            setTimeout(() => document.getElementById('goal-modal-input').focus(), 100);
+        }
+
+        async function saveGoalProgress() {
+            if (!_goalHabitId) return;
+            const habit = todayHabits.find(h => h.id === _goalHabitId);
+            if (!habit) return;
+            const val = parseFloat(document.getElementById('goal-modal-input').value);
+            if (isNaN(val) || val < 0) { UI.toast('Informe um valor válido.', 'error'); return; }
+            const btn = document.getElementById('btn-save-goal');
+            await UI.handleSubmit(btn, async () => {
+                const selDate = selectedDateObj();
+                const log = await Logs.logProgress(_goalHabitId, selDate, habit, val);
+                const idx = todayLogs.findIndex(l => l.habit_id === _goalHabitId);
+                if (idx >= 0) todayLogs[idx] = log;
+                else todayLogs.push(log);
+                document.getElementById('goal-modal').classList.remove('open');
+                renderHabitsList();
+                updateScores();
+                updateStreaks();
+                if (log.completed) UI.toast(`Meta de ${habit.name} atingida! +${log.score_earned} pts`, 'success', 2500);
+                else UI.toast(`Progresso salvo: ${val} ${habit.goal_unit || ''}`, 'info', 2000);
+            });
+        }
+
+        // ── Date Navigation ────────────────────────────────────────────
+        function navigateDay(delta) {
+            const [y, mo, d] = selectedDateStr.split('-').map(Number);
+            const date = new Date(y, mo - 1, d);
+            date.setDate(date.getDate() + delta);
+            const newStr = UI.dateStr(date);
+            const todayStr = UI.todayStr();
+            // Prevent going into the future
+            if (newStr > todayStr) return;
+            selectedDateStr = newStr;
+            updateDateNav();
+            UI.setText('#today-date', UI.formatDatePT(selectedDateObj()));
+            loadDashboard();
+        }
+
+        function updateDateNav() {
+            const todayStr = UI.todayStr();
+            const isToday = selectedDateStr === todayStr;
+            // next button
+            document.getElementById('next-day-btn').disabled = isToday;
+            // label
+            let label;
+            if (isToday) {
+                label = 'Hoje';
+            } else {
+                const [y, mo, d] = selectedDateStr.split('-').map(Number);
+                const ontem = new Date();
+                ontem.setDate(ontem.getDate() - 1);
+                const ontemStr = UI.dateStr(ontem);
+                if (selectedDateStr === ontemStr) {
+                    label = 'Ontem';
+                } else {
+                    label = UI.formatDatePT(selectedDateObj());
+                }
+            }
+            document.getElementById('date-nav-label').textContent = label;
+            // section title
+            document.getElementById('habits-section-title').textContent =
+                isToday ? 'Hábitos de hoje' : `Hábitos de ${document.getElementById('date-nav-label').textContent.toLowerCase()}`;
         }
 
         function updateScores() {

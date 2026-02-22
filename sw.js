@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ascend-v1';
+const CACHE_NAME = 'ascend-v2';
 
 // Assets to cache on install (app shell)
 const PRECACHE_URLS = [
@@ -7,6 +7,7 @@ const PRECACHE_URLS = [
     './auth.html',
     './dashboard.html',
     './habits.html',
+    './agenda.html',
     './analytics.html',
     './profile.html',
     './manifest.json',
@@ -19,6 +20,7 @@ const PRECACHE_URLS = [
     './css/pages/auth.css',
     './css/pages/dashboard.css',
     './css/pages/habits.css',
+    './css/pages/agenda.css',
     './css/pages/analytics.css',
     './js/supabase.js',
     './js/auth.js',

@@ -157,6 +157,52 @@
     font-size: 1.1rem;
 }
 
+/* ── Date Navigator ───────────────────────────────────────────── */
+.date-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 6px 12px;
+}
+
+.date-nav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    transition: background 0.15s, color 0.15s;
+    font-size: 0.85rem;
+}
+
+.date-nav-btn:hover:not(:disabled) {
+    background: var(--accent);
+    color: #fff;
+}
+
+.date-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.date-nav-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    min-width: 100px;
+    text-align: center;
+}
+
 .habits-list {
     display: flex;
     flex-direction: column;
