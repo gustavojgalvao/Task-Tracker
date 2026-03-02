@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/pages/analytics.css" />
+    <meta name="description"
+        content="Ascend Analytics — Deep performance dashboards with trend projections and habit intelligence." />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 
@@ -66,6 +68,27 @@
                     <div class="stat-label">Dias ativos</div>
                     <div class="stat-value" id="stat-active">0</div>
                 </div>
+                <!-- PDL card -->
+                <div class="card analytics-stat-card stat-box" style="border-color:rgba(99,102,241,0.3);">
+                    <div class="stat-label">PDL (30 dias)</div>
+                    <div class="stat-value gradient-text" id="stat-pdl">0.00</div>
+                    <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">Performance Discipline Level
+                    </div>
+                </div>
+            </div>
+
+            <!-- Streak Collapse Warning Card -->
+            <div id="streak-warning-card" class="card animate-slide-up delay-150"
+                style="display:none;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);margin-bottom:0;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:1.2rem;"></i>
+                    <div>
+                        <div style="font-weight:700;color:var(--red);font-family:var(--font-display);">Alerta de colapso
+                            de streak</div>
+                        <div id="streak-warning-msg"
+                            style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Annual Heatmap -->
@@ -101,6 +124,17 @@
                     </div>
                 </div>
 
+                <!-- Rolling 7-day Average Chart -->
+                <div class="card chart-card">
+                    <div class="card-header">
+                        <span class="card-title">Média Móvel 7 dias</span>
+                        <span id="volatility-badge" class="badge badge-accent" style="display:none;"></span>
+                    </div>
+                    <div class="chart-canvas-wrapper">
+                        <canvas id="chart-rolling"></canvas>
+                    </div>
+                </div>
+
                 <div class="card chart-card">
                     <div class="card-header">
                         <span class="card-title">Cumprimento por Hábito</span>
@@ -126,7 +160,12 @@
             <div class="card habit-table-card animate-slide-up delay-400">
                 <div class="card-header">
                     <span class="card-title">Detalhamento por Hábito</span>
-                    <span class="text-sm text-muted">Últimos 30 dias</span>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <span class="text-sm text-muted">Últimos 30 dias</span>
+                        <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Exportar dados">
+                            <i class="fa-solid fa-download"></i> Exportar
+                        </button>
+                    </div>
                 </div>
                 <table class="habit-table" id="habit-table">
                     <thead>
@@ -175,6 +214,7 @@
     <script src="js/auth.js"></script>
     <script src="js/router.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/engine.js"></script>
     <script src="js/habits.js"></script>
     <script src="js/logs.js"></script>
     <script src="js/score.js"></script>
@@ -215,6 +255,8 @@
             renderHabitTable();
             renderHabitDoughnut();
             renderTrendChart();
+            renderRollingAvgChart();
+            renderAdvancedAnalytics();
         }
 
         function renderStats() {
@@ -318,6 +360,150 @@
             </td>
           </tr>`;
             }).join('');
+        }
+
+        // ── NEW: Rolling Average Chart ─────────────────────────────────
+        function renderRollingAvgChart() {
+            if (!window.Engine) return;
+            const last60 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(60)));
+
+            // Build daily efficiency snapshots for last 60 days
+            const snapshots = [];
+            for (let i = 59; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = UI.toBRTDateStr(d);
+                const dow = d.getDay();
+                const applicable = allHabits.filter(h => {
+                    if (h.frequency === 'daily') return true;
+                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
+                    return false;
+                });
+                const dayLogs = last60.filter(l => l.date === dateStr);
+                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
+                snapshots.push({ date: dateStr, efficiency });
+            }
+
+            const rolling = Engine.calcRollingAverage(snapshots, 7);
+            const volatility = Engine.calcVolatility(snapshots.slice(-30));
+
+            // Volatility badge
+            const badge = document.getElementById('volatility-badge');
+            if (badge) {
+                badge.style.display = '';
+                const vol = volatility;
+                badge.textContent = vol > 25 ? `⚡ Alta volatilidade (${vol}%)` : vol > 12 ? `~ Volatilidade média (${vol}%)` : `✓ Estável (${vol}%)`;
+                badge.style.background = vol > 25 ? 'rgba(239,68,68,0.12)' : vol > 12 ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)';
+                badge.style.color = vol > 25 ? 'var(--red)' : vol > 12 ? 'var(--gold)' : 'var(--green)';
+            }
+
+            // Render with Chart.js
+            const ctx = document.getElementById('chart-rolling');
+            if (!ctx) return;
+            if (window._rollingChart) window._rollingChart.destroy();
+            window._rollingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: snapshots.map(s => s.date.slice(5)),
+                    datasets: [
+                        {
+                            label: 'Eficiência diária %',
+                            data: snapshots.map(s => s.efficiency),
+                            borderColor: 'rgba(99,102,241,0.4)',
+                            backgroundColor: 'transparent',
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            tension: 0.3,
+                        },
+                        {
+                            label: 'Média Móvel 7d',
+                            data: rolling.map(r => r.rollingAvg),
+                            borderColor: '#818cf8',
+                            backgroundColor: 'rgba(99,102,241,0.08)',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.4,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#8895b3', font: { size: 11 } } } },
+                    scales: {
+                        x: { ticks: { color: '#3d4f6e', maxTicksLimit: 10, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        y: { min: 0, max: 100, ticks: { color: '#3d4f6e', callback: v => v + '%', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                    }
+                }
+            });
+        }
+
+        // ── Advanced Analytics (PDL + Streak Risk) ─────────────────────
+        function renderAdvancedAnalytics() {
+            if (!window.Engine) return;
+            const last30Logs = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
+
+            // Build efficiency snapshots for last 30 days
+            const snaps30 = [];
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = UI.toBRTDateStr(d);
+                const dow = d.getDay();
+                const applicable = allHabits.filter(h => {
+                    if (h.frequency === 'daily') return true;
+                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
+                    return false;
+                });
+                const dayLogs = last30Logs.filter(l => l.date === dateStr);
+                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
+                snaps30.push({ date: dateStr, efficiency, streakQualifies: Engine.dayQualifiesForStreak(efficiency) });
+            }
+
+            // PDL
+            const pdl = Engine.calcPDL(snaps30);
+            const pdlEl = document.getElementById('stat-pdl');
+            if (pdlEl) pdlEl.textContent = pdl.toFixed(2);
+
+            // Streak collapse risk
+            const risk = Engine.detectStreakRisk(snaps30.slice(-7));
+            const warnCard = document.getElementById('streak-warning-card');
+            const warnMsg = document.getElementById('streak-warning-msg');
+            if (warnCard && warnMsg && risk.severity !== 'safe') {
+                warnCard.style.display = '';
+                warnCard.style.borderColor = risk.severity === 'critical' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)';
+                warnCard.style.background = risk.severity === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)';
+                const icon = warnCard.querySelector('i');
+                if (icon) icon.style.color = risk.severity === 'critical' ? 'var(--red)' : 'var(--gold)';
+                const title = warnCard.querySelector('div > div > div:first-child');
+                if (title) title.style.color = risk.severity === 'critical' ? 'var(--red)' : 'var(--gold)';
+                warnMsg.textContent = risk.message;
+            }
+        }
+
+        // ── CSV Export ─────────────────────────────────────────────────
+        function exportData() {
+            const logs30 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
+            const rates = Score.calcHabitCompletionRates(allHabits, logs30);
+
+            const rows = [
+                ['Hábito', 'Peso', 'Dias concluídos', 'Total dias', 'Cumprimento %', 'Streak atual', 'Score total']
+            ];
+            rates.forEach(r => {
+                const streak = Streak.calcHabitStreak(r.habit.id, yearLogs);
+                rows.push([r.habit.name, r.habit.weight, r.completedDays, r.totalDays, r.pct, streak, r.totalScore]);
+            });
+
+            const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ascend-export-${UI.todayStr()}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            if (window.UI) UI.toast('Dados exportados com sucesso!', 'success');
         }
 
 

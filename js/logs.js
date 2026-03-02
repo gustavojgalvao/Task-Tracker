@@ -1,10 +1,31 @@
 // ============================================================
 // ASCEND — Habit Logs Module
 // Handles recording completions and fetching log data
+// Includes: idempotency guard, debounce lock, typed errors
 // ============================================================
 
 const Logs = (() => {
     const db = () => window.supabaseClient;
+
+    // ── Debounce lock to prevent double-tap race conditions ───
+    // Maps habitId+date to a boolean. If true, operation in flight.
+    const _inFlight = new Map();
+
+    function _lockKey(habitId, dateStr) {
+        return `${habitId}::${dateStr}`;
+    }
+
+    function _isLocked(habitId, dateStr) {
+        return _inFlight.get(_lockKey(habitId, dateStr)) === true;
+    }
+
+    function _lock(habitId, dateStr) {
+        _inFlight.set(_lockKey(habitId, dateStr), true);
+    }
+
+    function _unlock(habitId, dateStr) {
+        _inFlight.delete(_lockKey(habitId, dateStr));
+    }
 
     /**
      * Format a Date as YYYY-MM-DD string in BRT (UTC-3)
@@ -24,47 +45,69 @@ const Logs = (() => {
     /**
      * Mark a boolean habit as completed for a date.
      * Applies strict mode penalty if applicable.
+     * Idempotency: upsert with onConflict guard.
+     * Race protection: client-side debounce lock.
      *
      * @param {string} habitId
      * @param {Date} date
      * @param {object} habit - full habit object (for weight + strict_mode)
      */
     async function complete(habitId, date, habit) {
-        const { data: { user } } = await db().auth.getUser();
         const dateStr = toDateStr(date);
-        const now = UI.nowInBRT(); // use BRT "now" for correct strict-mode penalty
 
-        let penaltyApplied = false;
-        let scoreEarned = habit.weight;
-
-        // Strict mode: check if marking after ideal_time (all in BRT)
-        if (habit.strict_mode && habit.ideal_time) {
-            const [h, m] = habit.ideal_time.split(':').map(Number);
-            // Build the ideal datetime for the given date in BRT
-            const dateInBRT = new Date(date.getTime() - 3 * 60 * 60 * 1000);
-            const idealDate = new Date(Date.UTC(dateInBRT.getUTCFullYear(), dateInBRT.getUTCMonth(), dateInBRT.getUTCDate(), h + 3, m, 0)); // convert BRT hours back to UTC
-            if (new Date() > idealDate) {
-                penaltyApplied = true;
-                scoreEarned = Math.max(1, Math.floor(scoreEarned * 0.5)); // -50%
-            }
+        // Client-side double-tap guard
+        if (_isLocked(habitId, dateStr)) {
+            throw Object.assign(new Error('Operation already in progress'), { code: 'DEBOUNCE' });
         }
+        _lock(habitId, dateStr);
 
-        const { data, error } = await db()
-            .from('habit_logs')
-            .upsert({
-                habit_id: habitId,
-                user_id: user.id,
-                date: dateStr,
-                completed: true,
-                completed_at: now.toISOString(),
-                penalty_applied: penaltyApplied,
-                score_earned: scoreEarned,
-            }, { onConflict: 'habit_id,date' })
-            .select()
-            .single();
+        try {
+            const { data: { user } } = await db().auth.getUser();
+            const now = UI.nowInBRT();
 
-        if (error) throw error;
-        return data;
+            let penaltyApplied = false;
+            let scoreEarned = habit.weight;
+
+            // Strict mode: check if marking after ideal_time (all in BRT)
+            if (habit.strict_mode && habit.ideal_time) {
+                const [h, m] = habit.ideal_time.split(':').map(Number);
+                const dateInBRT = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+                const idealDate = new Date(Date.UTC(dateInBRT.getUTCFullYear(), dateInBRT.getUTCMonth(), dateInBRT.getUTCDate(), h + 3, m, 0));
+                if (new Date() > idealDate) {
+                    penaltyApplied = true;
+                    scoreEarned = Math.max(1, Math.floor(scoreEarned * 0.5));
+                }
+            }
+
+            // XP calculation using Engine if available
+            const xpEarned = window.Engine
+                ? Engine.calcHabitXP(habit.weight, penaltyApplied)
+                : scoreEarned;
+
+            const { data, error } = await db()
+                .from('habit_logs')
+                .upsert({
+                    habit_id: habitId,
+                    user_id: user.id,
+                    date: dateStr,
+                    completed: true,
+                    completed_at: now.toISOString(),
+                    penalty_applied: penaltyApplied,
+                    score_earned: scoreEarned,
+                    xp_earned: xpEarned,
+                    weight: habit.weight,
+                }, { onConflict: 'habit_id,date' })
+                .select()
+                .single();
+
+            if (error) {
+                const classified = window.Engine ? Engine.classifyError(error) : null;
+                throw classified ? Object.assign(new Error(classified.userMessage), { type: classified.type, technical: classified.technical }) : error;
+            }
+            return data;
+        } finally {
+            _unlock(habitId, dateStr);
+        }
     }
 
     /**
@@ -77,42 +120,66 @@ const Logs = (() => {
      * @param {number} valueLogged - amount logged by the user
      */
     async function logProgress(habitId, date, habit, valueLogged) {
-        const { data: { user } } = await db().auth.getUser();
         const dateStr = toDateStr(date);
-        const now = UI.nowInBRT();
 
-        const completed = valueLogged >= habit.goal_value;
-        let scoreEarned = completed ? calcGoalScore(habit, valueLogged) : 0;
-
-        // Strict mode penalty even on goal habits
-        let penaltyApplied = false;
-        if (completed && habit.strict_mode && habit.ideal_time) {
-            const [h, m] = habit.ideal_time.split(':').map(Number);
-            const dateInBRT = new Date(date.getTime() - 3 * 60 * 60 * 1000);
-            const idealDate = new Date(Date.UTC(dateInBRT.getUTCFullYear(), dateInBRT.getUTCMonth(), dateInBRT.getUTCDate(), h + 3, m, 0));
-            if (new Date() > idealDate) {
-                penaltyApplied = true;
-                scoreEarned = Math.max(1, Math.floor(scoreEarned * 0.5));
-            }
+        if (_isLocked(habitId, dateStr)) {
+            throw Object.assign(new Error('Operation already in progress'), { code: 'DEBOUNCE' });
         }
+        _lock(habitId, dateStr);
 
-        const { data, error } = await db()
-            .from('habit_logs')
-            .upsert({
-                habit_id: habitId,
-                user_id: user.id,
-                date: dateStr,
-                completed,
-                completed_at: completed ? now.toISOString() : null,
-                penalty_applied: penaltyApplied,
-                score_earned: scoreEarned,
-                value_logged: valueLogged,
-            }, { onConflict: 'habit_id,date' })
-            .select()
-            .single();
+        try {
+            const { data: { user } } = await db().auth.getUser();
+            const now = UI.nowInBRT();
 
-        if (error) throw error;
-        return data;
+            // Validate: no negative value injection
+            if (isNaN(valueLogged) || valueLogged < 0) {
+                throw Object.assign(new Error('Valor inválido para progresso.'), { type: 'VALIDATION_ERROR' });
+            }
+
+            const completed = valueLogged >= habit.goal_value;
+            let scoreEarned = completed ? calcGoalScore(habit, valueLogged) : 0;
+
+            // Strict mode penalty even on goal habits
+            let penaltyApplied = false;
+            if (completed && habit.strict_mode && habit.ideal_time) {
+                const [h, m] = habit.ideal_time.split(':').map(Number);
+                const dateInBRT = new Date(date.getTime() - 3 * 60 * 60 * 1000);
+                const idealDate = new Date(Date.UTC(dateInBRT.getUTCFullYear(), dateInBRT.getUTCMonth(), dateInBRT.getUTCDate(), h + 3, m, 0));
+                if (new Date() > idealDate) {
+                    penaltyApplied = true;
+                    scoreEarned = Math.max(1, Math.floor(scoreEarned * 0.5));
+                }
+            }
+
+            const xpEarned = completed && window.Engine
+                ? Engine.calcHabitXP(habit.weight, penaltyApplied)
+                : 0;
+
+            const { data, error } = await db()
+                .from('habit_logs')
+                .upsert({
+                    habit_id: habitId,
+                    user_id: user.id,
+                    date: dateStr,
+                    completed,
+                    completed_at: completed ? now.toISOString() : null,
+                    penalty_applied: penaltyApplied,
+                    score_earned: scoreEarned,
+                    xp_earned: xpEarned,
+                    value_logged: valueLogged,
+                    weight: habit.weight,
+                }, { onConflict: 'habit_id,date' })
+                .select()
+                .single();
+
+            if (error) {
+                const classified = window.Engine ? Engine.classifyError(error) : null;
+                throw classified ? Object.assign(new Error(classified.userMessage), { type: classified.type }) : error;
+            }
+            return data;
+        } finally {
+            _unlock(habitId, dateStr);
+        }
     }
 
     /**
@@ -122,23 +189,36 @@ const Logs = (() => {
         const { data: { user } } = await db().auth.getUser();
         const dateStr = toDateStr(date);
 
-        const { data, error } = await db()
-            .from('habit_logs')
-            .upsert({
-                habit_id: habitId,
-                user_id: user.id,
-                date: dateStr,
-                completed: false,
-                completed_at: null,
-                penalty_applied: false,
-                score_earned: 0,
-                value_logged: null,
-            }, { onConflict: 'habit_id,date' })
-            .select()
-            .single();
+        if (_isLocked(habitId, dateStr)) {
+            throw Object.assign(new Error('Operation already in progress'), { code: 'DEBOUNCE' });
+        }
+        _lock(habitId, dateStr);
 
-        if (error) throw error;
-        return data;
+        try {
+            const { data, error } = await db()
+                .from('habit_logs')
+                .upsert({
+                    habit_id: habitId,
+                    user_id: user.id,
+                    date: dateStr,
+                    completed: false,
+                    completed_at: null,
+                    penalty_applied: false,
+                    score_earned: 0,
+                    xp_earned: 0,
+                    value_logged: null,
+                }, { onConflict: 'habit_id,date' })
+                .select()
+                .single();
+
+            if (error) {
+                const classified = window.Engine ? Engine.classifyError(error) : null;
+                throw classified ? Object.assign(new Error(classified.userMessage), { type: classified.type }) : error;
+            }
+            return data;
+        } finally {
+            _unlock(habitId, dateStr);
+        }
     }
 
     /**
@@ -212,7 +292,26 @@ const Logs = (() => {
         return map;
     }
 
-    return { complete, uncomplete, logProgress, getForDate, getRange, getThisYear, buildScoreMap, buildCompletionMap, toDateStr };
+    /**
+     * Calculate total XP from all logs.
+     * Uses xp_earned if available, falls back to score_earned.
+     * @param {object[]} logs
+     * @returns {number}
+     */
+    function calcTotalXP(logs) {
+        return logs.reduce((sum, l) => {
+            if (!l.completed) return sum;
+            return sum + (l.xp_earned ?? l.score_earned ?? 0);
+        }, 0);
+    }
+
+    return {
+        complete, uncomplete, logProgress,
+        getForDate, getRange, getThisYear,
+        buildScoreMap, buildCompletionMap,
+        calcTotalXP,
+        toDateStr,
+    };
 })();
 
 window.Logs = Logs;

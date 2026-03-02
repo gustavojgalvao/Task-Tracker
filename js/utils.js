@@ -1,6 +1,7 @@
 // ============================================================
 // ASCEND — UI Utilities
 // Toast notifications, loading states, date helpers, DOM utils
+// v2: mobile toast fix, reduced-motion, non-blocking confirm
 // ============================================================
 
 const UI = (() => {
@@ -27,6 +28,8 @@ const UI = (() => {
         const container = getToastContainer();
         const el = document.createElement('div');
         el.className = `toast ${type}`;
+        el.setAttribute('role', 'status');
+        el.setAttribute('aria-live', 'polite');
 
         const icons = {
             success: '<i class="fa-solid fa-circle-check"></i>',
@@ -143,6 +146,11 @@ const UI = (() => {
      */
     function animateNumber(el, target, duration = 800, suffix = '') {
         if (!el) return;
+        // Respect prefers-reduced-motion — jump straight to value
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            el.textContent = target + suffix;
+            return;
+        }
         const start = Date.now();
         const from = parseInt(el.textContent) || 0;
         const diff = target - from;
@@ -191,12 +199,36 @@ const UI = (() => {
     }
 
     /**
-     * Confirm dialog (returns promise)
+     * Non-blocking confirm dialog (custom modal, returns promise)
+     * Falls back to native confirm if modal container not found.
      */
     function confirm(message) {
         return new Promise(resolve => {
-            // For now use native dialog; could be upgraded to custom modal
-            resolve(window.confirm(message));
+            // Try to use a custom confirm modal if it exists in the DOM
+            const modal = document.getElementById('confirm-modal');
+            if (!modal) {
+                // Fallback for pages without custom confirm modal
+                resolve(window.confirm(message));
+                return;
+            }
+            document.getElementById('confirm-modal-message').textContent = message;
+            modal.classList.add('open');
+
+            function handleYes() {
+                cleanup();
+                resolve(true);
+            }
+            function handleNo() {
+                cleanup();
+                resolve(false);
+            }
+            function cleanup() {
+                modal.classList.remove('open');
+                document.getElementById('confirm-modal-yes').removeEventListener('click', handleYes);
+                document.getElementById('confirm-modal-no').removeEventListener('click', handleNo);
+            }
+            document.getElementById('confirm-modal-yes').addEventListener('click', handleYes);
+            document.getElementById('confirm-modal-no').addEventListener('click', handleNo);
         });
     }
 

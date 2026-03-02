@@ -1,24 +1,27 @@
 // ============================================================
 // ASCEND — Streak Calculation Module
 // Individual habit streaks + global streak
+// BRT-aware date calculations (UTC-3)
 // ============================================================
 
 const Streak = (() => {
 
     /**
-     * Get yesterday's date string
+     * Get yesterday's date string in BRT (UTC-3)
+     * FIX: was using toISOString() (UTC) which caused wrong date after 9 PM local time
      */
     function yesterday() {
         const d = new Date();
         d.setDate(d.getDate() - 1);
-        return d.toISOString().split('T')[0];
+        return UI.toBRTDateStr(d);
     }
 
     /**
-     * Get today's date string
+     * Get today's date string in BRT (UTC-3)
+     * FIX: was using toISOString() (UTC) which caused wrong date after 9 PM local time
      */
     function today() {
-        return new Date().toISOString().split('T')[0];
+        return UI.toBRTDateStr(new Date());
     }
 
     /**
@@ -63,8 +66,9 @@ const Streak = (() => {
     }
 
     /**
-     * Calculate the global streak.
-     * A day "passes" if ALL mandatory habits (daily/applicable) were completed.
+     * Calculate the global streak using efficiency-based threshold.
+     * A day "passes" if daily efficiency >= Engine.STREAK_THRESHOLD (50%).
+     * Falls back to 100% completion if Engine is unavailable.
      *
      * @param {object[]} logs - all logs
      * @param {object[]} habits - all active habits
@@ -74,8 +78,9 @@ const Streak = (() => {
         if (habits.length === 0) return 0;
 
         const todayStr = today();
+        const yestStr = yesterday();
 
-        // Build a set of unique dates in logs (descending)
+        // Build a map of date -> logs[]
         const logsByDate = {};
         for (const log of logs) {
             if (!logsByDate[log.date]) logsByDate[log.date] = [];
@@ -88,7 +93,6 @@ const Streak = (() => {
         if (dates.length === 0) return 0;
 
         // Streak must start from today or yesterday
-        const yestStr = yesterday();
         if (dates[0] !== todayStr && dates[0] !== yestStr) return 0;
 
         let streak = 0;
@@ -114,12 +118,21 @@ const Streak = (() => {
             }
 
             const dayLogs = logsByDate[dateStr] || [];
-            const allDone = applicableHabits.every(h => {
-                const log = dayLogs.find(l => l.habit_id === h.id);
-                return log && log.completed;
-            });
 
-            if (!allDone) break;
+            // Use efficiency-based threshold if Engine is available
+            let dayQualifies;
+            if (window.Engine) {
+                const efficiency = Engine.calcDailyEfficiency(dayLogs, applicableHabits);
+                dayQualifies = Engine.dayQualifiesForStreak(efficiency);
+            } else {
+                // Fallback: 100% completion
+                dayQualifies = applicableHabits.every(h => {
+                    const log = dayLogs.find(l => l.habit_id === h.id);
+                    return log && log.completed;
+                });
+            }
+
+            if (!dayQualifies) break;
 
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
@@ -130,18 +143,18 @@ const Streak = (() => {
 
     /**
      * Check if global strict mode 3-day-fail rule triggers streak reset.
+     * Now uses efficiency threshold instead of 100% completion.
      * @param {object[]} logs
      * @param {object[]} habits
      * @returns {boolean} true if streak should be 0 due to 3-day fail
      */
     function checkStrictModeReset(logs, habits) {
-        const todayStr = today();
         let failCount = 0;
 
         for (let i = 1; i <= 3; i++) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
+            const dateStr = UI.toBRTDateStr(d); // BRT fix
 
             const dow = d.getDay();
             const applicable = habits.filter(h => {
@@ -153,12 +166,19 @@ const Streak = (() => {
             if (applicable.length === 0) continue;
 
             const dayLogs = logs.filter(l => l.date === dateStr);
-            const allDone = applicable.every(h => {
-                const log = dayLogs.find(l => l.habit_id === h.id);
-                return log && log.completed;
-            });
 
-            if (!allDone) failCount++;
+            let dayQualifies;
+            if (window.Engine) {
+                const efficiency = Engine.calcDailyEfficiency(dayLogs, applicable);
+                dayQualifies = Engine.dayQualifiesForStreak(efficiency);
+            } else {
+                dayQualifies = applicable.every(h => {
+                    const log = dayLogs.find(l => l.habit_id === h.id);
+                    return log && log.completed;
+                });
+            }
+
+            if (!dayQualifies) failCount++;
         }
 
         return failCount >= 3;
@@ -194,7 +214,40 @@ const Streak = (() => {
         return max;
     }
 
-    return { calcHabitStreak, calcGlobalStreak, checkStrictModeReset, calcLongestHabitStreak };
+    /**
+     * Get streak risk status for dashboard display.
+     * @param {object[]} logs - recent logs
+     * @param {object[]} habits - all active habits
+     * @returns {{ severity: string, message: string }}
+     */
+    function getStreakRisk(logs, habits) {
+        if (!window.Engine) return { severity: 'safe', message: '' };
+
+        // Build last 7 day snapshots
+        const snapshots = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = UI.toBRTDateStr(d);
+            const dow = d.getDay();
+
+            const applicable = habits.filter(h => {
+                if (h.frequency === 'daily') return true;
+                if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
+                return false;
+            });
+
+            const dayLogs = logs.filter(l => l.date === dateStr);
+            const efficiency = applicable.length > 0
+                ? Engine.calcDailyEfficiency(dayLogs, applicable)
+                : 100; // no applicable habits = free pass
+            snapshots.push({ date: dateStr, efficiency, streakQualifies: Engine.dayQualifiesForStreak(efficiency) });
+        }
+
+        return Engine.detectStreakRisk(snapshots);
+    }
+
+    return { calcHabitStreak, calcGlobalStreak, checkStrictModeReset, calcLongestHabitStreak, getStreakRisk, today, yesterday };
 })();
 
 window.Streak = Streak;

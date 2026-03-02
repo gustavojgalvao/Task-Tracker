@@ -17,6 +17,8 @@
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/components.css" />
     <link rel="stylesheet" href="css/pages/dashboard.css" />
+    <meta name="description"
+        content="Ascend Dashboard — Track your discipline score, habits, and performance progression." />
 </head>
 
 <body>
@@ -53,13 +55,40 @@
                     <div class="score-hero animate-slide-up">
                         <div class="score-hero-left">
                             <div class="score-date" id="today-date">Carregando...</div>
+                            <!-- Rank + Level Row -->
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
+                                <span class="rank-emblem" id="rank-emblem"><i class="fa-solid fa-shield"></i>
+                                    Initiate</span>
+                                <span
+                                    style="font-size:0.78rem;color:var(--text-muted);font-family:var(--font-display);">Nível
+                                    <span id="level-num">1</span></span>
+                                <span id="streak-risk-badge" class="streak-risk-badge safe"><i
+                                        class="fa-solid fa-triangle-exclamation"></i> <span
+                                        id="streak-risk-text"></span></span>
+                            </div>
+                            <!-- XP bar -->
+                            <div class="xp-progress-bar-wrap" style="margin-bottom:14px;">
+                                <div class="xp-progress-label">
+                                    <span><span id="xp-current">0</span> XP</span>
+                                    <span>Próx. nível: <span id="xp-next">100</span> XP</span>
+                                </div>
+                                <div class="xp-bar">
+                                    <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
+                                </div>
+                            </div>
                             <div class="score-headline">Score de Disciplina Hoje</div>
                             <div class="score-value-big gradient-text" id="daily-score">0</div>
                             <div class="score-sublabel" id="score-sublabel">0 de 0 pontos possíveis</div>
+                            <!-- 7-day trend -->
+                            <div style="margin-top:8px;">
+                                <span id="efficiency-trend-chip"
+                                    style="display:none;font-size:0.78rem;font-family:var(--font-display);font-weight:600;"></span>
+                            </div>
                         </div>
                         <div class="score-hero-right">
                             <div class="progress-ring-container">
-                                <svg width="110" height="110" viewBox="0 0 110 110" class="progress-ring">
+                                <svg width="110" height="110" viewBox="0 0 110 110" class="progress-ring"
+                                    aria-hidden="true">
                                     <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.06)"
                                         stroke-width="8" />
                                     <circle id="progress-ring-circle" cx="55" cy="55" r="46" fill="none"
@@ -100,9 +129,15 @@
                                 <i class="fa-solid fa-chevron-right"></i>
                             </button>
                         </div>
-                        <div class="habits-list" id="habits-list">
-                            <div class="empty-state">
-                                <div class="spinner"></div>
+                        <div class="habits-list" id="habits-list" aria-live="polite">
+                            <!-- Skeleton loader -->
+                            <div class="habit-skeleton">
+                                <div class="skeleton skeleton-line wide"></div>
+                                <div class="skeleton skeleton-line medium" style="margin-top:6px;"></div>
+                            </div>
+                            <div class="habit-skeleton">
+                                <div class="skeleton skeleton-line wide"></div>
+                                <div class="skeleton skeleton-line narrow" style="margin-top:6px;"></div>
                             </div>
                         </div>
                     </div>
@@ -266,6 +301,20 @@
         </div>
     </div>
 
+    <!-- Confirm Modal -->
+    <div class="modal-overlay" id="confirm-modal">
+        <div class="modal" style="max-width:340px;">
+            <div class="modal-header" style="justify-content:center;">
+                <h3 class="modal-title">Confirmar ação</h3>
+            </div>
+            <p id="confirm-modal-message" style="text-align:center;"></p>
+            <div style="display:flex;gap:12px;margin-top:20px;">
+                <button class="btn btn-ghost" style="flex:1;" id="confirm-modal-no">Cancelar</button>
+                <button class="btn btn-primary" style="flex:1;" id="confirm-modal-yes">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
         <a href="dashboard.html" class="bottom-nav-item active">
@@ -291,6 +340,7 @@
     <script src="js/auth.js"></script>
     <script src="js/router.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/engine.js"></script>
     <script src="js/habits.js"></script>
     <script src="js/logs.js"></script>
     <script src="js/score.js"></script>
@@ -433,19 +483,24 @@
             try {
                 if (currentlyDone) {
                     await Logs.uncomplete(habitId, selDate);
-                    todayLogs = todayLogs.map(l => l.habit_id === habitId ? { ...l, completed: false, score_earned: 0 } : l);
+                    todayLogs = todayLogs.map(l => l.habit_id === habitId ? { ...l, completed: false, score_earned: 0, xp_earned: 0 } : l);
                 } else {
                     const log = await Logs.complete(habitId, selDate, habit);
                     const idx = todayLogs.findIndex(l => l.habit_id === habitId);
                     if (idx >= 0) todayLogs[idx] = log;
                     else todayLogs.push(log);
-                    UI.toast(`${habit.name} concluído! +${log.score_earned} pts`, 'success', 2000);
+                    const xp = log.xp_earned ?? log.score_earned ?? 0;
+                    UI.toast(`${habit.name} concluído! +${xp} XP`, 'success', 2000);
+                    // Haptic feedback on mobile
+                    if (navigator.vibrate) navigator.vibrate([30]);
                 }
                 renderHabitsList();
                 updateScores();
                 updateStreaks();
             } catch (err) {
-                UI.toast('Erro ao salvar. Tente novamente.', 'error');
+                if (err.code === 'DEBOUNCE') return; // silently ignore double-taps
+                const classified = Engine.classifyError(err);
+                UI.toast(classified.userMessage, 'error');
             }
         }
 
@@ -474,7 +529,7 @@
             const habit = todayHabits.find(h => h.id === _goalHabitId);
             if (!habit) return;
             const val = parseFloat(document.getElementById('goal-modal-input').value);
-            if (isNaN(val) || val < 0) { UI.toast('Informe um valor válido.', 'error'); return; }
+            if (isNaN(val) || val < 0) { UI.toast('Informe um valor válido (não negativo).', 'error'); return; }
             const btn = document.getElementById('btn-save-goal');
             await UI.handleSubmit(btn, async () => {
                 const selDate = selectedDateObj();
@@ -486,8 +541,13 @@
                 renderHabitsList();
                 updateScores();
                 updateStreaks();
-                if (log.completed) UI.toast(`Meta de ${habit.name} atingida! +${log.score_earned} pts`, 'success', 2500);
-                else UI.toast(`Progresso salvo: ${val} ${habit.goal_unit || ''}`, 'info', 2000);
+                const xp = log.xp_earned ?? log.score_earned ?? 0;
+                if (log.completed) {
+                    UI.toast(`Meta de ${habit.name} atingida! +${xp} XP`, 'success', 2500);
+                    if (navigator.vibrate) navigator.vibrate([30, 20, 60]);
+                } else {
+                    UI.toast(`Progresso salvo: ${val} ${habit.goal_unit || ''}`, 'info', 2000);
+                }
             });
         }
 
@@ -540,6 +600,25 @@
             UI.setText('#score-sublabel', `${dailyScore} de ${maxDaily} pontos possíveis`);
             UI.setProgressRing(document.getElementById('progress-ring-circle'), pct);
             UI.setText('#ring-pct', `${pct}%`);
+
+            // XP + Level + Rank
+            const totalXP = Logs.calcTotalXP(allLogs);
+            const lvl = Engine.getLevelProgress(totalXP);
+            const rank = Engine.getRankFromXP(totalXP);
+            document.getElementById('level-num').textContent = lvl.level;
+            document.getElementById('xp-current').textContent = lvl.currentLevelXP;
+            document.getElementById('xp-next').textContent = lvl.nextLevelXP;
+            const fillEl = document.getElementById('xp-bar-fill');
+            if (fillEl) setTimeout(() => fillEl.style.width = `${lvl.progressPct}%`, 100);
+            const emblem = document.getElementById('rank-emblem');
+            if (emblem) {
+                emblem.className = `rank-emblem ${rank.id}`;
+                emblem.innerHTML = `<i class="fa-solid fa-shield"></i> ${rank.label}`;
+            }
+
+            // 7-day efficiency trend
+            _updateEfficiencyTrend();
+
             const weekStart = UI.getStartOfWeek();
             const monthStart = UI.getStartOfMonth();
             const weekLogs = allLogs.filter(l => l.date >= UI.dateStr(weekStart));
@@ -547,6 +626,42 @@
             UI.animateNumber(document.getElementById('weekly-score'), Score.calcDaily(weekLogs));
             UI.animateNumber(document.getElementById('monthly-score'), Score.calcDaily(monthLogs));
             UI.animateNumber(document.getElementById('total-score'), Score.calcDaily(allLogs));
+        }
+
+        function _updateEfficiencyTrend() {
+            const chip = document.getElementById('efficiency-trend-chip');
+            if (!chip || !window.Engine) return;
+            // Build last 7 day snapshots
+            const snapshots = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = UI.toBRTDateStr(d);
+                const dow = d.getDay();
+                const applicable = todayHabits.filter(h => {
+                    if (h.frequency === 'daily') return true;
+                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
+                    return false;
+                });
+                const dayLogs = allLogs.filter(l => l.date === dateStr);
+                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
+                snapshots.push({ date: dateStr, efficiency });
+            }
+            const trend = Engine.calcTrend(snapshots);
+            if (snapshots.length < 3) { chip.style.display = 'none'; return; }
+            chip.style.display = 'inline-flex';
+            chip.style.gap = '5px';
+            chip.style.alignItems = 'center';
+            if (trend > 1) {
+                chip.style.color = 'var(--green)';
+                chip.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${trend.toFixed(1)}% / dia`;
+            } else if (trend < -1) {
+                chip.style.color = 'var(--red)';
+                chip.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${trend.toFixed(1)}% / dia`;
+            } else {
+                chip.style.color = 'var(--text-muted)';
+                chip.innerHTML = `<i class="fa-solid fa-minus"></i> Estável`;
+            }
         }
 
         function updateStreaks() {
@@ -559,6 +674,17 @@
                 if (s > best) best = s;
             }
             UI.animateNumber(document.getElementById('best-habit-streak'), best);
+
+            // Update streak risk badge
+            if (window.Streak && window.Streak.getStreakRisk) {
+                const risk = Streak.getStreakRisk(allLogs, todayHabits);
+                const badge = document.getElementById('streak-risk-badge');
+                const text = document.getElementById('streak-risk-text');
+                if (badge && text) {
+                    badge.className = `streak-risk-badge ${risk.severity}`;
+                    text.textContent = risk.message;
+                }
+            }
         }
 
         function updateIdentity() {
