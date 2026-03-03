@@ -63,6 +63,7 @@
   <script src="js/streak.js"></script>
   <script src="js/identity.js"></script>
   <script src="js/heatmap.js"></script>
+  <script src="js/engine.js"></script>
   <script>
     async function init() {
       const session = await Auth.getSession();
@@ -102,8 +103,14 @@
 
       const scoreMap = Logs.buildScoreMap(allLogs);
       const totalScore = allLogs.reduce((s, l) => s + (l.score_earned || 0), 0);
+      const totalXP = allLogs.reduce((s, l) => s + (l.xp_earned || 0), 0);
       const globalStreak = Streak.calcGlobalStreak(allLogs, allHabits);
       const activeDays = allLogs.filter(l => l.completed).length;
+
+      const rank = typeof Engine !== 'undefined'
+        ? Engine.getRankFromPDL(Math.round((profile.pdl ?? 0) * 100))
+        : null;
+      const lvlData = typeof Engine !== 'undefined' ? Engine.getLevelProgress(totalXP) : null;
 
       const name = profile.username || 'Ascender';
       const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -115,6 +122,11 @@
           <div class="profile-avatar">${initials}</div>
           <div class="profile-name">${name}</div>
           ${profile.future_version ? `<div class="profile-version">"${profile.future_version}"</div>` : ''}
+          ${rank ? `
+          <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin:12px 0 4px;">
+            <span class="rank-emblem ${rank.id}"><i class="fa-solid fa-shield"></i> ${rank.label}</span>
+            <span style="font-size:0.78rem;color:var(--text-muted);font-family:var(--font-display);">Nível ${lvlData ? lvlData.level : '—'}</span>
+          </div>` : ''}
           <div class="profile-stats-row">
             <div class="profile-stat">
               <div class="profile-stat-value gradient-text-gold">

@@ -92,6 +92,9 @@
                 </div>
             </div>
 
+            <!-- Rank Progress Card -->
+            <div class="card animate-slide-up delay-175" id="rank-progress-card" style="margin-bottom:24px;"></div>
+
             <!-- Annual Heatmap -->
             <div class="card heatmap-card animate-slide-up delay-200" style="margin-bottom:24px;">
                 <div class="card-header">
@@ -303,7 +306,92 @@
             renderTrendChart();
             renderRollingAvgChart();
             renderAdvancedAnalytics();
+            renderRankProgress();
             loadXPGraph(); // ← XP Gain Graph (habits + tasks combined)
+        }
+
+        function renderRankProgress() {
+            const card = document.getElementById('rank-progress-card');
+            if (!card || !window.Engine) return;
+
+            // Level (permanent — derived from cumulative XP)
+            const totalXP = yearLogs.reduce((s, l) => s + (l.xp_earned || 0), 0);
+            const lvl = Engine.getLevelProgress(totalXP);
+
+            // Competitive Rank (dynamic — derived from 7-day weighted PDL)
+            const snapshots = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                const dayLogs = yearLogs.filter(l => l.date === dateStr);
+                const efficiency = dayLogs.length > 0
+                    ? Math.round(dayLogs.reduce((s, l) => s + (l.xp_earned || 0), 0) / Math.max(1, dayLogs.length))
+                    : 0;
+                snapshots.push({ date: dateStr, efficiency: Math.min(100, efficiency) });
+            }
+            const competitivePDL = Engine.calcCompetitivePDL(snapshots);
+            const rank = Engine.getRankFromPDL(competitivePDL);
+            const ranks = Engine.COMPETITIVE_RANKS;
+            const currentIdx = ranks.findIndex(r => r.id === rank.id);
+            const nextRank = ranks[currentIdx + 1];
+
+            const tilesHTML = ranks.map((r, i) => {
+                const isActive = r.id === rank.id;
+                const isPast = i < currentIdx;
+                const icon = isActive ? 'shield-halved' : (isPast ? 'check' : 'lock');
+                return `
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);opacity:${isPast || isActive ? '1' : '0.38'}">
+                    <span class="rank-emblem ${r.id}" style="font-size:0.75rem;padding:3px 9px;">
+                      <i class="fa-solid fa-${icon}"></i> ${r.label}
+                    </span>
+                    <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">
+                      PDL ${r.minPDL}%${r.maxPDL < 100 ? '–' + r.maxPDL + '%' : '+'}
+                    </span>
+                    ${isActive ? `<span class="badge badge-accent" style="font-size:0.65rem;">atual</span>` : ''}
+                  </div>`;
+            }).join('');
+
+            card.innerHTML = `
+              <div class="card-header" style="margin-bottom:16px;">
+                <span class="card-title">Progressão</span>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                <!-- Level block -->
+                <div style="background:var(--bg-hover);border-radius:var(--radius-md);padding:12px;">
+                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">
+                    Nível <span style="font-size:0.6rem;opacity:.6;">(permanente)</span>
+                  </div>
+                  <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--text-primary);line-height:1;">${lvl.level}</div>
+                  <div style="margin-top:8px;">
+                    <div class="xp-bar" style="height:4px;">
+                      <div class="xp-bar-fill" style="width:${lvl.progressPct}%;"></div>
+                    </div>
+                    <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">${lvl.currentLevelXP} / ${lvl.nextLevelXP} XP</div>
+                  </div>
+                </div>
+                <!-- Rank block -->
+                <div style="background:var(--bg-hover);border-radius:var(--radius-md);padding:12px;">
+                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">
+                    Rank <span style="font-size:0.6rem;opacity:.6;">(7 dias)</span>
+                  </div>
+                  <span class="rank-emblem ${rank.id}" style="font-size:0.82rem;">
+                    <i class="fa-solid ${rank.icon || 'fa-shield'}"></i> ${rank.label}
+                  </span>
+                  <div style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;">
+                    PDL competitivo: <strong style="color:var(--text-primary);">${competitivePDL}%</strong>
+                  </div>
+                  <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">
+                    ${nextRank ? `→ ${nextRank.label} a partir de ${nextRank.minPDL}%` : '→ Rank máximo'}
+                  </div>
+                </div>
+              </div>
+
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;font-style:italic;">
+                O rank reflete disciplina recente — pode subir ou cair com seu desempenho.
+              </div>
+              <div>${tilesHTML}</div>`;
         }
 
         function renderStats() {

@@ -230,7 +230,6 @@
 
 .bottom-nav-item.active i {
     transform: translateY(-2px);
-    filter: drop-shadow(0 0 8px var(--accent-glow));
 }
 
 /* ── Buttons ─────────────────────────────────────────────────── */
@@ -264,7 +263,7 @@
 
 .btn-primary:hover:not(:disabled) {
     background: var(--accent-bright);
-    box-shadow: 0 0 20px var(--accent-glow);
+    box-shadow: 0 0 8px var(--accent-glow);
     transform: translateY(-1px);
 }
 
@@ -335,29 +334,15 @@
     border-radius: var(--radius-sm);
 }
 
-/* Button shimmer effect */
-.btn-primary::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
-    transform: translateX(-100%);
-    transition: transform 0.5s ease;
-}
-
-.btn-primary:hover::after {
-    transform: translateX(100%);
-}
+/* shimmer removed — motion should be purposeful */
 
 /* ── Cards ───────────────────────────────────────────────────── */
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    padding: var(--space-6);
-    backdrop-filter: blur(12px);
-    transition: border-color var(--dur-base) var(--ease),
-        box-shadow var(--dur-base) var(--ease);
+    padding: var(--space-5);
+    transition: border-color var(--dur-base) var(--ease);
 }
 
 .card:hover {
@@ -425,11 +410,28 @@
 }
 
 .badge-streak {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.1));
+    background: rgba(245, 158, 11, 0.1);
     color: var(--gold);
-    border: 1px solid rgba(245, 158, 11, 0.3);
-    animation: streak-bounce 2s ease-in-out infinite;
+    border: 1px solid rgba(245, 158, 11, 0.25);
 }
+
+.streak-risk-badge.safe {
+    display: none;
+}
+
+.streak-risk-badge.warning {
+    background: rgba(245, 158, 11, 0.08);
+    color: var(--gold);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.streak-risk-badge.critical {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--red);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* bounce animation removed — static is calmer */
 
 /* ── Stat Boxes ──────────────────────────────────────────────── */
 .stat-box {
@@ -511,6 +513,26 @@
     font-size: 0.9rem;
     transition: border-color var(--dur-fast) var(--ease),
         box-shadow var(--dur-fast) var(--ease);
+}
+
+.rank-emblem.initiate {
+    color: var(--rank-initiate);
+}
+
+.rank-emblem.ascender {
+    color: var(--rank-ascender);
+}
+
+.rank-emblem.elite {
+    color: var(--rank-elite);
+}
+
+.rank-emblem.sovereign {
+    color: var(--rank-sovereign);
+}
+
+.rank-emblem.legend {
+    color: var(--rank-legend);
 }
 
 .form-input:focus {
@@ -875,7 +897,6 @@
 
 .habit-weight-dot.active {
     background: var(--accent-bright);
-    box-shadow: 0 0 4px var(--accent-glow);
 }
 
 .habit-actions {
@@ -968,7 +989,6 @@
 
 .heatmap-cell[data-level="4"] {
     background: var(--green);
-    box-shadow: 0 0 6px var(--green-glow);
 }
 
 /* ── Tooltip ─────────────────────────────────────────────────── */

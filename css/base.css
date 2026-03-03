@@ -24,13 +24,13 @@
   /* Accent */
   --accent: #6366f1;
   --accent-bright: #818cf8;
-  --accent-glow: rgba(99, 102, 241, 0.35);
-  --accent-dim: rgba(99, 102, 241, 0.12);
+  --accent-glow: rgba(99, 102, 241, 0.15);
+  --accent-dim: rgba(99, 102, 241, 0.10);
 
   --green: #22c55e;
   --green-bright: #4ade80;
-  --green-glow: rgba(34, 197, 94, 0.3);
-  --green-dim: rgba(34, 197, 94, 0.1);
+  --green-glow: rgba(34, 197, 94, 0.12);
+  --green-dim: rgba(34, 197, 94, 0.08);
 
   --gold: #f59e0b;
   --gold-dim: rgba(245, 158, 11, 0.15);
@@ -39,6 +39,18 @@
   --red-dim: rgba(239, 68, 68, 0.12);
 
   /* Rank Colors */
+  --rank-initiate: #8895b3;
+  --rank-ascender: #6366f1;
+  --rank-elite: #22c55e;
+  --rank-sovereign: #f59e0b;
+  /* ── Competitive Rank Tokens (PDL-based: Bronze → Diamante) ── */
+  --rank-bronze: #cd7f32;
+  --rank-prata: #9ca3af;
+  --rank-ouro: #f59e0b;
+  --rank-platina: #6366f1;
+  --rank-diamante: #22c55e;
+
+  /* Legacy level-tier tokens kept for XP bar color hints */
   --rank-initiate: #8895b3;
   --rank-ascender: #6366f1;
   --rank-elite: #22c55e;
@@ -85,9 +97,9 @@
   /* Transitions */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --dur-fast: 150ms;
-  --dur-base: 250ms;
-  --dur-slow: 400ms;
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 300ms;
 
   /* Layout */
   --max-width: 1200px;
@@ -385,18 +397,6 @@ p {
   }
 }
 
-@keyframes glow-pulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 10px var(--accent-glow);
-  }
-
-  50% {
-    box-shadow: 0 0 30px var(--accent-glow), 0 0 60px var(--accent-glow);
-  }
-}
-
 @keyframes checkmark {
   from {
     stroke-dashoffset: 30;
@@ -439,17 +439,7 @@ p {
   }
 }
 
-@keyframes streak-bounce {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.15);
-  }
-}
+/* glow-pulse and streak-bounce removed — replaced by subtle static elevation */
 
 .animate-fade-in {
   animation: fadeIn var(--dur-base) var(--ease) both;
@@ -505,6 +495,18 @@ p {
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* ── Utility: animate pulse ─────────────────────────────────── */
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ── Utility: active toggle button ──────────────────────────── */
+.active-btn {
+  background: var(--accent-dim) !important;
+  color: var(--accent-bright) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
 }
 
 /* ── Glassmorphism background noise ──────────────────────────── */
@@ -611,6 +613,7 @@ p {
 
 /* ── Accessibility: Reduced Motion ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -646,11 +649,50 @@ p {
   opacity: 0.9;
 }
 
-.rank-emblem.initiate  { color: var(--rank-initiate);  box-shadow: 0 0 10px var(--rank-initiate-glow); }
-.rank-emblem.ascender  { color: var(--rank-ascender);  box-shadow: 0 0 10px var(--rank-ascender-glow); }
-.rank-emblem.elite     { color: var(--rank-elite);     box-shadow: 0 0 10px var(--rank-elite-glow); }
-.rank-emblem.sovereign { color: var(--rank-sovereign); box-shadow: 0 0 10px var(--rank-sovereign-glow); }
-.rank-emblem.legend    { color: var(--rank-legend);    box-shadow: 0 0 10px var(--rank-legend-glow); animation: glow-pulse 2s ease-in-out infinite; }
+.rank-emblem.initiate {
+  color: var(--rank-initiate);
+  box-shadow: 0 0 10px var(--rank-initiate-glow);
+}
+
+.rank-emblem.ascender {
+  color: var(--rank-ascender);
+  box-shadow: 0 0 10px var(--rank-ascender-glow);
+}
+
+.rank-emblem.elite {
+  color: var(--rank-elite);
+  box-shadow: 0 0 10px var(--rank-elite-glow);
+}
+
+.rank-emblem.sovereign {
+  color: var(--rank-sovereign);
+  box-shadow: 0 0 10px var(--rank-sovereign-glow);
+}
+
+.rank-emblem.legend {
+  color: var(--rank-legend);
+}
+
+/* ── Competitive Rank Emblems (PDL-based — primary rank identity) ── */
+.rank-emblem.bronze {
+  color: var(--rank-bronze);
+}
+
+.rank-emblem.prata {
+  color: var(--rank-prata);
+}
+
+.rank-emblem.ouro {
+  color: var(--rank-ouro);
+}
+
+.rank-emblem.platina {
+  color: var(--rank-platina);
+}
+
+.rank-emblem.diamante {
+  color: var(--rank-diamante);
+}
 
 /* ── XP Progress Bar ─────────────────────────────────────── */
 .xp-progress-bar-wrap {
@@ -679,13 +721,59 @@ p {
   border-radius: var(--radius-full);
   background: linear-gradient(90deg, var(--accent) 0%, var(--green) 100%);
   transition: width 0.8s cubic-bezier(0, 0, 0.2, 1);
-  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Rank-adaptive XP bar tinting — subtle level identity only (NOT the competitive rank) */
+.xp-bar-fill.rank-bronze {
+  background: linear-gradient(90deg, #a86428 0%, #cd7f32 100%);
+}
+
+.xp-bar-fill.rank-prata {
+  background: linear-gradient(90deg, #6b7280 0%, #9ca3af 100%);
+}
+
+.xp-bar-fill.rank-ouro {
+  background: linear-gradient(90deg, #d97706 0%, var(--gold) 100%);
+}
+
+.xp-bar-fill.rank-platina {
+  background: linear-gradient(90deg, var(--accent) 0%, #818cf8 100%);
+}
+
+.xp-bar-fill.rank-diamante {
+  background: linear-gradient(90deg, #16a34a 0%, var(--green) 100%);
+}
+
+/* Legacy level-tier XP bar classes */
+.xp-bar-fill.rank-initiate {
+  background: linear-gradient(90deg, #5b6428 0%, var(--accent) 100%);
+}
+
+.xp-bar-fill.rank-ascender {
+  background: linear-gradient(90deg, var(--accent) 0%, #818cf8 100%);
+}
+
+.xp-bar-fill.rank-elite {
+  background: linear-gradient(90deg, #16a34a 0%, var(--green) 100%);
+}
+
+.xp-bar-fill.rank-sovereign {
+  background: linear-gradient(90deg, #d97706 0%, var(--gold) 100%);
+}
+
+.xp-bar-fill.rank-legend {
+  background: linear-gradient(90deg, #dc2626 0%, #f97316 100%);
 }
 
 /* ── Skeleton Loading ────────────────────────────────────── */
 @keyframes skeleton-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .skeleton {
@@ -700,9 +788,17 @@ p {
   margin-bottom: var(--space-2);
 }
 
-.skeleton-line.wide { width: 80%; }
-.skeleton-line.medium { width: 55%; }
-.skeleton-line.narrow { width: 35%; }
+.skeleton-line.wide {
+  width: 80%;
+}
+
+.skeleton-line.medium {
+  width: 55%;
+}
+
+.skeleton-line.narrow {
+  width: 35%;
+}
 
 /* ── Streak Risk Badge ───────────────────────────────────── */
 .streak-risk-badge {
@@ -715,9 +811,22 @@ p {
   font-weight: 600;
 }
 
-.streak-risk-badge.safe     { display: none; }
-.streak-risk-badge.warning  { background: rgba(245,158,11,0.12); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
-.streak-risk-badge.critical { background: rgba(239,68,68,0.12);  color: var(--red);  border: 1px solid rgba(239,68,68,0.3); animation: glow-pulse 1.5s ease-in-out infinite; }
+.streak-risk-badge.safe {
+  display: none;
+}
+
+.streak-risk-badge.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--gold);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.streak-risk-badge.critical {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--red);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  animation: glow-pulse 1.5s ease-in-out infinite;
+}
 
 /* ── Confirm Modal ───────────────────────────────────────── */
 #confirm-modal .modal {

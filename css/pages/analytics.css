@@ -88,7 +88,7 @@
 }
 
 .analytics-stat-card {
-    padding: var(--space-5) var(--space-6);
+    padding: var(--space-4) var(--space-5);
 }
 
 /* ── Charts Grid ──────────────────────────────────────────────── */
@@ -99,8 +99,9 @@
     margin-bottom: var(--space-6);
 }
 
-.chart-card {
-    padding: var(--space-6);
+.chart-card,
+.analytics-chart-card {
+    padding: var(--space-5);
 }
 
 .chart-canvas-wrapper {
@@ -147,7 +148,7 @@
 }
 
 .habit-table tr:hover td {
-    background: var(--bg-elevated);
+    background: var(--bg-hover);
     color: var(--text-primary);
 }
 
@@ -160,15 +161,16 @@
 .completion-bar-mini {
     flex: 1;
     height: 4px;
-    background: var(--bg-elevated);
+    background: var(--bg-hover);
     border-radius: var(--radius-full);
     overflow: hidden;
 }
 
 .completion-bar-fill-mini {
     height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--green));
+    background: var(--accent);
     border-radius: var(--radius-full);
+    opacity: 0.8;
 }
 
 .completion-pct {

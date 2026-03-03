@@ -316,6 +316,22 @@
         </div>
     </div>
 
+    <!-- Rank Promotion Modal -->
+    <div class="modal-overlay" id="rank-promotion-modal">
+        <div class="modal" style="max-width:360px;text-align:center;">
+            <div id="rank-promo-icon" style="font-size:2.5rem;margin-bottom:16px;line-height:1;"></div>
+            <div id="rank-promo-emblem-wrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
+            <h3 class="modal-title" style="margin-bottom:10px;">Promoção de Rank!</h3>
+            <p id="rank-promo-message"
+                style="color:var(--text-secondary);font-size:0.875rem;line-height:1.65;margin-bottom:8px;"></p>
+            <p id="rank-promo-next" style="font-size:0.75rem;color:var(--text-muted);margin-bottom:24px;"></p>
+            <button class="btn btn-primary" style="width:100%;"
+                onclick="document.getElementById('rank-promotion-modal').classList.remove('open')">
+                <i class="fa-solid fa-chevron-up"></i> Continuar subindo
+            </button>
+        </div>
+    </div>
+
     <!-- Bottom Navigation Bar -->
     <nav class="bottom-nav">
         <a href="dashboard.html" class="bottom-nav-item active">
@@ -358,6 +374,7 @@
         let todayLogs = [];
         let allLogs = [];
         let profile = null;
+        let _lastRankId = null; // tracks rank for promotion detection
         // selectedDate is a YYYY-MM-DD string in BRT; starts as today
         let selectedDateStr = UI.todayStr();
         // Interpret selectedDateStr as a local midnight Date object for display
@@ -606,20 +623,40 @@
             UI.setProgressRing(document.getElementById('progress-ring-circle'), pct);
             UI.setText('#ring-pct', `${pct}%`);
 
-            // XP + Level + Rank
+            // XP + Level (permanent — never falls)
             const totalXP = Logs.calcTotalXP(allLogs);
             const lvl = Engine.getLevelProgress(totalXP);
-            const rank = Engine.getRankFromXP(totalXP);
             document.getElementById('level-num').textContent = lvl.level;
             document.getElementById('xp-current').textContent = lvl.currentLevelXP;
             document.getElementById('xp-next').textContent = lvl.nextLevelXP;
+
+            // XP bar uses a neutral gradient (level-based, always progressing)
             const fillEl = document.getElementById('xp-bar-fill');
-            if (fillEl) setTimeout(() => fillEl.style.width = `${lvl.progressPct}%`, 100);
+            if (fillEl) {
+                fillEl.className = 'xp-bar-fill';
+                setTimeout(() => fillEl.style.width = `${lvl.progressPct}%`, 100);
+            }
+
+            // Competitive Rank (PDL-based, 7-day weighted avg — can fall)
+            const snapshots = _buildLast7DaySnapshots();
+            const competitivePDL = Engine.calcCompetitivePDL(snapshots);
+            const rank = Engine.getRankFromPDL(competitivePDL);
+
             const emblem = document.getElementById('rank-emblem');
             if (emblem) {
                 emblem.className = `rank-emblem ${rank.id}`;
-                emblem.innerHTML = `<i class="fa-solid fa-shield"></i> ${rank.label}`;
+                emblem.innerHTML = `<i class="fa-solid ${rank.icon || 'fa-shield'}"></i> ${rank.label} <span style="font-size:0.7rem;opacity:0.6;">${competitivePDL}%</span>`;
             }
+
+            // Promotion / Demotion detection
+            if (_lastRankId !== null && _lastRankId !== rank.id) {
+                const allRankIds = Engine.COMPETITIVE_RANKS.map(r => r.id);
+                const wasIdx = allRankIds.indexOf(_lastRankId);
+                const nowIdx = allRankIds.indexOf(rank.id);
+                if (nowIdx > wasIdx) showRankPromotion(rank, competitivePDL);
+                if (nowIdx < wasIdx) showRankDemotion(rank, competitivePDL);
+            }
+            _lastRankId = rank.id;
 
             // 7-day efficiency trend
             _updateEfficiencyTrend();
@@ -631,6 +668,59 @@
             UI.animateNumber(document.getElementById('weekly-score'), Score.calcDaily(weekLogs));
             UI.animateNumber(document.getElementById('monthly-score'), Score.calcDaily(monthLogs));
             UI.animateNumber(document.getElementById('total-score'), Score.calcDaily(allLogs));
+        }
+
+        function _buildLast7DaySnapshots() {
+            const snapshots = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = UI.toBRTDateStr(d);
+                const dow = d.getDay();
+                const applicable = todayHabits.filter(h => {
+                    if (h.frequency === 'daily') return true;
+                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
+                    return false;
+                });
+                const dayLogs = allLogs.filter(l => l.date === dateStr);
+                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
+                snapshots.push({ date: dateStr, efficiency });
+            }
+            return snapshots;
+        }
+
+        function showRankPromotion(rank, pdl) {
+            const RANK_ICONS = {
+                bronze: `<i class="fa-solid fa-shield"         style="color:${rank.color}"></i>`,
+                prata: `<i class="fa-solid fa-shield-halved"  style="color:${rank.color}"></i>`,
+                ouro: `<i class="fa-solid fa-trophy"          style="color:${rank.color}"></i>`,
+                platina: `<i class="fa-solid fa-gem"             style="color:${rank.color}"></i>`,
+                diamante: `<i class="fa-solid fa-diamond"         style="color:${rank.color}"></i>`,
+            };
+            const MESSAGES = {
+                bronze: 'Seu desempenho recente colocou você em movimento. Bronze é o ponto de partida.',
+                prata: 'Consistência crescente. Prata mostra que você está acima da média.',
+                ouro: 'Ouro alcançado. Você está em alta forma. Continue o ritmo.',
+                platina: 'Platina. Desempenho de elite nos últimos 7 dias. Raridade real.',
+                diamante: 'Diamante. PDL acima de 90% — você está operando no máximo.',
+            };
+            const allRanks = Engine.COMPETITIVE_RANKS;
+            const nextRank = allRanks[allRanks.findIndex(r => r.id === rank.id) + 1];
+
+            document.getElementById('rank-promo-icon').innerHTML = RANK_ICONS[rank.id] || '🏆';
+            document.getElementById('rank-promo-emblem-wrap').innerHTML =
+                `<span class="rank-emblem ${rank.id}"><i class="fa-solid ${rank.icon || 'fa-shield'}"></i> ${rank.label}</span>`;
+            document.getElementById('rank-promo-message').textContent = MESSAGES[rank.id] || '';
+            document.getElementById('rank-promo-next').textContent = nextRank
+                ? `→ Próximo rank: ${nextRank.label} (PDL ${nextRank.minPDL}%+)`
+                : '→ Você está no rank máximo. Mantenha a disciplina.';
+
+            document.getElementById('rank-promotion-modal').classList.add('open');
+        }
+
+        function showRankDemotion(rank, pdl) {
+            // Non-intrusive — toast only (no modal for demotions)
+            UI.toast(`Rank ajustado para ${rank.label} — PDL atual: ${pdl}%. Retome o ritmo.`, 'warning', 4000);
         }
 
         function _updateEfficiencyTrend() {

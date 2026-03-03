@@ -96,32 +96,73 @@ const Engine = (() => {
         return { level, currentLevelXP, nextLevelXP, progressPct };
     }
 
-    // ── Rank System ───────────────────────────────────────────
-    // 5 tiers based on level. Each rank has a glow color and emblem.
-    const RANKS = [
-        { id: 'initiate', label: 'Initiate', minLevel: 1, maxLevel: 4, color: '#8895b3', glow: 'rgba(136,149,179,0.4)' },
-        { id: 'ascender', label: 'Ascender', minLevel: 5, maxLevel: 9, color: '#6366f1', glow: 'rgba(99,102,241,0.5)' },
-        { id: 'elite', label: 'Elite', minLevel: 10, maxLevel: 14, color: '#22c55e', glow: 'rgba(34,197,94,0.5)' },
-        { id: 'sovereign', label: 'Sovereign', minLevel: 15, maxLevel: 19, color: '#f59e0b', glow: 'rgba(245,158,11,0.5)' },
-        { id: 'legend', label: 'Legend', minLevel: 20, maxLevel: 999, color: '#ef4444', glow: 'rgba(239,68,68,0.6)' },
+    // ── Level Tier Labels (internal — XP bar color hints only) ───
+    // These are purely visual identifiers derived from level, NOT the Rank system.
+    const LEVEL_TIERS = [
+        { id: 'tier-novice', label: 'Novice', minLevel: 1, maxLevel: 4 },
+        { id: 'tier-adept', label: 'Adept', minLevel: 5, maxLevel: 9 },
+        { id: 'tier-expert', label: 'Expert', minLevel: 10, maxLevel: 14 },
+        { id: 'tier-master', label: 'Master', minLevel: 15, maxLevel: 19 },
+        { id: 'tier-grandmaster', label: 'Grand Master', minLevel: 20, maxLevel: 999 },
+    ];
+
+    // ── Competitive Rank System ───────────────────────────────
+    // Rank = f(PDL competitive — 7-day weighted avg)
+    // Rank CAN fall if recent performance declines.
+    // NEVER derived from XP total or level.
+    const COMPETITIVE_RANKS = [
+        { id: 'bronze', label: 'Bronze', minPDL: 0, maxPDL: 39, color: '#cd7f32', glow: 'rgba(205,127,50,0.25)', icon: 'fa-shield' },
+        { id: 'prata', label: 'Prata', minPDL: 40, maxPDL: 59, color: '#9ca3af', glow: 'rgba(156,163,175,0.25)', icon: 'fa-shield-halved' },
+        { id: 'ouro', label: 'Ouro', minPDL: 60, maxPDL: 74, color: '#f59e0b', glow: 'rgba(245,158,11,0.25)', icon: 'fa-trophy' },
+        { id: 'platina', label: 'Platina', minPDL: 75, maxPDL: 89, color: '#6366f1', glow: 'rgba(99,102,241,0.25)', icon: 'fa-gem' },
+        { id: 'diamante', label: 'Diamante', minPDL: 90, maxPDL: 100, color: '#22c55e', glow: 'rgba(34,197,94,0.25)', icon: 'fa-diamond' },
     ];
 
     /**
-     * Get rank object for a given level.
-     * @param {number} level
-     * @returns {object} { id, label, minLevel, maxLevel, color, glow }
+     * Calculate Competitive PDL — weighted 7-day efficiency average.
+     * Last 3 days carry 2× weight to emphasise recent form.
+     *
+     * @param {Array<{efficiency: number}>} last7Days - sorted oldest first, max 7 items
+     * @returns {number} 0–100 integer competitive PDL
      */
-    function getRank(level) {
-        return RANKS.find(r => level >= r.minLevel && level <= r.maxLevel) ?? RANKS[0];
+    function calcCompetitivePDL(last7Days) {
+        if (!last7Days || last7Days.length === 0) return 0;
+        const n = last7Days.length;
+        let weightedSum = 0;
+        let totalWeight = 0;
+        last7Days.forEach((d, i) => {
+            // Recent 3 days (tail of sorted array) get doubled weight
+            const weight = i >= n - 3 ? 2 : 1;
+            weightedSum += (d.efficiency ?? 0) * weight;
+            totalWeight += weight;
+        });
+        return Math.min(100, Math.max(0, Math.round(weightedSum / totalWeight)));
     }
 
     /**
-     * Get rank from total XP.
-     * @param {number} totalXP
-     * @returns {object}
+     * Get competitive rank tier from PDL score.
+     * @param {number} pdl - 0–100 competitive PDL
+     * @returns {object} { id, label, minPDL, maxPDL, color, glow, icon }
+     */
+    function getRankFromPDL(pdl) {
+        const score = Math.min(100, Math.max(0, pdl ?? 0));
+        return COMPETITIVE_RANKS.find(r => score >= r.minPDL && score <= r.maxPDL)
+            ?? COMPETITIVE_RANKS[0];
+    }
+
+    /**
+     * @deprecated Use getRankFromPDL() instead.
+     * Do NOT use to determine visible Rank — only kept for legacy call sites.
      */
     function getRankFromXP(totalXP) {
-        return getRank(calcLevel(totalXP));
+        // Returns a LEVEL TIER, not the competitive Rank.
+        const level = calcLevel(totalXP);
+        return LEVEL_TIERS.find(t => level >= t.minLevel && level <= t.maxLevel) ?? LEVEL_TIERS[0];
+    }
+
+    /** @deprecated Internal only — use COMPETITIVE_RANKS */
+    function getRank(level) {
+        return LEVEL_TIERS.find(t => level >= t.minLevel && level <= t.maxLevel) ?? LEVEL_TIERS[0];
     }
 
     // ── Daily Efficiency ──────────────────────────────────────
@@ -445,7 +486,7 @@ const Engine = (() => {
      * @returns {number} priority score
      */
     function calcTaskPriority(task, currentEfficiency = 0) {
-        let score = task.base_priority || 5;
+        let score = task.priority || 5;
 
         // Urgency (deadline proximity)
         if (task.deadline) {
@@ -603,15 +644,19 @@ const Engine = (() => {
         calcTaskXP,
         calcTaskPriority,
         calcDDA,
-        // Level
+        // Level (permanent — grows with XP)
         xpForLevel,
         xpToNextLevel,
         calcLevel,
         getLevelProgress,
-        // Rank
-        RANKS,
-        getRank,
-        getRankFromXP,
+        // Rank — Competitive (PDL-based, primary API)
+        COMPETITIVE_RANKS,
+        calcCompetitivePDL,
+        getRankFromPDL,
+        // Rank — Legacy aliases (@deprecated)
+        RANKS: COMPETITIVE_RANKS,   // backward compat alias
+        getRankFromXP,              // @deprecated
+        getRank,                    // @deprecated
         // Efficiency
         calcDailyEfficiency,
         // Streak
