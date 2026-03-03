@@ -1,0 +1,533 @@
+/* ============================================================
+   ASCEND — Tasks Page CSS
+   Sprint overlay, task cards, priority badges, type icons
+   ============================================================ */
+
+.tasks-page {
+    padding: calc(var(--nav-height) + var(--space-8)) 0 calc(var(--bottom-nav-height) + var(--space-12));
+}
+
+@media (max-width: 768px) {
+    .tasks-page {
+        padding: var(--space-5) 0 calc(var(--bottom-nav-height) + var(--space-8));
+    }
+}
+
+/* ── Page Header ─────────────────────────────────────────── */
+.tasks-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+    gap: var(--space-4);
+}
+
+.tasks-header h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+.tasks-header-actions {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ── Filter Tabs ─────────────────────────────────────────── */
+.tasks-filter-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    padding: 4px;
+    width: fit-content;
+    overflow-x: auto;
+}
+
+.filter-tab {
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: var(--font-display);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all var(--motion-fast) var(--ease-snap);
+    white-space: nowrap;
+}
+
+.filter-tab.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: var(--glow-sm);
+}
+
+.filter-tab:hover:not(.active) {
+    color: var(--text-primary);
+    background: var(--bg-hover);
+}
+
+/* ── DDA Banner ──────────────────────────────────────────── */
+.dda-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: 0.82rem;
+    margin-bottom: var(--space-4);
+    border: 1px solid transparent;
+}
+
+.dda-banner.increase {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.25);
+    color: var(--green);
+}
+
+.dda-banner.decrease {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+    color: var(--gold);
+}
+
+.dda-banner.maintain {
+    display: none;
+}
+
+/* ── Task List ───────────────────────────────────────────── */
+.tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* ── Task Card ───────────────────────────────────────────── */
+.task-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    transition: border-color var(--motion-fast), box-shadow var(--motion-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.task-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    background: var(--accent);
+    transition: background var(--motion-fast);
+}
+
+.task-card.priority-critical::before {
+    background: var(--red);
+}
+
+.task-card.priority-high::before {
+    background: var(--gold);
+}
+
+.task-card.priority-medium::before {
+    background: var(--accent);
+}
+
+.task-card.priority-low::before {
+    background: var(--text-muted);
+}
+
+.task-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--glow-sm);
+}
+
+.task-card.done {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.task-card.done .task-title {
+    text-decoration: line-through;
+}
+
+/* Task check button */
+.task-check-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all var(--motion-fast) var(--ease-spring);
+}
+
+.task-check-btn:hover {
+    border-color: var(--green);
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--green);
+}
+
+.task-check-btn.checked {
+    border-color: var(--green);
+    background: var(--green);
+    color: #fff;
+}
+
+.task-check-btn i {
+    font-size: 0.75rem;
+}
+
+/* Task content */
+.task-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.task-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    margin-bottom: var(--space-1);
+    line-height: 1.4;
+}
+
+.task-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.task-description {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-top: var(--space-2);
+    line-height: 1.5;
+}
+
+/* ── Task Badges ─────────────────────────────────────────── */
+.task-type-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.task-type-badge.strategic {
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--accent-bright);
+}
+
+.task-type-badge.operational {
+    background: rgba(136, 149, 179, 0.12);
+    color: var(--text-muted);
+}
+
+.task-type-badge.sprint_block {
+    background: rgba(245, 158, 11, 0.12);
+    color: var(--gold);
+}
+
+.task-type-badge.recurring {
+    background: rgba(34, 197, 94, 0.10);
+    color: var(--green);
+}
+
+.task-xp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: var(--font-display);
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-bright);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.task-deadline-badge {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.task-deadline-badge.overdue {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.task-deadline-badge.urgent {
+    color: var(--gold);
+    font-weight: 600;
+}
+
+/* ── Task Actions ────────────────────────────────────────── */
+.task-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    flex-shrink: 0;
+}
+
+.task-action-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: all var(--motion-fast);
+}
+
+.task-action-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.task-action-btn.danger:hover {
+    border-color: var(--red);
+    color: var(--red);
+}
+
+.task-action-btn.sprint:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+}
+
+/* ── Empty State ─────────────────────────────────────────── */
+.tasks-empty {
+    text-align: center;
+    padding: var(--space-16) var(--space-8);
+    color: var(--text-muted);
+}
+
+.tasks-empty i {
+    font-size: 2.5rem;
+    margin-bottom: var(--space-4);
+    opacity: 0.4;
+}
+
+.tasks-empty h3 {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+/* ── Task Form Modal ─────────────────────────────────────── */
+.task-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.task-form-grid .span-2 {
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 540px) {
+    .task-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .task-form-grid .span-2 {
+        grid-column: 1;
+    }
+}
+
+/* ── Sprint Mode Overlay ─────────────────────────────────── */
+.sprint-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 8, 15, 0.97);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-8);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--motion-normal) var(--ease-snap);
+}
+
+.sprint-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.sprint-timer-ring {
+    position: relative;
+    width: 220px;
+    height: 220px;
+}
+
+.sprint-timer-svg {
+    transform: rotate(-90deg);
+}
+
+.sprint-timer-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.06);
+    stroke-width: 10;
+}
+
+.sprint-timer-fill {
+    fill: none;
+    stroke: url(#sprint-gradient);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 628.318;
+    /* circumference of r=100 */
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+}
+
+.sprint-timer-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.sprint-timer-value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 3rem;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--accent), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.sprint-timer-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+}
+
+.sprint-overlay-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    text-align: center;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sprint-active-task {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    text-align: center;
+    max-width: 360px;
+}
+
+.sprint-controls {
+    display: flex;
+    gap: var(--space-4);
+}
+
+.sprint-interrupt-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* Pulse ring animation during active sprint */
+@keyframes sprint-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    }
+
+    50% {
+        box-shadow: 0 0 0 16px rgba(99, 102, 241, 0.12);
+    }
+}
+
+.sprint-overlay.active .sprint-timer-ring {
+    animation: sprint-pulse 2.5s ease-in-out infinite;
+    border-radius: 50%;
+}
+
+/* ── Stats Row ───────────────────────────────────────────── */
+.tasks-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+@media (max-width: 600px) {
+    .tasks-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.task-stat-card {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    text-align: center;
+}
+
+.task-stat-value {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.task-stat-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-top: 4px;
+}

@@ -95,7 +95,6 @@ const Logs = (() => {
                     penalty_applied: penaltyApplied,
                     score_earned: scoreEarned,
                     xp_earned: xpEarned,
-                    weight: habit.weight,
                 }, { onConflict: 'habit_id,date' })
                 .select()
                 .single();
@@ -167,7 +166,6 @@ const Logs = (() => {
                     score_earned: scoreEarned,
                     xp_earned: xpEarned,
                     value_logged: valueLogged,
-                    weight: habit.weight,
                 }, { onConflict: 'habit_id,date' })
                 .select()
                 .single();

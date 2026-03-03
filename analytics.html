@@ -33,6 +33,7 @@
             <div class="nav-links">
                 <a href="dashboard.html" class="nav-link">Dashboard</a>
                 <a href="habits.html" class="nav-link">Hábitos</a>
+                <a href="tasks.html" class="nav-link">Tarefas</a>
                 <a href="agenda.html" class="nav-link">Agenda</a>
                 <a href="analytics.html" class="nav-link active">Análises</a>
                 <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
@@ -186,6 +187,47 @@
                 </table>
             </div>
 
+            <!-- ── XP Gain Graph ─────────────────────────────────── -->
+            <div class="card analytics-chart-card animate-slide-up delay-400" style="margin-top:var(--space-8,32px);">
+                <div
+                    style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:var(--space-5,20px);">
+                    <div>
+                        <h2 style="font-size:1.05rem;font-weight:700;margin:0;">
+                            <i class="fa-solid fa-chart-line" style="color:var(--accent);margin-right:8px;"></i>XP
+                            Diário
+                        </h2>
+                        <p style="font-size:0.78rem;color:var(--text-muted);margin:3px 0 0;">Últimos 30 dias — hábitos +
+                            tarefas combinados</p>
+                    </div>
+                    <button id="btn-toggle-avg" class="btn btn-ghost btn-sm" onclick="toggleXPAverage()"
+                        title="Ativar/desativar média de 7 dias">
+                        <i class="fa-solid fa-chart-area"></i> Média 7 dias
+                    </button>
+                </div>
+                <!-- Chart container -->
+                <div id="xp-graph-wrap" style="position:relative;height:240px;">
+                    <canvas id="xp-chart"></canvas>
+                </div>
+                <!-- Empty state (hidden when data exists) -->
+                <div id="xp-graph-empty" style="display:none;text-align:center;padding:48px 0;color:var(--text-muted);">
+                    <i class="fa-solid fa-chart-line fa-2x" style="margin-bottom:12px;opacity:0.3;"></i>
+                    <p style="font-size:0.9rem;">Nenhum XP registrado nos últimos 30 dias.<br>Complete hábitos ou
+                        tarefas para visualizar o gráfico.</p>
+                </div>
+                <!-- Summary row -->
+                <div id="xp-graph-summary" style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;display:none;">
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Total: <strong id="xp-sum-total" style="color:var(--text-primary);">0 XP</strong>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Melhor dia: <strong id="xp-sum-peak" style="color:var(--gold);">0 XP</strong>
+                    </div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);">
+                        Média diária: <strong id="xp-sum-avg" style="color:var(--accent-bright);">0 XP</strong>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -198,6 +240,10 @@
         <a href="habits.html" class="bottom-nav-item">
             <i class="fa-solid fa-bolt"></i>
             <span>Hábitos</span>
+        </a>
+        <a href="tasks.html" class="bottom-nav-item">
+            <i class="fa-solid fa-list-check"></i>
+            <span>Tarefas</span>
         </a>
         <a href="agenda.html" class="bottom-nav-item">
             <i class="fa-solid fa-calendar-check"></i>
@@ -257,6 +303,7 @@
             renderTrendChart();
             renderRollingAvgChart();
             renderAdvancedAnalytics();
+            loadXPGraph(); // ← XP Gain Graph (habits + tasks combined)
         }
 
         function renderStats() {
@@ -507,6 +554,207 @@
         }
 
 
+
+
+        // ─── XP Gain Graph ──────────────────────────────────────────
+        let _xpChart = null;
+        let _xpShowAvg = false;
+        let _xpDailyData = []; // [{ date, xp }] sorted asc
+
+        /**
+         * Build a YYYY-MM-DD → xp map from an array of objects that each have
+         * a date-like field and an xp_earned field.
+         */
+        function _buildXPMap(records, dateField, xpField) {
+            const map = {};
+            for (const r of records) {
+                if (!r[dateField] || !r[xpField]) continue;
+                const day = String(r[dateField]).substring(0, 10);
+                map[day] = (map[day] || 0) + (parseInt(r[xpField]) || 0);
+            }
+            return map;
+        }
+
+        async function loadXPGraph() {
+            try {
+                const { data: { user } } = window.supabaseClient.auth.getUser
+                    ? await window.supabaseClient.auth.getUser()
+                    : { data: { user: null } };
+                if (!user) return;
+
+                // Build last-30-days date list (in BRT)
+                const days = 30;
+                const today = UI.toBRTDateStr(new Date());
+                const dateList = [];
+                for (let i = days - 1; i >= 0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dateList.push(UI.toBRTDateStr(d));
+                }
+                const oldest = dateList[0];
+
+                // Fetch habit_logs XP (last 30 days)
+                const { data: habitLogs } = await window.supabaseClient
+                    .from('habit_logs')
+                    .select('date, xp_earned')
+                    .eq('user_id', user.id)
+                    .eq('completed', true)
+                    .gte('date', oldest)
+                    .lte('date', today);
+
+                // Fetch tasks XP (last 30 days by completed_at)
+                const { data: taskRows } = await window.supabaseClient
+                    .from('tasks')
+                    .select('completed_at, xp_earned')
+                    .eq('user_id', user.id)
+                    .eq('status', 'done')
+                    .gte('completed_at', oldest + 'T00:00:00')
+                    .not('xp_earned', 'is', null);
+
+                // Aggregate into day maps
+                const habitMap = _buildXPMap(habitLogs || [], 'date', 'xp_earned');
+                const taskMap = _buildXPMap(taskRows || [], 'completed_at', 'xp_earned');
+
+                // Merge for each day in the 30-day window
+                _xpDailyData = dateList.map(d => ({
+                    date: d,
+                    xp: (habitMap[d] || 0) + (taskMap[d] || 0),
+                }));
+
+                const totalXP = _xpDailyData.reduce((s, r) => s + r.xp, 0);
+                const activeDays = _xpDailyData.filter(r => r.xp > 0);
+                const peakXP = Math.max(0, ...activeDays.map(r => r.xp));
+                const avgXP = activeDays.length > 0 ? Math.round(totalXP / activeDays.length) : 0;
+
+                const hasData = totalXP > 0;
+
+                // Show/hide empty state vs canvas
+                document.getElementById('xp-graph-wrap').style.display = hasData ? 'block' : 'none';
+                document.getElementById('xp-graph-empty').style.display = hasData ? 'none' : 'block';
+                document.getElementById('btn-toggle-avg').style.display = hasData ? '' : 'none';
+
+                const summaryEl = document.getElementById('xp-graph-summary');
+                if (hasData) {
+                    document.getElementById('xp-sum-total').textContent = totalXP + ' XP';
+                    document.getElementById('xp-sum-peak').textContent = peakXP + ' XP';
+                    document.getElementById('xp-sum-avg').textContent = avgXP + ' XP';
+                    summaryEl.style.display = 'flex';
+                } else {
+                    summaryEl.style.display = 'none';
+                }
+
+                if (hasData) _renderXPChart();
+            } catch (e) {
+                console.warn('[XP Graph] Error:', e);
+            }
+        }
+
+        function _calcRolling7(data) {
+            return data.map((_, i) => {
+                const window7 = data.slice(Math.max(0, i - 6), i + 1);
+                return Math.round(window7.reduce((s, r) => s + r.xp, 0) / window7.length);
+            });
+        }
+
+        function _renderXPChart() {
+            const labels = _xpDailyData.map(r => {
+                const [, m, d] = r.date.split('-');
+                return `${d}/${m}`;
+            });
+            const xpValues = _xpDailyData.map(r => r.xp);
+            const avgValues = _calcRolling7(_xpDailyData);
+
+            const canvas = document.getElementById('xp-chart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+
+            // Gradient fill
+            const grad = ctx.createLinearGradient(0, 0, 0, 240);
+            grad.addColorStop(0, 'rgba(99,102,241,0.35)');
+            grad.addColorStop(1, 'rgba(99,102,241,0)');
+
+            const datasets = [{
+                label: 'XP Diário',
+                data: xpValues,
+                borderColor: '#6366f1',
+                backgroundColor: grad,
+                borderWidth: 2,
+                pointRadius: xpValues.map(v => v > 0 ? 3 : 0),
+                pointBackgroundColor: '#6366f1',
+                fill: true,
+                tension: 0.4,
+            }];
+
+            if (_xpShowAvg) {
+                datasets.push({
+                    label: 'Média 7 dias',
+                    data: avgValues,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderDash: [5, 3],
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.4,
+                });
+            }
+
+            if (_xpChart) { _xpChart.destroy(); _xpChart = null; }
+
+            _xpChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15,15,30,0.95)',
+                            titleColor: '#a78bfa',
+                            bodyColor: '#e2e8f0',
+                            borderColor: 'rgba(99,102,241,0.3)',
+                            borderWidth: 1,
+                            padding: 10,
+                            callbacks: {
+                                title: items => items[0].label,
+                                label: item => ` ${item.dataset.label}: ${item.raw} XP`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: {
+                                color: '#64748b',
+                                maxTicksLimit: 10,
+                                font: { size: 10 },
+                            },
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 10 },
+                                callback: v => v + ' XP',
+                            },
+                            beginAtZero: true,
+                        },
+                    },
+                },
+            });
+        }
+
+        function toggleXPAverage() {
+            _xpShowAvg = !_xpShowAvg;
+            const btn = document.getElementById('btn-toggle-avg');
+            btn.classList.toggle('active-btn', _xpShowAvg);
+            if (_xpDailyData.length) _renderXPChart();
+        }
+
+        // Expose so other pages can call after a completion
+        window.refreshXPGraph = loadXPGraph;
 
         init();
     </script>

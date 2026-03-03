@@ -38,10 +38,10 @@ const Identity = (() => {
             .from('profiles')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle(); // ← returns null instead of error when 0 rows
 
         if (error) throw error;
-        return data;
+        return data; // null if profile not created yet
     }
 
     /**

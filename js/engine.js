@@ -99,11 +99,11 @@ const Engine = (() => {
     // ── Rank System ───────────────────────────────────────────
     // 5 tiers based on level. Each rank has a glow color and emblem.
     const RANKS = [
-        { id: 'initiate',   label: 'Initiate',   minLevel: 1,  maxLevel: 4,   color: '#8895b3', glow: 'rgba(136,149,179,0.4)' },
-        { id: 'ascender',   label: 'Ascender',   minLevel: 5,  maxLevel: 9,   color: '#6366f1', glow: 'rgba(99,102,241,0.5)'  },
-        { id: 'elite',      label: 'Elite',      minLevel: 10, maxLevel: 14,  color: '#22c55e', glow: 'rgba(34,197,94,0.5)'   },
-        { id: 'sovereign',  label: 'Sovereign',  minLevel: 15, maxLevel: 19,  color: '#f59e0b', glow: 'rgba(245,158,11,0.5)'  },
-        { id: 'legend',     label: 'Legend',     minLevel: 20, maxLevel: 999, color: '#ef4444', glow: 'rgba(239,68,68,0.6)'   },
+        { id: 'initiate', label: 'Initiate', minLevel: 1, maxLevel: 4, color: '#8895b3', glow: 'rgba(136,149,179,0.4)' },
+        { id: 'ascender', label: 'Ascender', minLevel: 5, maxLevel: 9, color: '#6366f1', glow: 'rgba(99,102,241,0.5)' },
+        { id: 'elite', label: 'Elite', minLevel: 10, maxLevel: 14, color: '#22c55e', glow: 'rgba(34,197,94,0.5)' },
+        { id: 'sovereign', label: 'Sovereign', minLevel: 15, maxLevel: 19, color: '#f59e0b', glow: 'rgba(245,158,11,0.5)' },
+        { id: 'legend', label: 'Legend', minLevel: 20, maxLevel: 999, color: '#ef4444', glow: 'rgba(239,68,68,0.6)' },
     ];
 
     /**
@@ -350,53 +350,259 @@ const Engine = (() => {
         const code = err?.code || err?.status || 0;
 
         if (!navigator.onLine || msg.includes('network') || msg.includes('failed to fetch')) {
-            return {
-                type: ERROR_TYPES.NETWORK,
-                userMessage: 'Sem conexão. Verifique sua internet e tente novamente.',
-                technical: err?.message,
-            };
+            return { type: ERROR_TYPES.NETWORK, userMessage: 'Sem conexão. Verifique sua internet e tente novamente.', technical: err?.message };
         }
         if (code === 401 || msg.includes('jwt') || msg.includes('auth') || msg.includes('unauthorized')) {
-            return {
-                type: ERROR_TYPES.AUTH,
-                userMessage: 'Sessão expirada. Faça login novamente.',
-                technical: err?.message,
-            };
+            return { type: ERROR_TYPES.AUTH, userMessage: 'Sessão expirada. Faça login novamente.', technical: err?.message };
         }
         if (code === 409 || msg.includes('duplicate') || msg.includes('unique')) {
-            return {
-                type: ERROR_TYPES.DB,
-                userMessage: 'Registro já existe. Atualize a página.',
-                technical: err?.message,
-            };
+            return { type: ERROR_TYPES.DB, userMessage: 'Registro já existe. Atualize a página.', technical: err?.message };
         }
         if (code >= 400 && code < 500) {
-            return {
-                type: ERROR_TYPES.VALIDATION,
-                userMessage: 'Dados inválidos. Verifique os campos e tente novamente.',
-                technical: err?.message,
-            };
+            return { type: ERROR_TYPES.VALIDATION, userMessage: 'Dados inválidos. Verifique os campos e tente novamente.', technical: err?.message };
         }
         if (code >= 500 || msg.includes('internal')) {
-            return {
-                type: ERROR_TYPES.DB,
-                userMessage: 'Erro no servidor. Tente novamente em alguns segundos.',
-                technical: err?.message,
-            };
+            return { type: ERROR_TYPES.DB, userMessage: 'Erro no servidor. Tente novamente em alguns segundos.', technical: err?.message };
         }
+        return { type: ERROR_TYPES.UNKNOWN, userMessage: 'Algo deu errado. Tente novamente.', technical: err?.message };
+    }
+
+    // ── Task XP System ────────────────────────────────────────
+    // Base: weight × 20 → weight 1-5 gives 20/40/60/80/100 XP
+    // Modifiers applied multiplicatively.
+
+    const TASK_BASE_XP = { 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 };
+
+    // Lateness tier multipliers
+    const LATENESS_MULTS = [1.0, 0.80, 0.55, 0.30]; // tier 0-3
+
+    /**
+     * Determine lateness tier from hours overdue.
+     * @param {number} hoursLate - 0 means on time or early
+     * @returns {number} 0=on time, 1=<24h, 2=24-72h, 3=>72h
+     */
+    function getLateTier(hoursLate) {
+        if (hoursLate <= 0) return 0;
+        if (hoursLate < 24) return 1;
+        if (hoursLate < 72) return 2;
+        return 3;
+    }
+
+    /**
+     * Calculate XP earned for a task completion.
+     *
+     * @param {object} task - { weight, deadline?, completed_at?, is_sprint? }
+     * @param {object} [opts]
+     * @param {boolean} [opts.streakAligned] - completion pushed efficiency over 50%
+     * @param {boolean} [opts.sprintMode] - completed inside a sprint session
+     * @param {number}  [opts.xpMultiplier] - custom task multiplier (default 1.0)
+     * @returns {{ xp: number, lateTier: number, modifiers: object }}
+     */
+    function calcTaskXP(task, opts = {}) {
+        const { streakAligned = false, sprintMode = false, xpMultiplier = 1.0 } = opts;
+        const weight = Math.min(5, Math.max(1, task.weight || 3));
+        const base = TASK_BASE_XP[weight];
+
+        // Lateness
+        let hoursLate = 0;
+        if (task.deadline && task.completed_at) {
+            const dlMs = new Date(task.deadline).getTime();
+            const doneMs = new Date(task.completed_at).getTime();
+            hoursLate = Math.max(0, (doneMs - dlMs) / 3600000);
+        }
+
+        // Early bonus: deadline exists, completed > 24h before
+        let hoursEarly = 0;
+        if (task.deadline && task.completed_at) {
+            const dlMs = new Date(task.deadline).getTime();
+            const doneMs = new Date(task.completed_at).getTime();
+            hoursEarly = Math.max(0, (dlMs - doneMs) / 3600000);
+        }
+
+        const lateTier = getLateTier(hoursLate);
+        const lateMult = LATENESS_MULTS[lateTier];
+        const earlyMult = hoursEarly > 24 ? 1.15 : 1.0;
+        const sprintMult = sprintMode ? 1.20 : 1.0;
+        const streakMult = streakAligned ? 1.10 : 1.0;
+
+        const xp = Math.max(1, Math.floor(
+            base * lateMult * earlyMult * sprintMult * streakMult * xpMultiplier
+        ));
+
         return {
-            type: ERROR_TYPES.UNKNOWN,
-            userMessage: 'Algo deu errado. Tente novamente.',
-            technical: err?.message,
+            xp,
+            lateTier,
+            modifiers: { lateMult, earlyMult, sprintMult, streakMult, xpMultiplier },
         };
+    }
+
+    /**
+     * Calculate dynamic task priority score.
+     * Higher = surface at top of list.
+     *
+     * @param {object} task - { base_priority, weight, deadline, classification }
+     * @param {number} [currentEfficiency] - today's efficiency so far (0-100)
+     * @returns {number} priority score
+     */
+    function calcTaskPriority(task, currentEfficiency = 0) {
+        let score = task.base_priority || 5;
+
+        // Urgency (deadline proximity)
+        if (task.deadline) {
+            const hoursLeft = (new Date(task.deadline) - Date.now()) / 3600000;
+            if (hoursLeft < 4) score += 3;
+            else if (hoursLeft < 24) score += 2;
+            else if (hoursLeft < 72) score += 1;
+        }
+
+        // Importance (weight)
+        if (task.weight >= 4) score += 2;
+        else if (task.weight >= 3) score += 1;
+
+        // Streak alignment: if completing would push us over 50% threshold
+        const projectedEfficiency = currentEfficiency + (task.weight || 3) * 5;
+        if (currentEfficiency < STREAK_THRESHOLD && projectedEfficiency >= STREAK_THRESHOLD) {
+            score += 2;
+        }
+
+        // Strategic tasks get a +1 elevation
+        if (task.classification === 'strategic') score += 1;
+
+        return score;
+    }
+
+    /**
+     * Dynamic Difficulty Adjustment — analyses 7-day task completion rate.
+     * Returns a suggestion: 'increase' | 'decrease' | 'maintain'
+     *
+     * @param {object[]} recentTasks - completed/failed tasks last 7 days
+     * @returns {{ suggestion: string, completionRate: number }}
+     */
+    function calcDDA(recentTasks) {
+        if (recentTasks.length === 0) return { suggestion: 'maintain', completionRate: 0 };
+        const completed = recentTasks.filter(t => t.status === 'done').length;
+        const rate = completed / recentTasks.length;
+        return {
+            suggestion: rate > 0.90 ? 'increase' : rate < 0.50 ? 'decrease' : 'maintain',
+            completionRate: +rate.toFixed(2),
+        };
+    }
+
+    // ── V2 Analytics Intelligence System ─────────────────────
+    // Momentum Score, Burnout Risk Index, Consistency Index
+
+    /**
+     * Calculate composite Momentum Score (0-100).
+     * Components: trend direction, consistency, PDL mass, streak ratio.
+     *
+     * @param {object} p
+     * @param {number} p.slopePtsPerDay   - from calcTrend()
+     * @param {number} p.volatility       - σ from calcVolatility()
+     * @param {number} p.pdl              - 0.00-1.00
+     * @param {number} p.currentStreak    - days
+     * @returns {number} 0-100
+     */
+    function calcMomentum({ slopePtsPerDay, volatility, pdl, currentStreak }) {
+        const slopeNorm = Math.max(0, Math.min(1, (slopePtsPerDay + 5) / 10));
+        const invVol = 1 - Math.min(1, volatility / 50);
+        const pdlNorm = Math.min(1, pdl);
+        const streakRatio = Math.min(1, currentStreak / 30);
+
+        const score = (slopeNorm * 0.35 + invVol * 0.25 + pdlNorm * 0.25 + streakRatio * 0.15) * 100;
+        return Math.round(Math.max(0, Math.min(100, score)));
+    }
+
+    /**
+     * Get Momentum label from score.
+     * @param {number} score 0-100
+     * @returns {{ label: string, color: string }}
+     */
+    function getMomentumLabel(score) {
+        if (score >= 76) return { label: 'Peak State', color: 'var(--green)' };
+        if (score >= 51) return { label: 'Building', color: 'var(--accent-bright)' };
+        if (score >= 26) return { label: 'Stabilizing', color: 'var(--gold)' };
+        return { label: 'Declining', color: 'var(--red)' };
+    }
+
+    /**
+     * Calculate Burnout Risk Index (0-100).
+     *
+     * @param {object} p
+     * @param {number} p.slopePtsPerDay     - negative = declining
+     * @param {number} p.volatility         - σ
+     * @param {number} p.failedDaysLast7    - days in last 7 that failed streak threshold
+     * @returns {{ bri: number, severity: string }}
+     */
+    function calcBurnoutRisk({ slopePtsPerDay, volatility, failedDaysLast7 }) {
+        const declineW = Math.max(0, Math.min(1, -slopePtsPerDay / 5));
+        const volatilityW = Math.min(1, volatility / 40);
+        const instability = Math.min(1, failedDaysLast7 / 7);
+
+        const bri = Math.round((declineW * 0.40 + volatilityW * 0.35 + instability * 0.25) * 100);
+        const severity = bri >= 76 ? 'critical' : bri >= 56 ? 'warning' : bri >= 31 ? 'caution' : 'safe';
+        return { bri: Math.max(0, Math.min(100, bri)), severity };
+    }
+
+    /**
+     * Calculate Consistency Index (0-1).
+     * CI = 1 - clamp(σ_30d / 50, 0, 1)
+     * Higher = more predictable and stable.
+     *
+     * @param {Array<{efficiency: number}>} last30Days
+     * @returns {number} 0.00-1.00
+     */
+    function calcConsistencyIndex(last30Days) {
+        const vol = calcVolatility(last30Days);
+        return +Math.max(0, 1 - Math.min(1, vol / 50)).toFixed(3);
+    }
+
+    /**
+     * Classify behavioral cluster from composite metrics.
+     * @param {object} metrics - { efficiency, ci, momentum, bri }
+     * @returns {{ cluster: string, label: string, suggestion: string }}
+     */
+    function classifyBehavioralCluster({ efficiency, ci, momentum, bri }) {
+        const CLUSTERS = [
+            { cluster: 'A', label: 'Elite Executor', check: () => efficiency >= 75 && ci >= 0.7 && momentum >= 60 && bri < 40, suggestion: 'Ative metas de estiramento para crescimento.' },
+            { cluster: 'E', label: 'Ascendente', check: () => momentum >= 50 && ci >= 0.5 && bri < 40 && efficiency > 0, suggestion: 'Trajetória positiva — mantenha o ritmo.' },
+            { cluster: 'B', label: 'Volátil de Alto Nível', check: () => efficiency >= 60 && ci < 0.5, suggestion: 'Foco em consistência — reduza variação diária.' },
+            { cluster: 'C', label: 'Piloto Automático', check: () => ci >= 0.7 && momentum < 40, suggestion: 'Aumente o peso das tarefas para crescer.' },
+            { cluster: 'D', label: 'Em Recuperação', check: () => bri >= 56, suggestion: 'Ative o Modo Recuperação — metas mais simples por 7 dias.' },
+        ];
+        const match = CLUSTERS.find(c => c.check()) ?? { cluster: 'D', label: 'Em Recuperação', suggestion: 'Comece com uma habito simples hoje.' };
+        return match;
+    }
+
+    /**
+     * Sprint session focus multiplier.
+     * Based on session quality (no interruptions = highest).
+     *
+     * @param {number} plannedMinutes
+     * @param {number} actualMinutes
+     * @param {number} interruptionCount
+     * @returns {number} 1.00-1.20
+     */
+    function calcSprintFocusMultiplier(plannedMinutes, actualMinutes, interruptionCount) {
+        const completionRatio = Math.min(1, actualMinutes / Math.max(1, plannedMinutes));
+        if (completionRatio < 0.5) return 1.0;
+        if (interruptionCount === 0) return 1.20;
+        if (interruptionCount <= 2) return 1.05;
+        return 1.0;
     }
 
     // ── Public API ─────────────────────────────────────────────
     return {
-        // XP
+        // XP — Habits
         XP_TIERS,
         calcHabitXP,
         calcMaxDailyXP,
+        // XP — Tasks
+        TASK_BASE_XP,
+        LATENESS_MULTS,
+        getLateTier,
+        calcTaskXP,
+        calcTaskPriority,
+        calcDDA,
         // Level
         xpForLevel,
         xpToNextLevel,
@@ -421,12 +627,19 @@ const Engine = (() => {
         calcDecayAmount,
         // Snapshots
         buildDaySnapshot,
-        // Analytics
+        // Analytics — Base
         calcRollingAverage,
         calcTrend,
         calcVolatility,
         detectStreakRisk,
         projectEfficiency,
+        // Analytics — Intelligence (V2)
+        calcMomentum,
+        getMomentumLabel,
+        calcBurnoutRisk,
+        calcConsistencyIndex,
+        classifyBehavioralCluster,
+        calcSprintFocusMultiplier,
         // Errors
         ERROR_TYPES,
         classifyError,
@@ -434,3 +647,4 @@ const Engine = (() => {
 })();
 
 window.Engine = Engine;
+
