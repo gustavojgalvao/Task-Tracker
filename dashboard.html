@@ -1,360 +1,457 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="dark" lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ascend — Dashboard</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#6366f1" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#101622" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Ascend" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW registered:', reg);
+                }).catch(err => console.log('SW reg failed:', err));
+            });
+        }
+    </script>
+    <title>VitaAscend - Dashboard</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/pages/dashboard.css" />
-    <meta name="description"
-        content="Ascend Dashboard — Track your discipline score, habits, and performance progression." />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: { "display": ["Inter"] }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.8s cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chart-radar {
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        }
+    </style>
 </head>
 
-<body>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
 
-    <nav class="nav">
-        <div class="nav-inner">
-            <a href="dashboard.html" class="nav-logo">
-                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
-                <span>Ascend</span>
-            </a>
-            <div class="nav-links">
-                <a href="dashboard.html" class="nav-link active">Dashboard</a>
-                <a href="habits.html" class="nav-link">Hábitos</a>
-                <a href="tasks.html" class="nav-link">Tarefas</a>
-                <a href="agenda.html" class="nav-link">Agenda</a>
-                <a href="analytics.html" class="nav-link">Análises</a>
-                <div id="nav-streak-badge" class="badge badge-streak" style="margin-left:8px;"><i
-                        class="fa-solid fa-fire"></i> 0</div>
-                <button class="btn btn-ghost btn-sm" onclick="handleSignOut()" style="margin-left:8px;">Sair</button>
-            </div>
+        <header
+            class="hidden md:flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
 
-        </div>
-    </nav>
-
-
-
-    <div class="page-wrapper dashboard-page">
-        <div class="container">
-            <div class="dashboard-grid">
-
-                <!-- MAIN -->
-                <div class="dashboard-main">
-
-                    <!-- Score Hero -->
-                    <div class="score-hero animate-slide-up">
-                        <div class="score-hero-left">
-                            <div class="score-date" id="today-date">Carregando...</div>
-                            <!-- Rank + Level Row -->
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;">
-                                <span class="rank-emblem" id="rank-emblem"><i class="fa-solid fa-shield"></i>
-                                    Initiate</span>
-                                <span
-                                    style="font-size:0.78rem;color:var(--text-muted);font-family:var(--font-display);">Nível
-                                    <span id="level-num">1</span></span>
-                                <span id="streak-risk-badge" class="streak-risk-badge safe"><i
-                                        class="fa-solid fa-triangle-exclamation"></i> <span
-                                        id="streak-risk-text"></span></span>
-                            </div>
-                            <!-- XP bar -->
-                            <div class="xp-progress-bar-wrap" style="margin-bottom:14px;">
-                                <div class="xp-progress-label">
-                                    <span><span id="xp-current">0</span> XP</span>
-                                    <span>Próx. nível: <span id="xp-next">100</span> XP</span>
-                                </div>
-                                <div class="xp-bar">
-                                    <div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div>
-                                </div>
-                            </div>
-                            <div class="score-headline">Score de Disciplina Hoje</div>
-                            <div class="score-value-big gradient-text" id="daily-score">0</div>
-                            <div class="score-sublabel" id="score-sublabel">0 de 0 pontos possíveis</div>
-                            <!-- 7-day trend -->
-                            <div style="margin-top:8px;">
-                                <span id="efficiency-trend-chip"
-                                    style="display:none;font-size:0.78rem;font-family:var(--font-display);font-weight:600;"></span>
-                            </div>
-                        </div>
-                        <div class="score-hero-right">
-                            <div class="progress-ring-container">
-                                <svg width="110" height="110" viewBox="0 0 110 110" class="progress-ring"
-                                    aria-hidden="true">
-                                    <circle cx="55" cy="55" r="46" fill="none" stroke="rgba(255,255,255,0.06)"
-                                        stroke-width="8" />
-                                    <circle id="progress-ring-circle" cx="55" cy="55" r="46" fill="none"
-                                        stroke="url(#ring-gradient)" stroke-width="8" stroke-linecap="round"
-                                        transform="rotate(-90 55 55)"
-                                        style="stroke-dasharray:289.027;stroke-dashoffset:289.027;transition:stroke-dashoffset 0.8s cubic-bezier(0,0,0.2,1)" />
-                                    <defs>
-                                        <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                            <stop offset="0%" stop-color="#6366f1" />
-                                            <stop offset="100%" stop-color="#22c55e" />
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                                <div class="progress-ring-text-center">
-                                    <span class="progress-ring-pct" id="ring-pct">0%</span>
-                                    <span class="progress-ring-sub">feito</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Today's Habits -->
-                    <div class="animate-slide-up delay-200">
-                        <div class="section-header">
-                            <h2 class="section-title" id="habits-section-title">Hábitos de hoje</h2>
-                            <a href="habits.html" class="btn btn-ghost btn-sm"><i class="fa-solid fa-plus"></i>
-                                Gerenciar</a>
-                        </div>
-                        <!-- Date Navigator -->
-                        <div class="date-nav">
-                            <button class="date-nav-btn" id="prev-day-btn" onclick="navigateDay(-1)"
-                                title="Dia anterior">
-                                <i class="fa-solid fa-chevron-left"></i>
-                            </button>
-                            <span class="date-nav-label" id="date-nav-label">Hoje</span>
-                            <button class="date-nav-btn" id="next-day-btn" onclick="navigateDay(1)" title="Dia seguinte"
-                                disabled>
-                                <i class="fa-solid fa-chevron-right"></i>
-                            </button>
-                        </div>
-                        <div class="habits-list" id="habits-list" aria-live="polite">
-                            <!-- Skeleton loader -->
-                            <div class="habit-skeleton">
-                                <div class="skeleton skeleton-line wide"></div>
-                                <div class="skeleton skeleton-line medium" style="margin-top:6px;"></div>
-                            </div>
-                            <div class="habit-skeleton">
-                                <div class="skeleton skeleton-line wide"></div>
-                                <div class="skeleton skeleton-line narrow" style="margin-top:6px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Score Summary Row -->
-                    <div class="score-summary animate-slide-up delay-300">
-                        <div class="score-summary-item">
-                            <div class="score-summary-val gradient-text" id="weekly-score">0</div>
-                            <div class="score-summary-label">Esta semana</div>
-                        </div>
-                        <div class="score-summary-item">
-                            <div class="score-summary-val" id="monthly-score">0</div>
-                            <div class="score-summary-label">Este mês</div>
-                        </div>
-                        <div class="score-summary-item">
-                            <div class="score-summary-val gradient-text-gold" id="total-score">0</div>
-                            <div class="score-summary-label">Total geral</div>
-                        </div>
-                    </div>
-
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-primary cursor-pointer"
+                    onclick="window.location.href='dashboard.html'">
+                    <span class="material-symbols-outlined text-3xl font-bold">change_history</span>
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">VitaAscend</h2>
                 </div>
 
-                <!-- SIDEBAR -->
-                <div class="dashboard-sidebar animate-slide-up delay-400">
+                <nav class="hidden md:flex ml-10 gap-6 text-sm font-medium">
+                    <a class="text-primary font-bold border-b-2 border-primary pb-1" href="dashboard.html">Dashboard</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="habits.html">Hábitos</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="agenda.html">Agenda</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="analytics.html">Análises</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors"
+                        href="leaderboard.html">Leaderboard</a>
+                </nav>
+            </div>
 
-                    <!-- Identity Card -->
-                    <div class="identity-card">
-                        <div class="card-title" style="margin-bottom:12px;">Identidade</div>
-                        <div class="identity-quote" id="identity-quote">Defina sua versão futura</div>
-                        <div class="identity-alignment">
-                            <span>Alinhamento</span>
-                            <span class="identity-pct" id="identity-pct">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-bar-fill" id="identity-bar" style="width:0%"></div>
-                        </div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;" id="identity-label">—
-                        </div>
-                        <button class="btn btn-ghost identity-edit-btn" onclick="openIdentityModal()">
-                            <i class="fa-solid fa-pen"></i> Editar identidade
-                        </button>
-                    </div>
+            <div class="flex items-center gap-4">
 
-                    <!-- Streak Widget -->
-                    <div class="card">
-                        <div class="card-title">Streaks</div>
-                        <div class="streak-widget" style="margin-top:12px;">
-                            <div class="streak-item">
-                                <div class="streak-fire"><i class="fa-solid fa-fire"></i></div>
-                                <div class="streak-number" id="global-streak">0</div>
-                                <div class="streak-label">Streak global</div>
-                            </div>
-                            <div class="streak-item">
-                                <div class="streak-fire"><i class="fa-solid fa-bolt"></i></div>
-                                <div class="streak-number gradient-text" id="best-habit-streak">0</div>
-                                <div class="streak-label">Melhor hábito</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mini Heatmap -->
-                    <div class="card mini-heatmap">
-                        <div class="card-header">
-                            <span class="card-title">Últimas 4 semanas</span>
-                            <a href="analytics.html" class="btn btn-icon" title="Ver heatmap completo"><i
-                                    class="fa-solid fa-chart-bar"></i></a>
-                        </div>
-                        <div class="mini-heatmap-grid" id="mini-heatmap"></div>
-                    </div>
-
-                    <!-- Notifications Toggle -->
-                    <div class="card">
-                        <div class="toggle-wrapper">
-                            <div class="settings-label-group">
-                                <span class="card-title">Notificações</span>
-                                <span class="settings-sub">Lembretes de hábitos</span>
-                            </div>
-                            <label class="toggle">
-                                <input type="checkbox" id="notif-toggle" onchange="toggleNotifications(this.checked)" />
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
+                <div id="nav-streak-badge"
+                    class="hidden sm:flex px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold items-center gap-1">
+                    <i class="fa-solid fa-fire text-[10px]"></i> <span id="nav-streak-val">0</span>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Identity Modal -->
-    <div class="modal-overlay" id="identity-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Sua Identidade</h3>
-                <button class="modal-close" onclick="closeIdentityModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="form-group" style="margin-bottom:24px;">
-                <label class="form-label">Quem você está se tornando?</label>
-                <input class="form-input" type="text" id="future-version-input"
-                    placeholder="Ex: Desenvolvedor de elite. Shape forte. Estudante top." />
-                <span class="form-helper">Seja específico. Essa identidade vai guiar seus hábitos.</span>
-            </div>
-            <div class="form-group" style="margin-bottom:24px;">
-                <div class="toggle-wrapper">
-                    <div class="settings-label-group">
-                        <span class="form-label" style="font-weight:600;">Modo Rigoroso Global</span>
-                        <span class="settings-sub">3 dias seguidos sem completar = streak zera</span>
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='profile.html'">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold leading-none text-slate-900 dark:text-white" id="nav-user-name">
+                            Carregando...</p>
+                        <p class="text-[10px] font-black uppercase text-primary tracking-widest" id="nav-user-rank">
+                            Elite Tier</p>
                     </div>
-                    <label class="toggle">
-                        <input type="checkbox" id="strict-mode-input" />
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            <div class="form-group" style="margin-bottom:24px;">
-                <div class="toggle-wrapper">
-                    <div class="settings-label-group">
-                        <span class="form-label" style="font-weight:600;">Perfil Público</span>
-                        <span class="settings-sub">Mostre seu heatmap e streak para todos</span>
+                    <div
+                        class="size-10 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center overflow-hidden">
+                        <i class="fa-solid fa-user text-primary"></i>
                     </div>
-                    <label class="toggle">
-                        <input type="checkbox" id="public-profile-input" onchange="onPublicToggle(this.checked)" />
-                        <span class="toggle-slider"></span>
-                    </label>
                 </div>
+
+                <button class="text-xs font-bold text-red-500 hover:text-red-400 transition-colors ml-2"
+                    onclick="handleSignOut()">
+                    Sair
+                </button>
+
             </div>
-            <div id="public-link-section" style="display:none;margin-bottom:24px;">
-                <label class="form-label">Seu link público</label>
-                <div class="public-link-row">
-                    <input class="public-link-input" type="text" id="public-link-display" readonly />
-                    <button class="btn btn-ghost btn-sm" onclick="copyPublicLink()"><i
-                            class="fa-solid fa-clipboard"></i> Copiar</button>
-                </div>
+        </header>
+
+        <!-- Inactivity / Decay Warning Banner -->
+        <div id="pdl-inactivity-banner"
+            class="hidden mx-6 mt-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center gap-4 animate-slide-up">
+            <div class="size-8 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-sm"></i>
             </div>
-            <button class="btn btn-primary" style="width:100%;" id="btn-save-identity" onclick="saveIdentity()">
-                Salvar identidade
+            <div>
+                <p class="text-sm font-black text-red-500">Cuidado! Seu rank começará a cair em breve.</p>
+                <p class="text-[10px] text-red-400 font-bold">Reserve esgotada. Complete seus hábitos hoje para proteger
+                    seu rank.</p>
+            </div>
+            <button onclick="this.closest('#pdl-inactivity-banner').classList.add('hidden')"
+                class="ml-auto text-red-400 hover:text-red-600 transition-colors">
+                <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
+
+        <main class="flex-1 max-w-[1400px] mx-auto w-full p-4 md:p-8 space-y-8">
+
+            <section class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 animate-slide-up">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                        <span class="size-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <span class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Unidade de
+                            Performance Ativa</span>
+                    </div>
+                    <h1 class="text-4xl font-black tracking-tighter italic text-slate-900 dark:text-white">Protocol
+                        Alpha</h1>
+                    <p class="text-slate-500 dark:text-slate-400 text-lg">Operador: <span id="welcome-name"
+                            class="text-primary font-bold">---</span> | Eficiência: <span
+                            class="text-primary font-black" id="ring-pct">0%</span></p>
+                </div>
+
+                <div
+                    class="flex items-center bg-white dark:bg-slate-800/80 backdrop-blur-md rounded-2xl p-1.5 border border-slate-200 dark:border-slate-700 shadow-xl">
+                    <button onclick="navigateDay(-1)"
+                        class="size-10 flex items-center justify-center hover:text-primary transition-all active:scale-90"><span
+                            class="material-symbols-outlined">chevron_left</span></button>
+                    <div class="px-6 text-center min-w-[140px] border-x border-slate-100 dark:border-slate-700">
+                        <p id="date-nav-label" class="text-xs font-black uppercase tracking-widest">Hoje</p>
+                        <p class="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Sessão de Dados</p>
+                    </div>
+                    <button id="next-day-btn" onclick="navigateDay(1)" disabled
+                        class="size-10 flex items-center justify-center hover:text-primary transition-all active:scale-90 disabled:opacity-10"><span
+                            class="material-symbols-outlined">chevron_right</span></button>
+                </div>
+            </section>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up"
+                style="animation-delay: 100ms">
+
+                <div
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
+                    <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <span class="material-symbols-outlined text-7xl">military_tech</span>
+                    </div>
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Potência de Nível
+                    </p>
+                    <div class="flex items-baseline gap-2">
+                        <h3 class="text-4xl font-black italic">Lvl <span id="level-num">1</span></h3>
+                        <span class="text-emerald-500 text-[10px] font-black" id="xp-trend">? 12%</span>
+                    </div>
+                    <div class="mt-8 space-y-2">
+                        <div class="flex justify-between text-[9px] font-black uppercase tracking-tighter">
+                            <span id="xp-current" class="text-primary">0 XP</span>
+                            <span class="text-slate-500" id="xp-needed">Faltam 0</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
+                            <div id="xp-bar-fill"
+                                class="h-full bg-primary transition-all duration-1000 shadow-[0_0_15px_rgba(13,89,242,0.5)]"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="pdl-rank-card"
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-primary/30 transition-all">
+                    <div id="pdl-glow"
+                        class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-1000 pointer-events-none rounded-[2rem]">
+                    </div>
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest">Liga Competitiva</p>
+                        <div id="pdl-trend" class="flex items-center gap-1"></div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div id="pdl-tier-icon-wrap"
+                            class="size-14 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30 rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                            <i id="pdl-tier-icon" class="fa-solid fa-shield text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 id="pdl-tier-name" class="text-2xl font-black tracking-tight leading-none">---</h3>
+                            <p id="pdl-division-label"
+                                class="text-primary font-bold text-[10px] uppercase tracking-tighter mt-1">---</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 space-y-2">
+                        <div class="flex justify-between text-[9px] font-black uppercase tracking-tighter">
+                            <span id="pdl-current-label" class="text-primary">0 PDL</span>
+                            <span class="text-slate-500" id="pdl-max-label">Meta: 100</span>
+                        </div>
+                        <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
+                            <div id="pdl-bar-fill"
+                                class="h-full bg-primary transition-all duration-1000 shadow-[0_0_15px_rgba(13,89,242,0.5)]"
+                                style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="pdl-reserve-shields" class="flex gap-1 mt-6"></div>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center relative group">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest absolute top-6 left-8">
+                        Operação Diária</p>
+                    <div class="relative size-28 mt-4">
+                        <svg class="size-full -rotate-90">
+                            <circle class="text-slate-100 dark:text-slate-700/30" cx="56" cy="56" r="50"
+                                fill="transparent" stroke="currentColor" stroke-width="8"></circle>
+                            <circle id="progress-ring-circle" class="text-primary transition-all duration-1000" cx="56"
+                                cy="56" r="50" fill="transparent" stroke="currentColor" stroke-width="8"
+                                stroke-dasharray="314" stroke-dashoffset="314" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center">
+                            <span id="efficiency-val" class="text-2xl font-black leading-none italic">0%</span>
+                            <span class="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Power</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between group overflow-hidden">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest">Resiliência</p>
+                    <div class="flex items-end justify-between">
+                        <h3 id="global-streak"
+                            class="text-6xl font-black text-slate-900 dark:text-white leading-none tracking-tighter group-hover:scale-110 transition-transform origin-left">
+                            0</h3>
+                        <div class="text-orange-500 flex flex-col items-end">
+                            <i class="fa-solid fa-fire text-3xl mb-1 drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]"></i>
+                            <span class="text-[9px] font-black uppercase tracking-tighter">Days Streak</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                <div class="lg:col-span-8 space-y-6 animate-slide-up" style="animation-delay: 200ms">
+
+                    <div
+                        class="bg-white dark:bg-slate-800/40 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-inner">
+                        <div class="flex items-center justify-between mb-10">
+                            <div class="space-y-1">
+                                <h3 class="text-xl font-black tracking-tight uppercase italic">Volume de Performance
+                                </h3>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Fluxo de XP dos
+                                    últimos 7 dias</p>
+                            </div>
+                            <div
+                                class="flex items-center gap-1.5 text-[10px] font-bold text-primary bg-primary/10 px-3 py-1 rounded-full uppercase">
+                                Live Sync <span class="size-1.5 rounded-full bg-primary animate-ping"></span>
+                            </div>
+                        </div>
+                        <div class="h-[200px] w-full relative mt-4">
+                            <canvas id="weekly-line-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 pt-4">
+                        <div class="flex items-center justify-between px-2">
+                            <h2 id="habits-section-title" class="text-2xl font-black tracking-tight uppercase italic">
+                                Protocolo Alpha</h2>
+                            <div class="flex items-center gap-3">
+                                <button onclick="openNewTaskModal()"
+                                    class="text-[10px] font-black text-slate-500 hover:text-primary transition-colors flex items-center gap-1 uppercase tracking-tighter">
+                                    <span class="material-symbols-outlined text-lg">add</span> Nova Tarefa
+                                </button>
+                                <span id="habits-count-label"
+                                    class="text-[10px] font-black px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500 uppercase tracking-tighter">0
+                                    DE 0 FEITOS</span>
+                            </div>
+                        </div>
+                        <div id="habits-list" class="grid grid-cols-1 gap-4">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6 animate-slide-up" style="animation-delay: 300ms">
+
+                    <section
+                        class="bg-primary p-8 rounded-[2.5rem] text-white shadow-2xl shadow-primary/40 relative overflow-hidden group">
+                        <div
+                            class="absolute top-0 right-0 p-6 opacity-10 pointer-events-none group-hover:scale-125 transition-transform duration-1000">
+                            <span class="material-symbols-outlined text-9xl">psychology</span>
+                        </div>
+                        <div class="flex items-start justify-between gap-2 mb-2 relative z-10">
+                            <h3 class="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Identidade
+                                Evolutiva</h3>
+                            <button id="identity-edit-btn" title="Editar" onclick="startEditIdentity()"
+                                class="opacity-40 hover:opacity-100 transition-opacity flex-shrink-0">
+                                <span class="material-symbols-outlined text-sm">edit</span>
+                            </button>
+                        </div>
+
+                        <!-- Display mode -->
+                        <p id="identity-quote"
+                            class="text-2xl font-bold leading-tight tracking-tight italic cursor-pointer hover:opacity-80 transition-opacity relative z-10"
+                            onclick="startEditIdentity()" title="Clique para editar">"Defina sua versão futura"</p>
+
+                        <!-- Edit mode (hidden) -->
+                        <div id="identity-edit-wrap" class="hidden mt-1 relative z-10">
+                            <textarea id="identity-input" rows="3" maxlength="180"
+                                placeholder="Quem você está se tornando..."
+                                class="w-full bg-white/15 border border-white/30 rounded-2xl p-3 text-white placeholder-white/40 text-lg font-bold italic resize-none focus:outline-none focus:border-white/60 transition-colors"
+                                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();saveIdentity();}"
+                                oninput="document.getElementById('identity-char-count').textContent=this.value.length+'/180'"></textarea>
+                            <div class="flex justify-between items-center mt-2">
+                                <span id="identity-char-count" class="text-[10px] opacity-50 font-black">0/180</span>
+                                <div class="flex gap-2">
+                                    <button onclick="cancelEditIdentity()"
+                                        class="text-[10px] font-black uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity px-2">
+                                        Cancelar
+                                    </button>
+                                    <button onclick="saveIdentity()"
+                                        class="text-[10px] font-black uppercase tracking-widest bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors">
+                                        Salvar ?
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-10 space-y-3">
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-[0.2em]">
+                                <span>Alinhamento Total</span>
+                                <span id="identity-pct"
+                                    class="bg-white/20 px-2 py-0.5 rounded backdrop-blur-md font-black">0%</span>
+                            </div>
+                            <div class="w-full h-2.5 bg-white/20 rounded-full overflow-hidden border border-white/10">
+                                <div id="identity-bar"
+                                    class="h-full bg-white transition-all duration-1000 shadow-[0_0_20px_rgba(255,255,255,0.6)]"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div
+                        class="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:border-primary/20">
+                        <h3 class="text-sm font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary font-bold">balance</span> Bio-Equilbrio
+                        </h3>
+                        <div id="mini-balanced-score" class="space-y-6">
+                            <div class="flex items-end gap-3 mb-2">
+                                <h4 class="text-6xl font-black text-primary italic leading-none" id="mbs-val">0</h4>
+                                <span class="text-xs font-black uppercase tracking-widest text-slate-500 mb-2">Alpha /
+                                    10</span>
+                            </div>
+                            <div class="w-full h-4 flex rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                                id="mbs-bars">
+                            </div>
+                            <div class="grid grid-cols-2 gap-y-3 gap-x-4">
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                    <div class="size-2 rounded-full bg-[#0d59f2]"></div> FOCUS
+                                </div>
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                    <div class="size-2 rounded-full bg-[#f59e0b]"></div> ENERGY
+                                </div>
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                    <div class="size-2 rounded-full bg-[#8b5cf6]"></div> MIND
+                                </div>
+                                <div class="flex items-center gap-2 text-[10px] font-bold text-slate-500">
+                                    <div class="size-2 rounded-full bg-[#10b981]"></div> BODY
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="milestone-card"
+                        class="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border-2 border-dashed border-slate-200 dark:border-slate-700 relative overflow-hidden group">
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 relative group overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                            <span class="material-symbols-outlined text-8xl">auto_awesome</span>
+                        </div>
+                        <h3 class="text-sm font-black uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-primary text-xl font-bold">analytics</span> AI
+                            Analysis
+                        </h3>
+                        <div id="tactical-insights" class="space-y-8 relative z-10">
+                        </div>
+                        <a href="analytics.html"
+                            class="block w-full mt-10 py-5 text-center border border-slate-200 dark:border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-[0.3em] hover:bg-primary hover:text-white hover:border-primary transition-all duration-500">Visualizar
+                            Deep Analytics</a>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-xs font-black uppercase tracking-[0.15em]">Consistência</h3>
+                            <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">28 dias</span>
+                        </div>
+                        <div id="mini-heatmap-wrap"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <!-- Goal Progress Modal -->
-    <div class="modal-overlay" id="goal-modal">
-        <div class="modal" style="max-width:360px;">
-            <div class="modal-header">
-                <h3 class="modal-title" id="goal-modal-title">Registrar progresso</h3>
-                <button class="modal-close" onclick="document.getElementById('goal-modal').classList.remove('open')"><i
-                        class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div style="margin-bottom:16px;">
-                <label class="form-label" id="goal-modal-label">Quantidade alcançada</label>
-                <input class="form-input" type="number" id="goal-modal-input" min="0" step="any" placeholder="0"
-                    style="margin-top:8px;" />
-                <p class="settings-sub" id="goal-modal-hint" style="margin-top:6px;"></p>
-            </div>
-            <div style="display:flex;gap:12px;">
-                <button class="btn btn-ghost" style="flex:1;"
-                    onclick="document.getElementById('goal-modal').classList.remove('open')">Cancelar</button>
-                <button class="btn btn-primary" style="flex:1;" id="btn-save-goal" onclick="saveGoalProgress()"><i
-                        class="fa-solid fa-check"></i> Salvar</button>
+    <div id="goal-modal"
+        class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] p-8 shadow-2xl animate-slide-up">
+            <h3 class="text-xl font-black mb-1" id="goal-modal-title">Registrar</h3>
+            <p class="text-xs text-slate-500 mb-6 uppercase font-bold tracking-widest">Atualizar métrica de hábito</p>
+
+            <input type="number" id="goal-modal-input"
+                class="w-full bg-slate-100 dark:bg-slate-800 border-none rounded-2xl p-4 text-2xl font-black mb-6 focus:ring-2 focus:ring-primary transition-all"
+                placeholder="0" />
+
+            <div class="flex gap-3">
+                <button
+                    class="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all"
+                    onclick="closeGoalModal()">Cancelar</button>
+                <button
+                    class="flex-1 py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+                    onclick="saveGoalProgress()">Salvar</button>
             </div>
         </div>
     </div>
 
-    <!-- Confirm Modal -->
-    <div class="modal-overlay" id="confirm-modal">
-        <div class="modal" style="max-width:340px;">
-            <div class="modal-header" style="justify-content:center;">
-                <h3 class="modal-title">Confirmar ação</h3>
-            </div>
-            <p id="confirm-modal-message" style="text-align:center;"></p>
-            <div style="display:flex;gap:12px;margin-top:20px;">
-                <button class="btn btn-ghost" style="flex:1;" id="confirm-modal-no">Cancelar</button>
-                <button class="btn btn-primary" style="flex:1;" id="confirm-modal-yes">Confirmar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Rank Promotion Modal -->
-    <div class="modal-overlay" id="rank-promotion-modal">
-        <div class="modal" style="max-width:360px;text-align:center;">
-            <div id="rank-promo-icon" style="font-size:2.5rem;margin-bottom:16px;line-height:1;"></div>
-            <div id="rank-promo-emblem-wrap" style="display:flex;justify-content:center;margin-bottom:14px;"></div>
-            <h3 class="modal-title" style="margin-bottom:10px;">Promoção de Rank!</h3>
-            <p id="rank-promo-message"
-                style="color:var(--text-secondary);font-size:0.875rem;line-height:1.65;margin-bottom:8px;"></p>
-            <p id="rank-promo-next" style="font-size:0.75rem;color:var(--text-muted);margin-bottom:24px;"></p>
-            <button class="btn btn-primary" style="width:100%;"
-                onclick="document.getElementById('rank-promotion-modal').classList.remove('open')">
-                <i class="fa-solid fa-chevron-up"></i> Continuar subindo
-            </button>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation Bar -->
-    <nav class="bottom-nav">
-        <a href="dashboard.html" class="bottom-nav-item active">
-            <i class="fa-solid fa-gauge"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="habits.html" class="bottom-nav-item">
-            <i class="fa-solid fa-bolt"></i>
-            <span>Hábitos</span>
-        </a>
-        <a href="tasks.html" class="bottom-nav-item">
-            <i class="fa-solid fa-list-check"></i>
-            <span>Tarefas</span>
-        </a>
-        <a href="agenda.html" class="bottom-nav-item">
-            <i class="fa-solid fa-calendar-check"></i>
-            <span>Agenda</span>
-        </a>
-        <a href="analytics.html" class="bottom-nav-item">
-            <i class="fa-solid fa-chart-bar"></i>
-            <span>Análises</span>
-        </a>
-    </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase.js"></script>
@@ -362,527 +459,927 @@
     <script src="js/router.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/engine.js"></script>
+    <script src="js/pdl.js"></script>
     <script src="js/habits.js"></script>
+    <script src="js/tasks.js"></script>
     <script src="js/logs.js"></script>
     <script src="js/score.js"></script>
     <script src="js/streak.js"></script>
     <script src="js/identity.js"></script>
-    <script src="js/heatmap.js"></script>
-    <script src="js/notifications.js"></script>
+    <script src="js/app.js"></script>
+
     <script>
-        let todayHabits = [];
-        let todayLogs = [];
-        let allLogs = [];
-        let profile = null;
-        let _lastRankId = null; // tracks rank for promotion detection
-        // selectedDate is a YYYY-MM-DD string in BRT; starts as today
+        // -- Dashboard Page State --------------------------------------
         let selectedDateStr = UI.todayStr();
-        // Interpret selectedDateStr as a local midnight Date object for display
-        function selectedDateObj() {
-            const [y, mo, d] = selectedDateStr.split('-').map(Number);
-            return new Date(y, mo - 1, d);
+        let _todayHabits = [];
+        let _todayLogs = [];
+        let _goalHabit = null;
+
+        // -- Init ------------------------------------------------------
+        async function init() {
+            const ok = await AppInit.boot();
+            if (!ok) return;
+            await loadDashboard();
         }
 
-        async function init() {
-            const ok = await Router.init();
-            if (!ok) return;
-            selectedDateStr = UI.todayStr();
-            updateDateNav();
-            UI.setText('#today-date', UI.formatDatePT(selectedDateObj()));
-            try {
-                await loadDashboard();
-            } catch (err) {
-                console.error('Dashboard init error:', err);
-                UI.toast('Erro ao carregar dashboard.', 'error');
-            }
-        }
+        let _unifiedData = { habits: [], tasks: [] };
 
         async function loadDashboard() {
-            const selDate = selectedDateObj();
-            const startYear = UI.getStartOfYear();
-            const [habits, todayL, yearLogs, prof] = await Promise.all([
-                Habits.getForDate(selDate),
-                Logs.getForDate(selDate),
-                Logs.getRange(startYear, new Date()),
-                Identity.getProfile(),
-            ]);
-            todayHabits = habits;
-            todayLogs = todayL;
-            allLogs = yearLogs;
-            profile = prof;
-            renderHabitsList();
-            updateScores();
-            updateStreaks();
-            updateIdentity();
-            renderMiniHeatmap();
-            setupNotifications();
-        }
-
-        // Helper: renders a FA icon OR falls back if it's a legacy emoji string
-        function renderIcon(icon) {
-            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
-            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
-            return icon; // legacy emoji fallback
-        }
-
-        function renderHabitsList() {
-            const container = document.getElementById('habits-list');
-            const logMap = {};
-            todayLogs.forEach(l => { logMap[l.habit_id] = l; });
-
-            if (todayHabits.length === 0) {
-                container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fa-solid fa-bolt fa-2x"></i></div>
-            <div class="empty-title">Nenhum hábito para hoje</div>
-            <p class="empty-desc">Crie seus primeiros hábitos para começar a medir sua disciplina.</p>
-            <a href="habits.html" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Criar hábito</a>
-          </div>`;
-                return;
-            }
-
-            const sorted = [...todayHabits].sort((a, b) => {
-                const aLog = logMap[a.id];
-                const bLog = logMap[b.id];
-                const aDone = aLog && aLog.completed;
-                const bDone = bLog && bLog.completed;
-                if (aDone !== bDone) return aDone ? 1 : -1;
-                if (a.ideal_time && b.ideal_time) return a.ideal_time.localeCompare(b.ideal_time);
-                return 0;
-            });
-
-            container.innerHTML = sorted.map(habit => {
-                const log = logMap[habit.id];
-                const done = log && log.completed;
-                const dots = Array.from({ length: 5 }, (_, i) =>
-                    `<div class="habit-weight-dot ${i < habit.weight ? 'active' : ''}"></div>`
-                ).join('');
-                const timeLabel = habit.ideal_time ? `<span class="habit-meta-item"><i class="fa-regular fa-clock"></i> ${UI.formatTime(habit.ideal_time)}</span>` : '';
-                const strictLabel = habit.strict_mode ? `<span class="habit-meta-item"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : '';
-
-                // Goal progress bar
-                let goalBar = '';
-                if (habit.goal_value) {
-                    const logged = (log && log.value_logged) || 0;
-                    const pct = Math.min(100, Math.round((logged / habit.goal_value) * 100));
-                    const reached = logged >= habit.goal_value;
-                    goalBar = `
-                      <div class="habit-goal-bar">
-                        <div class="habit-goal-track"><div class="habit-goal-fill" style="width:${pct}%"></div></div>
-                        <span class="habit-goal-text ${reached ? 'reached' : ''}">${logged}/${habit.goal_value}${habit.goal_unit ? ' ' + habit.goal_unit : ''}</span>
-                      </div>`;
-                }
-
-                const clickHandler = habit.goal_value
-                    ? `onclick="openGoalModal('${habit.id}', ${done})"`
-                    : `onclick="toggleHabit('${habit.id}', ${done})"`;
-
-                const checkboxHandler = habit.goal_value
-                    ? `onclick="event.stopPropagation();openGoalModal('${habit.id}', ${done})"`
-                    : `onclick="event.stopPropagation();toggleHabit('${habit.id}', ${done})"`;
-
-                return `
-          <div class="habit-item ${done ? 'completed' : ''}" id="habit-item-${habit.id}" ${clickHandler}>
-            <input type="checkbox" class="habit-checkbox" ${done ? 'checked' : ''} readonly ${checkboxHandler} />
-            <div class="habit-icon" style="background:${habit.color}22;color:${habit.color}">${renderIcon(habit.icon)}</div>
-            <div class="habit-info">
-              <div class="habit-name">${habit.name}</div>
-              <div class="habit-meta">
-                <div class="habit-weight">${dots}</div>
-                <span class="habit-meta-item">${habit.weight} pt${habit.weight > 1 ? 's' : ''}</span>
-                ${timeLabel}${strictLabel}
-              </div>
-              ${goalBar}
-            </div>
-          </div>`;
-            }).join('');
-        }
-
-        async function toggleHabit(habitId, currentlyDone) {
-            const habit = todayHabits.find(h => h.id === habitId);
-            if (!habit) return;
-            const selDate = selectedDateObj();
             try {
-                if (currentlyDone) {
-                    await Logs.uncomplete(habitId, selDate);
-                    todayLogs = todayLogs.map(l => l.habit_id === habitId ? { ...l, completed: false, score_earned: 0, xp_earned: 0 } : l);
-                } else {
-                    const log = await Logs.complete(habitId, selDate, habit);
-                    const idx = todayLogs.findIndex(l => l.habit_id === habitId);
-                    if (idx >= 0) todayLogs[idx] = log;
-                    else todayLogs.push(log);
-                    const xp = log.xp_earned ?? log.score_earned ?? 0;
-                    UI.toast(`${habit.name} concluído! +${xp} XP`, 'success', 2000);
-                    // Haptic feedback on mobile
-                    if (navigator.vibrate) navigator.vibrate([30]);
-                }
-                renderHabitsList();
+                await AppInit.fetchAll();           // Keep caching AppState for general stats
+
+                // Call the new backend-first Unified RPC
+                const { data, error } = await window.supabaseClient.rpc('get_dashboard_unified_view', { p_target_date: selectedDateStr });
+                if (error) throw error;
+
+                _unifiedData = data || { habits: [], tasks: [] };
+
+                // Map for legacy code compatibility
+                _todayHabits = _unifiedData.habits.map(h => ({ ...h, weight: h.weight || 1 }));
+                _todayLogs = _unifiedData.habits.filter(h => h.log_id).map(h => ({
+                    id: h.log_id,
+                    habit_id: h.id,
+                    completed: h.completed,
+                    value_logged: h.value_logged,
+                    skipped: h.skipped,
+                    date: selectedDateStr
+                }));
+
+                // Render everything
+                AppUI.renderNav();
+                updateDateNav();
+                renderUnifiedList();
                 updateScores();
-                updateStreaks();
+                updateIdentity();
+                renderMiniBalancedScore();
+                renderMiniHeatmap();
+                renderWeeklyBars();
+                renderTacticalInsights();
+                renderMilestoneCard();
+                // renderPDLRankCard(); // DEPRECATED: Consolidated into updateScores
+
             } catch (err) {
-                if (err.code === 'DEBOUNCE') return; // silently ignore double-taps
-                const classified = Engine.classifyError(err);
-                UI.toast(classified.userMessage, 'error');
+                console.error('[dashboard] loadDashboard error:', err);
+                UI.toast('Erro ao carregar dados. Verifique sua conexão.', 'error');
             }
         }
 
-        let _goalHabitId = null;
-        let _goalCurrentlyDone = false;
-
-        function openGoalModal(habitId, currentlyDone) {
-            const habit = todayHabits.find(h => h.id === habitId);
-            if (!habit) return;
-            const log = todayLogs.find(l => l.habit_id === habitId);
-            _goalHabitId = habitId;
-            _goalCurrentlyDone = currentlyDone;
-            document.getElementById('goal-modal-title').textContent = habit.name;
-            document.getElementById('goal-modal-label').textContent =
-                `Quanto você fez? (meta: ${habit.goal_value} ${habit.goal_unit || ''})`;
-            document.getElementById('goal-modal-input').value = (log && log.value_logged) ? log.value_logged : '';
-            document.getElementById('goal-modal-input').placeholder = `0 ${habit.goal_unit || ''}`;
-            document.getElementById('goal-modal-hint').textContent =
-                `Meta: ${habit.goal_value} ${habit.goal_unit || ''}. Score proporcional ao progresso.`;
-            document.getElementById('goal-modal').classList.add('open');
-            setTimeout(() => document.getElementById('goal-modal-input').focus(), 100);
-        }
-
-        async function saveGoalProgress() {
-            if (!_goalHabitId) return;
-            const habit = todayHabits.find(h => h.id === _goalHabitId);
-            if (!habit) return;
-            const val = parseFloat(document.getElementById('goal-modal-input').value);
-            if (isNaN(val) || val < 0) { UI.toast('Informe um valor válido (não negativo).', 'error'); return; }
-            const btn = document.getElementById('btn-save-goal');
-            await UI.handleSubmit(btn, async () => {
-                const selDate = selectedDateObj();
-                const log = await Logs.logProgress(_goalHabitId, selDate, habit, val);
-                const idx = todayLogs.findIndex(l => l.habit_id === _goalHabitId);
-                if (idx >= 0) todayLogs[idx] = log;
-                else todayLogs.push(log);
-                document.getElementById('goal-modal').classList.remove('open');
-                renderHabitsList();
-                updateScores();
-                updateStreaks();
-                const xp = log.xp_earned ?? log.score_earned ?? 0;
-                if (log.completed) {
-                    UI.toast(`Meta de ${habit.name} atingida! +${xp} XP`, 'success', 2500);
-                    if (navigator.vibrate) navigator.vibrate([30, 20, 60]);
-                } else {
-                    UI.toast(`Progresso salvo: ${val} ${habit.goal_unit || ''}`, 'info', 2000);
-                }
-            });
-        }
-
-        // ── Date Navigation ────────────────────────────────────────────
-        function navigateDay(delta) {
-            const [y, mo, d] = selectedDateStr.split('-').map(Number);
-            const date = new Date(y, mo - 1, d);
-            date.setDate(date.getDate() + delta);
-            const newStr = UI.dateStr(date);
-            const todayStr = UI.todayStr();
-            // Prevent going into the future
-            if (newStr > todayStr) return;
+        // -- Date Navigation -------------------------------------------
+        function navigateDay(dir) {
+            const d = UI.parseDate(selectedDateStr);
+            d.setDate(d.getDate() + dir);
+            const newStr = UI.dateStr(d);
+            if (newStr > UI.todayStr()) return;
             selectedDateStr = newStr;
-            updateDateNav();
-            UI.setText('#today-date', UI.formatDatePT(selectedDateObj()));
             loadDashboard();
         }
 
         function updateDateNav() {
             const todayStr = UI.todayStr();
-            const isToday = selectedDateStr === todayStr;
-            // next button
-            document.getElementById('next-day-btn').disabled = isToday;
-            // label
-            let label;
-            if (isToday) {
-                label = 'Hoje';
+            const label = document.getElementById('date-nav-label');
+            const nextBtn = document.getElementById('next-day-btn');
+            if (selectedDateStr === todayStr) {
+                if (label) label.textContent = 'Hoje';
+                if (nextBtn) nextBtn.disabled = true;
             } else {
-                const [y, mo, d] = selectedDateStr.split('-').map(Number);
-                const ontem = new Date();
-                ontem.setDate(ontem.getDate() - 1);
-                const ontemStr = UI.dateStr(ontem);
-                if (selectedDateStr === ontemStr) {
-                    label = 'Ontem';
-                } else {
-                    label = UI.formatDatePT(selectedDateObj());
-                }
+                const d = UI.parseDate(selectedDateStr);
+                if (label) label.textContent = `${d.getDate()}/${d.getMonth() + 1}`;
+                if (nextBtn) nextBtn.disabled = false;
             }
-            document.getElementById('date-nav-label').textContent = label;
-            // section title
-            document.getElementById('habits-section-title').textContent =
-                isToday ? 'Hábitos de hoje' : `Hábitos de ${document.getElementById('date-nav-label').textContent.toLowerCase()}`;
         }
 
-        function updateScores() {
-            const dailyScore = Score.calcDaily(todayLogs);
-            const maxDaily = Score.calcMaxDaily(todayHabits);
-            const pct = Score.calcDailyPercent(todayLogs, todayHabits);
-            UI.animateNumber(document.getElementById('daily-score'), dailyScore);
-            UI.setText('#score-sublabel', `${dailyScore} de ${maxDaily} pontos possíveis`);
-            UI.setProgressRing(document.getElementById('progress-ring-circle'), pct);
-            UI.setText('#ring-pct', `${pct}%`);
+        let _weeklyChartInstance = null;
 
-            // XP + Level (permanent — never falls)
-            const totalXP = Logs.calcTotalXP(allLogs);
-            const lvl = Engine.getLevelProgress(totalXP);
-            document.getElementById('level-num').textContent = lvl.level;
-            document.getElementById('xp-current').textContent = lvl.currentLevelXP;
-            document.getElementById('xp-next').textContent = lvl.nextLevelXP;
+        // -- Weekly XP Line Chart (real data) ---------------------------
+        function renderWeeklyBars() {
+            const ctx = document.getElementById('weekly-line-chart');
+            if (!ctx) return;
 
-            // XP bar uses a neutral gradient (level-based, always progressing)
-            const fillEl = document.getElementById('xp-bar-fill');
-            if (fillEl) {
-                fillEl.className = 'xp-bar-fill';
-                setTimeout(() => fillEl.style.width = `${lvl.progressPct}%`, 100);
+            // Build 7-day XP per day
+            const xpByDay = {};
+            for (const l of AppState.logs) {
+                if (l.completed) xpByDay[l.date] = (xpByDay[l.date] || 0) + (l.xp_earned || l.score_earned || 0);
             }
-
-            // Competitive Rank (PDL-based, 7-day weighted avg — can fall)
-            const snapshots = _buildLast7DaySnapshots();
-            const competitivePDL = Engine.calcCompetitivePDL(snapshots);
-            const rank = Engine.getRankFromPDL(competitivePDL);
-
-            const emblem = document.getElementById('rank-emblem');
-            if (emblem) {
-                emblem.className = `rank-emblem ${rank.id}`;
-                emblem.innerHTML = `<i class="fa-solid ${rank.icon || 'fa-shield'}"></i> ${rank.label} <span style="font-size:0.7rem;opacity:0.6;">${competitivePDL}%</span>`;
-            }
-
-            // Promotion / Demotion detection
-            if (_lastRankId !== null && _lastRankId !== rank.id) {
-                const allRankIds = Engine.COMPETITIVE_RANKS.map(r => r.id);
-                const wasIdx = allRankIds.indexOf(_lastRankId);
-                const nowIdx = allRankIds.indexOf(rank.id);
-                if (nowIdx > wasIdx) showRankPromotion(rank, competitivePDL);
-                if (nowIdx < wasIdx) showRankDemotion(rank, competitivePDL);
-            }
-            _lastRankId = rank.id;
-
-            // 7-day efficiency trend
-            _updateEfficiencyTrend();
-
-            const weekStart = UI.getStartOfWeek();
-            const monthStart = UI.getStartOfMonth();
-            const weekLogs = allLogs.filter(l => l.date >= UI.dateStr(weekStart));
-            const monthLogs = allLogs.filter(l => l.date >= UI.dateStr(monthStart));
-            UI.animateNumber(document.getElementById('weekly-score'), Score.calcDaily(weekLogs));
-            UI.animateNumber(document.getElementById('monthly-score'), Score.calcDaily(monthLogs));
-            UI.animateNumber(document.getElementById('total-score'), Score.calcDaily(allLogs));
-        }
-
-        function _buildLast7DaySnapshots() {
-            const snapshots = [];
+            const days = [];
             for (let i = 6; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
-                const dateStr = UI.toBRTDateStr(d);
-                const dow = d.getDay();
-                const applicable = todayHabits.filter(h => {
-                    if (h.frequency === 'daily') return true;
-                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
-                    return false;
+                days.push({
+                    str: UI.dateStr(d),
+                    xp: xpByDay[UI.dateStr(d)] || 0,
+                    label: d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').toUpperCase()
                 });
-                const dayLogs = allLogs.filter(l => l.date === dateStr);
-                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
-                snapshots.push({ date: dateStr, efficiency });
             }
-            return snapshots;
-        }
 
-        function showRankPromotion(rank, pdl) {
-            const RANK_ICONS = {
-                bronze: `<i class="fa-solid fa-shield"         style="color:${rank.color}"></i>`,
-                prata: `<i class="fa-solid fa-shield-halved"  style="color:${rank.color}"></i>`,
-                ouro: `<i class="fa-solid fa-trophy"          style="color:${rank.color}"></i>`,
-                platina: `<i class="fa-solid fa-gem"             style="color:${rank.color}"></i>`,
-                diamante: `<i class="fa-solid fa-diamond"         style="color:${rank.color}"></i>`,
-            };
-            const MESSAGES = {
-                bronze: 'Seu desempenho recente colocou você em movimento. Bronze é o ponto de partida.',
-                prata: 'Consistência crescente. Prata mostra que você está acima da média.',
-                ouro: 'Ouro alcançado. Você está em alta forma. Continue o ritmo.',
-                platina: 'Platina. Desempenho de elite nos últimos 7 dias. Raridade real.',
-                diamante: 'Diamante. PDL acima de 90% — você está operando no máximo.',
-            };
-            const allRanks = Engine.COMPETITIVE_RANKS;
-            const nextRank = allRanks[allRanks.findIndex(r => r.id === rank.id) + 1];
-
-            document.getElementById('rank-promo-icon').innerHTML = RANK_ICONS[rank.id] || '🏆';
-            document.getElementById('rank-promo-emblem-wrap').innerHTML =
-                `<span class="rank-emblem ${rank.id}"><i class="fa-solid ${rank.icon || 'fa-shield'}"></i> ${rank.label}</span>`;
-            document.getElementById('rank-promo-message').textContent = MESSAGES[rank.id] || '';
-            document.getElementById('rank-promo-next').textContent = nextRank
-                ? `→ Próximo rank: ${nextRank.label} (PDL ${nextRank.minPDL}%+)`
-                : '→ Você está no rank máximo. Mantenha a disciplina.';
-
-            document.getElementById('rank-promotion-modal').classList.add('open');
-        }
-
-        function showRankDemotion(rank, pdl) {
-            // Non-intrusive — toast only (no modal for demotions)
-            UI.toast(`Rank ajustado para ${rank.label} — PDL atual: ${pdl}%. Retome o ritmo.`, 'warning', 4000);
-        }
-
-        function _updateEfficiencyTrend() {
-            const chip = document.getElementById('efficiency-trend-chip');
-            if (!chip || !window.Engine) return;
-            // Build last 7 day snapshots
-            const snapshots = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                const dateStr = UI.toBRTDateStr(d);
-                const dow = d.getDay();
-                const applicable = todayHabits.filter(h => {
-                    if (h.frequency === 'daily') return true;
-                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
-                    return false;
-                });
-                const dayLogs = allLogs.filter(l => l.date === dateStr);
-                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
-                snapshots.push({ date: dateStr, efficiency });
+            if (_weeklyChartInstance) {
+                _weeklyChartInstance.destroy();
             }
-            const trend = Engine.calcTrend(snapshots);
-            if (snapshots.length < 3) { chip.style.display = 'none'; return; }
-            chip.style.display = 'inline-flex';
-            chip.style.gap = '5px';
-            chip.style.alignItems = 'center';
-            if (trend > 1) {
-                chip.style.color = 'var(--green)';
-                chip.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i> +${trend.toFixed(1)}% / dia`;
-            } else if (trend < -1) {
-                chip.style.color = 'var(--red)';
-                chip.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i> ${trend.toFixed(1)}% / dia`;
-            } else {
-                chip.style.color = 'var(--text-muted)';
-                chip.innerHTML = `<i class="fa-solid fa-minus"></i> Estável`;
-            }
-        }
 
-        function updateStreaks() {
-            const globalStreak = Streak.calcGlobalStreak(allLogs, todayHabits);
-            UI.animateNumber(document.getElementById('global-streak'), globalStreak);
-            document.getElementById('nav-streak-badge').innerHTML = `<i class="fa-solid fa-fire"></i> ${globalStreak}`;
-            let best = 0;
-            for (const habit of todayHabits) {
-                const s = Streak.calcHabitStreak(habit.id, allLogs);
-                if (s > best) best = s;
-            }
-            UI.animateNumber(document.getElementById('best-habit-streak'), best);
-
-            // Update streak risk badge
-            if (window.Streak && window.Streak.getStreakRisk) {
-                const risk = Streak.getStreakRisk(allLogs, todayHabits);
-                const badge = document.getElementById('streak-risk-badge');
-                const text = document.getElementById('streak-risk-text');
-                if (badge && text) {
-                    badge.className = `streak-risk-badge ${risk.severity}`;
-                    text.textContent = risk.message;
+            const primaryColor = '#0d59f2';
+            _weeklyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days.map(d => d.label),
+                    datasets: [{
+                        label: 'XP',
+                        data: days.map(d => d.xp),
+                        borderColor: primaryColor,
+                        backgroundColor: 'rgba(13, 89, 242, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: primaryColor,
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(16, 22, 34, 0.9)',
+                            titleFont: { size: 10, weight: 'bold', family: 'Inter' },
+                            bodyFont: { size: 12, weight: 'bold', family: 'Inter' },
+                            padding: 10,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: (context) => context.parsed.y + ' XP'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: {
+                                font: { size: 10, weight: 'bold', family: 'Inter' },
+                                color: '#94a3b8',
+                                padding: 8
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(148, 163, 184, 0.1)',
+                                drawBorder: false,
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                display: false
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
                 }
-            }
-        }
-
-        function updateIdentity() {
-            if (!profile) return;
-            if (profile.future_version) UI.setText('#identity-quote', `"${profile.future_version}"`);
-            const last30 = allLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
-            const pct = Score.calcAlignmentPercent(todayHabits, last30);
-            UI.setText('#identity-pct', `${pct}%`);
-            document.getElementById('identity-bar').style.width = `${pct}%`;
-            const { label, emoji } = Identity.getAlignmentLabel(pct);
-            UI.setText('#identity-label', `${label}`);
-        }
-
-        function renderMiniHeatmap() {
-            const scoreMap = Logs.buildScoreMap(allLogs);
-            Heatmap.renderMini(document.getElementById('mini-heatmap'), scoreMap, 28);
-        }
-
-        async function setupNotifications() {
-            if (Notifications.isEnabled()) {
-                document.getElementById('notif-toggle').checked = true;
-                const globalStreak = Streak.calcGlobalStreak(allLogs, todayHabits);
-                Notifications.scheduleDailyReminders(todayHabits, todayLogs);
-                Notifications.scheduleStreakAlert(todayHabits, todayLogs, globalStreak);
-            }
-        }
-
-        async function toggleNotifications(enabled) {
-            if (enabled) {
-                const granted = await Notifications.requestPermission();
-                if (!granted) {
-                    document.getElementById('notif-toggle').checked = false;
-                    UI.toast('Permissão de notificação negada.', 'error');
-                    return;
-                }
-                setupNotifications();
-                UI.toast('Notificações ativadas!', 'success');
-            } else {
-                Notifications.clearAll();
-                UI.toast('Notificações desativadas.', 'info');
-            }
-        }
-
-        function openIdentityModal() {
-            if (profile) {
-                document.getElementById('future-version-input').value = profile.future_version || '';
-                document.getElementById('strict-mode-input').checked = profile.strict_mode_global || false;
-                document.getElementById('public-profile-input').checked = profile.public_profile || false;
-                onPublicToggle(profile.public_profile);
-                if (profile.public_slug) {
-                    document.getElementById('public-link-display').value = `${window.location.origin}/profile.html?u=${profile.public_slug}`;
-                }
-            }
-            document.getElementById('identity-modal').classList.add('open');
-        }
-
-        function closeIdentityModal() {
-            document.getElementById('identity-modal').classList.remove('open');
-        }
-
-        function onPublicToggle(checked) {
-            document.getElementById('public-link-section').style.display = checked ? 'block' : 'none';
-            if (checked && profile && !profile.public_slug) {
-                const slug = Identity.generateSlug(profile.username);
-                document.getElementById('public-link-display').value = `${window.location.origin}/profile.html?u=${slug}`;
-            }
-        }
-
-        async function saveIdentity() {
-            const btn = document.getElementById('btn-save-identity');
-            const futureVersion = document.getElementById('future-version-input').value.trim();
-            const strictMode = document.getElementById('strict-mode-input').checked;
-            const publicProfile = document.getElementById('public-profile-input').checked;
-            let slug = profile?.public_slug;
-            if (publicProfile && !slug) slug = Identity.generateSlug(profile?.username);
-            await UI.handleSubmit(btn, async () => {
-                profile = await Identity.save(futureVersion, { strictMode, publicProfile, publicSlug: slug });
-                closeIdentityModal();
-                updateIdentity();
-                UI.toast('Identidade salva!', 'success');
             });
         }
 
-        function copyPublicLink() {
-            const val = document.getElementById('public-link-display').value;
-            navigator.clipboard.writeText(val).then(() => UI.toast('Link copiado!', 'success'));
+        // -- Unified Habits & Tasks List Rendering (Backend Driven) ---------------------------
+        function renderUnifiedList() {
+            const container = document.getElementById('habits-list');
+            if (!container) return;
+
+            const isToday = selectedDateStr === UI.todayStr();
+            const titleEl = document.getElementById('habits-section-title');
+            if (titleEl) titleEl.textContent = isToday ? 'Daily Protocol' : `Protocolo  ${UI.parseDate(selectedDateStr).toLocaleDateString('pt-BR')}`;
+
+            if (_unifiedData.habits.length === 0 && _unifiedData.tasks.length === 0) {
+                container.innerHTML = `<div class="py-20 text-center opacity-30 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
+                    <p class="font-black uppercase tracking-widest">Protocolo Vazio</p>
+                    <a href="habits.html" class="text-primary text-xs mt-2 inline-block font-bold">Criar hábito ?</a>
+                </div>`;
+                document.getElementById('habits-count-label').textContent = '0 DE 0 FEITOS';
+                return;
+            }
+
+            let html = '';
+
+            // 1. Render Habits
+            if (_unifiedData.habits.length > 0) {
+                html += _unifiedData.habits.map(h => {
+                    const isDone = h.completed || false;
+                    const isGoal = h.goal_value > 0;
+                    const progress = isGoal ? (h.value_logged || 0) : 0;
+                    const pct = isGoal ? Math.min(100, Math.round((progress / h.goal_value) * 100)) : (isDone ? 100 : 0);
+                    const xp = Engine.calcHabitXP(h.weight, false, h.difficulty_weight || 1);
+                    const icon = (h.icon || '?').startsWith('fa-') ? `<i class="${h.icon}"></i>` : h.icon;
+
+                    return `
+                    <div class="group flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-300 ${isDone
+                            ? 'bg-emerald-500/5 border-emerald-500/20 opacity-70'
+                            : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-primary/40'}"
+                        id="habit-row-${h.id}">
+                        <div class="flex items-center gap-5 min-w-0 flex-1">
+                            <div class="size-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                                 style="background:${h.color}15; color:${h.color}">${icon}</div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-black tracking-tight text-lg ${isDone ? 'line-through text-slate-500' : ''}">${h.name}</p>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded text-slate-500">+${xp} XP</span>
+                                    <span class="text-[9px] font-black uppercase tracking-widest" style="color:${h.color}">${h.category_name}</span>
+                                    ${isGoal ? `
+                                        <div class="flex-1 h-1 bg-slate-200 dark:bg-slate-700 rounded-full max-w-[100px] overflow-hidden">
+                                            <div class="h-full bg-primary" style="width:${pct}%"></div>
+                                        </div>
+                                        <span class="text-[10px] font-bold text-slate-400">${progress}/${h.goal_value} ${h.goal_unit || ''}</span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="${isGoal ? `openGoalModal('${h.id}')` : `toggleHabit('${h.id}', ${isDone})`}"
+                                class="size-12 rounded-xl flex items-center justify-center transition-all ${isDone
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                            : 'bg-slate-100 dark:bg-slate-900 text-slate-400 hover:bg-primary hover:text-white shadow-sm'}">
+                            <span class="material-symbols-outlined font-black">${isDone ? 'check' : (isGoal ? 'edit' : 'add')}</span>
+                        </button>
+                    </div>`;
+                }).join('');
+            }
+
+            // 2. Add horizontal separator if both habits and tasks exist
+            if (_unifiedData.habits.length > 0 && _unifiedData.tasks.length > 0) {
+                html += `<div class="flex items-center gap-4 my-2">
+                            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                            <span class="text-[10px] uppercase font-black tracking-[0.2em] text-slate-400">Atividades Core</span>
+                            <div class="flex-1 h-px bg-slate-200 dark:bg-slate-800"></div>
+                          </div>`;
+            }
+
+            // 3. Render Tasks
+            if (_unifiedData.tasks.length > 0) {
+                html += _unifiedData.tasks.map(t => {
+                    const isDone = t.status === 'done';
+                    const isLate = !isDone && t.deadline && new Date(t.deadline) < new Date();
+                    const txp = Engine.calcTaskXP(t, { xpMultiplier: t.xp_multiplier || 1.0 }).xp;
+                    return `
+                     <div class="group flex items-center justify-between p-5 rounded-2xl border-2 transition-all duration-300 ${isDone
+                            ? 'bg-emerald-500/5 border-emerald-500/20 opacity-70'
+                            : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 hover:border-slate-400'}" id="task-row-${t.id}">
+                        <div class="flex items-center gap-5 min-w-0 flex-1">
+                            <div class="size-12 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${isDone ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-100 dark:bg-slate-900 text-slate-500'}">
+                                <span class="material-symbols-outlined">${isDone ? 'task_alt' : 'radio_button_unchecked'}</span>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-black tracking-tight text-lg text-slate-700 dark:text-slate-300 ${isDone ? 'line-through opacity-70' : ''}">${t.title}</p>
+                                <div class="flex items-center gap-3 mt-1">
+                                    <span class="text-[9px] font-black uppercase bg-slate-100 dark:bg-slate-900 px-2 py-0.5 rounded text-slate-500">+${txp} XP</span>
+                                    ${t.deadline ? `<span class="text-[9px] font-black uppercase ${isLate ? 'text-red-500' : 'text-slate-400'}"><span class="material-symbols-outlined text-[10px] align-middle">schedule</span> ${new Date(t.deadline).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="toggleDashboardTask('${t.id}', ${isDone})" title="${isDone ? 'Desmarcar' : 'Concluir Tarefa'}"
+                            class="size-12 rounded-xl flex items-center justify-center transition-all ${isDone
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                            : 'bg-slate-100 dark:bg-slate-900 text-slate-400 hover:bg-emerald-500 hover:text-white shadow-sm'}">
+                            <span class="material-symbols-outlined font-black">${isDone ? 'undo' : 'check'}</span>
+                        </button>
+                    </div>`;
+                }).join('');
+            }
+
+            container.innerHTML = html;
+
+            const done = _unifiedData.habits.filter(h => h.completed).length;
+            document.getElementById('habits-count-label').textContent = `${done} DE ${_unifiedData.habits.length} FEITOS`;
         }
 
-        async function handleSignOut() { await Auth.signOut(); }
+        // -- Task Creation Modal ---------------------------------------
+        function openNewTaskModal() {
+            let modal = document.getElementById('task-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'task-modal';
+                modal.className = 'fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] p-8 shadow-2xl animate-slide-up">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-black">Nova Tarefa</h3>
+                            <button onclick="closeTaskModal()" class="size-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Título da Tarefa</label>
+                                <input id="tm-title" type="text" placeholder="O que precisa ser feito?"
+                                    class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Impacto (1-5)</label>
+                                    <input id="tm-weight" type="number" min="1" max="5" value="3"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Prazo (opcional)</label>
+                                    <input id="tm-deadline" type="datetime-local"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 mt-8">
+                            <button onclick="closeTaskModal()"
+                                class="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancelar</button>
+                            <button onclick="saveTask()"
+                                class="flex-1 py-4 rounded-2xl bg-primary text-white font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">Criar</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modal);
+                modal.addEventListener('click', e => { if (e.target === modal) closeTaskModal(); });
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('tm-title').focus(), 50);
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        async function saveTask() {
+            const title = document.getElementById('tm-title').value.trim();
+            if (!title) { UI.toast('Título é obrigatório.', 'error'); return; }
+            try {
+                await Tasks.create({
+                    title,
+                    weight: parseInt(document.getElementById('tm-weight').value) || 3,
+                    deadline: document.getElementById('tm-deadline').value || null,
+                });
+                UI.toast('Tarefa criada!', 'success');
+                closeTaskModal();
+                await loadDashboard(); // Immediately refresh dashboard to show task
+            } catch (e) { UI.toast(e.message || 'Erro ao criar tarefa.', 'error'); }
+        }
 
 
+        // -- Toggle Boolean Habit --------------------------------------
+        async function toggleHabit(habitId, isDone) {
+            const habit = _todayHabits.find(h => h.id === habitId);
+            if (!habit) return;
 
-        document.getElementById('identity-modal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) closeIdentityModal();
+            const btn = document.querySelector(`#habit-row-${habitId} button`);
+            if (btn) btn.disabled = true;
+
+            try {
+                if (isDone) {
+                    await Logs.uncomplete(habitId, UI.parseDate(selectedDateStr));
+                    UI.toast('Hábito desmarcado.', 'info');
+                } else {
+                    await Logs.complete(habitId, UI.parseDate(selectedDateStr), habit);
+                    const xp = Engine.calcHabitXP(habit.weight, false, habit.difficulty_weight || 1);
+                    UI.toast(`+${xp} XP para ${habit.name}!`, 'success');
+                }
+                // Refresh state
+                loadDashboard();
+            } catch (err) {
+                if (err?.code === 'DEBOUNCE') return;
+                UI.toast(err?.message || 'Erro ao registrar hábito.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        // -- Toggle Tarefa -------------------------------------------
+        async function toggleDashboardTask(taskId, isDone) {
+            try {
+                if (isDone) {
+                    await Tasks.uncomplete(taskId);
+                    UI.toast('Tarefa desmarcada.', 'info');
+                } else {
+                    const res = await Tasks.complete(taskId);
+                    UI.toast(`Tarefa concluída! +${res.xpResult.xp} XP`, 'success');
+                }
+                loadDashboard();
+            } catch (err) {
+                if (err?.code === 'DEBOUNCE') return;
+                UI.toast(err?.message || 'Erro ao processar tarefa.', 'error');
+            }
+        }
+
+        // -- Goal Progress Modal ---------------------------------------
+        function openGoalModal(habitId) {
+            const habit = _todayHabits.find(h => h.id === habitId);
+            if (!habit) return;
+            _goalHabit = habit;
+
+            const log = _todayLogs.find(l => l.habit_id === habitId);
+            document.getElementById('goal-modal-title').textContent = `Registrar ${habit.name}`;
+            document.getElementById('goal-modal-input').value = log?.value_logged || '';
+            document.getElementById('goal-modal-input').placeholder = `Meta: ${habit.goal_value} ${habit.goal_unit || ''}`;
+
+            const modal = document.getElementById('goal-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('goal-modal-input').focus();
+        }
+
+        function closeGoalModal() {
+            const modal = document.getElementById('goal-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            _goalHabit = null;
+        }
+
+        async function saveGoalProgress() {
+            if (!_goalHabit) return;
+            const val = parseFloat(document.getElementById('goal-modal-input').value);
+            if (isNaN(val) || val < 0) { UI.toast('Valor inválido.', 'error'); return; }
+
+            try {
+                await Logs.logProgress(_goalHabit.id, UI.parseDate(selectedDateStr), _goalHabit, val);
+                UI.toast(`Progresso salvo: ${val} ${_goalHabit.goal_unit || ''}`, 'success');
+                closeGoalModal();
+                loadDashboard();
+            } catch (err) {
+                UI.toast(err?.message || 'Erro ao salvar progresso.', 'error');
+            }
+        }
+
+        // -- Score / XP / Rank / Streak Update (BACKEND-DRIVEN) -------
+        async function updateScores() {
+            try {
+                // 1. Get live summary (or sealed if already closed today)
+                const summary = await PDL.getProgressionSummary(selectedDateStr);
+                if (!summary) return;
+
+                // 2. Competitive Rank (PDL-based, 7-day weighted avg can fall)
+                // We compute this LIVE from snapshots to ensure consistency across pages
+                const activeHabits = AppState.habits.filter(h => !h.is_paused);
+                const snapshots = Engine.buildDayEfficiencySnapshots(AppState.logs || [], activeHabits, 7);
+                const competitivePDL = Engine.calcCompetitivePDL(snapshots);
+                const rank = Engine.getRankFromPDL(competitivePDL);
+
+                // Update Rank UI (Emblem & PDL Card)
+                const pdlInfo = Engine.getLocalPDL(competitivePDL);
+                const emblem = document.getElementById('rank-emblem');
+                if (emblem) {
+                    emblem.className = `rank-emblem ${rank.id}`;
+                    emblem.innerHTML = `<i class="fa-solid ${rank.icon}"></i> ${rank.label} ${rank.division} <span style="font-size:0.7rem;opacity:0.6;">${pdlInfo.value} PDL</span>`;
+                }
+
+                // Update PDL Card elements
+                const pdlBar = document.getElementById('pdl-bar-fill');
+                const pdlLabel = document.getElementById('pdl-current-label');
+                const pdlMaxLabel = document.getElementById('pdl-max-label');
+                const pdlDivision = document.getElementById('pdl-division-label');
+                const pdlTierName = document.getElementById('pdl-tier-name');
+                const tierIcon = document.getElementById('pdl-tier-icon');
+                const iconWrap = document.getElementById('pdl-tier-icon-wrap');
+                const glow = document.getElementById('pdl-glow');
+
+                if (pdlBar) {
+                    pdlBar.style.width = `${pdlInfo.pct}%`;
+                    pdlBar.style.backgroundColor = rank.color;
+                }
+
+                if (pdlLabel) pdlLabel.textContent = `${pdlInfo.value} / ${pdlInfo.max}`;
+                // Build "next sub-rank" label
+                let nextLabel = 'MAX';
+                if (rank.id !== 'lenda') {
+                    if (rank.division === 'I') nextLabel = `${rank.label} II`;
+                    else if (rank.division === 'II') nextLabel = `${rank.label} III`;
+                    else {
+                        // Division III ? next main rank's I
+                        const idx = Engine.COMPETITIVE_RANKS.findIndex(r => r.id === rank.id);
+                        const next = Engine.COMPETITIVE_RANKS[idx + 1];
+                        nextLabel = next ? (next.id === 'lenda' ? 'Lenda' : `${next.label} I`) : 'MAX';
+                    }
+                }
+                if (pdlMaxLabel) pdlMaxLabel.textContent = `Próximo: ${nextLabel}`;
+                if (pdlTierName) pdlTierName.textContent = (`${rank.label} ${rank.division}`).trim();
+
+                if (pdlDivision) {
+                    pdlDivision.textContent = 'Liga Competitiva (7d)';
+                    pdlDivision.style.color = rank.color;
+                }
+                if (tierIcon) tierIcon.className = `fa-solid ${rank.icon} text-2xl`;
+                if (iconWrap) {
+                    iconWrap.style.backgroundColor = rank.color;
+                    iconWrap.style.boxShadow = `0 8px 24px ${rank.glow}`;
+                }
+                if (glow) glow.style.background = `radial-gradient(ellipse at center, ${rank.glow} 0%, transparent 75%)`;
+
+                // Update Backend-specific extras (Reserve days, MD3, etc)
+                const navRank = document.getElementById('nav-user-rank');
+                if (navRank) navRank.textContent = `${rank.label} ${rank.division}`;
+
+                const trendEl = document.getElementById('pdl-trend');
+                if (trendEl) trendEl.innerHTML = PDL.getTrendHTML(summary.trend || 'stable');
+
+                const shields = document.getElementById('pdl-reserve-shields');
+                if (shields) shields.innerHTML = PDL.renderReserveDaysHTML(summary.reserve_days || 0);
+
+                const promoPanel = document.getElementById('pdl-promo-panel');
+                if (promoPanel) {
+                    const inPromo = PDL.isInPromotion(summary);
+                    promoPanel.classList.toggle('hidden', !inPromo);
+                    promoPanel.classList.toggle('flex', inPromo);
+                    if (inPromo) {
+                        const w = document.getElementById('pdl-promo-wins');
+                        const l = document.getElementById('pdl-promo-losses');
+                        const p = document.getElementById('pdl-promo-pips');
+                        if (w) w.textContent = summary.promotion_wins || 0;
+                        if (l) l.textContent = summary.promotion_losses || 0;
+                        if (p) {
+                            const played = (summary.promotion_wins || 0) + (summary.promotion_losses || 0);
+                            p.innerHTML = Array.from({ length: 3 }, (_, i) => {
+                                if (i < played) {
+                                    const win = i < (summary.promotion_wins || 0);
+                                    return `<div class="size-3 rounded-full ${win ? 'bg-white shadow-lg' : 'bg-red-300'}"></div>`;
+                                }
+                                return `<div class="size-3 rounded-full bg-white/30"></div>`;
+                            }).join('');
+                        }
+                    }
+                }
+
+                // 3. Level / XP bar (from backend xp_total)
+                const totalXP = summary.xp_total || 0;
+                const lvl = Engine.getLevelProgress(totalXP);
+                document.getElementById('level-num').textContent = lvl.level;
+                document.getElementById('xp-current').textContent = lvl.currentLevelXP.toLocaleString('pt-BR') + ' XP';
+                document.getElementById('xp-needed').textContent = 'Faltam ' + (lvl.nextLevelXP - lvl.currentLevelXP).toLocaleString('pt-BR') + ' XP';
+                document.getElementById('xp-bar-fill').style.width = lvl.progressPct + '%';
+
+                // 4. Efficiency ring (from backend efficiency_percent)
+                const eff = summary.efficiency_percent || 0;
+                const circle = document.getElementById('progress-ring-circle');
+                if (circle) AppUI.setRingPct(circle, eff, 213.6);
+                const effEl = document.getElementById('efficiency-val');
+                if (effEl) effEl.textContent = eff + '%';
+                const ringEl = document.getElementById('ring-pct');
+                if (ringEl) ringEl.textContent = eff + '%';
+
+                // 5. Streak from backend
+                const streak = summary.streak || 0;
+                UI.animateNumber(document.getElementById('global-streak'), streak);
+                const navStreak = document.getElementById('nav-streak-val');
+                if (navStreak) navStreak.textContent = streak;
+
+                // 6. Promotion / Demotion detection (requires persistence of previous rank id)
+                const prevRankId = localStorage.getItem('last_rank_id');
+                if (prevRankId && prevRankId !== rank.id) {
+                    const allRanks = Engine.COMPETITIVE_RANKS;
+                    const prevIdx = allRanks.findIndex(r => r.id === prevRankId);
+                    const currIdx = allRanks.findIndex(r => r.id === rank.id);
+
+                    if (currIdx > prevIdx) showRankPromotion(rank, competitivePDL);
+                    else if (currIdx < prevIdx) showRankDemotion(rank);
+                }
+                localStorage.setItem('last_rank_id', rank.id);
+
+                // 7. Auto-seal the day if goal just met (idempotent)
+                if (selectedDateStr === UI.todayStr() && !summary.summary_sealed && eff >= 80) {
+                    PDL.closeDay(selectedDateStr).catch(e => console.warn('[PDL] closeDay:', e));
+                }
+
+            } catch (err) {
+                console.warn('[updateScores] error:', err);
+            }
+        }
+
+
+        function showRankPromotion(rank, pdl) {
+            const msgs = {
+                bronze: "Início da jornada. Mantenha a constância.",
+                prata: "Ritmo estabelecido. Você está evoluindo.",
+                ouro: "Elite detectada. Sua disciplina é notável.",
+                platina: "Alta performance. Você está no topo 10%.",
+                diamante: "Mestria absoluta. O protocolo está em seu DNA.",
+                mestre: "Transcendente. Você quebrou o teto de vidro.",
+                'grao-mestre': "Poder sem limites. Uma força da natureza.",
+                lenda: "Imortalidade alcançada. Você é o parâmetro."
+            };
+
+            UI.modal({
+                title: `<span style="color:${rank.color}">RANK PROMOTED: ${rank.label.toUpperCase()} ${rank.division}</span>`,
+                body: `
+                    <div class="text-center py-6">
+                        <div class="rank-emblem ${rank.id} mx-auto mb-4" style="font-size:3rem">
+                            <i class="fa-solid ${rank.icon}"></i>
+                        </div>
+                        <p class="text-xl font-black italic mb-2">${rank.label} ${rank.division}</p>
+                        <p class="text-slate-500 text-xs mb-6 px-4">${msgs[rank.id] || ''}</p>
+                        <div class="bg-slate-100 dark:bg-slate-900 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">PDL Competitivo</p>
+                            <p class="text-2xl font-black text-primary">${pdl}%</p>
+                        </div>
+                    </div>
+                `,
+                confirmText: "ENTENDIDO",
+                onConfirm: () => { }
+            });
+            UI.confetti();
+        }
+
+        function showRankDemotion(rank) {
+            UI.toast(`Aviso: Seu rank caiu para ${rank.label} ${rank.division}. Retome o ritmo imediatamente para recuperar sua posição.`, 'warning');
+        }
+
+        // -- Identity Card ---------------------------------------------
+        function updateIdentity() {
+            if (!AppState.profile) return;
+            const quote = document.getElementById('identity-quote');
+            const current = AppState.profile.future_version || '';
+            if (quote) quote.textContent = `"${current || 'Defina sua vers�o futura'}"`;
+
+            const activeHabits = AppState.habits.filter(h => !h.is_paused);
+            const align = Score.calcAlignmentPercent(activeHabits, AppState.logs);
+            document.getElementById('identity-pct').textContent = align + '%';
+            document.getElementById('identity-bar').style.width = align + '%';
+        }
+
+        function startEditIdentity() {
+            const current = AppState.profile?.future_version || '';
+            const input = document.getElementById('identity-input');
+            const wrap = document.getElementById('identity-edit-wrap');
+            const quote = document.getElementById('identity-quote');
+            const editBtn = document.getElementById('identity-edit-btn');
+            if (!input || !wrap || !quote) return;
+
+            input.value = current;
+            document.getElementById('identity-char-count').textContent = `${current.length}/180`;
+            quote.classList.add('hidden');
+            editBtn.classList.add('hidden');
+            wrap.classList.remove('hidden');
+            input.focus();
+            input.setSelectionRange(input.value.length, input.value.length);
+        }
+
+        async function saveIdentity() {
+            const input = document.getElementById('identity-input');
+            const wrap = document.getElementById('identity-edit-wrap');
+            const quote = document.getElementById('identity-quote');
+            const editBtn = document.getElementById('identity-edit-btn');
+            if (!input) return;
+
+            const newText = input.value.trim();
+            try {
+                const updated = await Identity.save(newText);
+                if (AppState.profile) AppState.profile.future_version = newText;
+                if (quote) quote.textContent = `"${newText || 'Defina sua vers�o futura'}"`;
+                UI.toast('Identidade atualizada!', 'success');
+            } catch (err) {
+                console.error('Erro ao salvar identidade:', err);
+                UI.toast('Erro ao salvar. Tente novamente.', 'error');
+            }
+
+            wrap.classList.add('hidden');
+            quote.classList.remove('hidden');
+            editBtn.classList.remove('hidden');
+        }
+
+        function cancelEditIdentity() {
+            const wrap = document.getElementById('identity-edit-wrap');
+            const quote = document.getElementById('identity-quote');
+            const editBtn = document.getElementById('identity-edit-btn');
+            wrap.classList.add('hidden');
+            quote.classList.remove('hidden');
+            if (editBtn) editBtn.classList.remove('hidden');
+        }
+
+        // -- Mini Balanced Score ---------------------------------------
+        async function renderMiniBalancedScore() {
+            const [scoreData, distData] = await Promise.all([
+                BalancedScoreService.calc(30),
+                CategoryAnalyticsService.getDistribution(30)
+            ]);
+
+            const totalXP = distData.reduce((sum, d) => sum + d.xp, 0);
+            const safeTotal = totalXP > 0 ? totalXP : 1;
+            const mbsBars = document.getElementById('mbs-bars');
+
+            if (mbsBars) {
+                mbsBars.innerHTML = distData.map(d =>
+                    `<div style="width: ${(d.xp / safeTotal) * 100}%; background-color: ${d.color}" title="${d.category}: ${d.xp}XP"></div>`
+                ).join('');
+            }
+
+            const mbsVal = document.getElementById('mbs-val');
+            if (mbsVal) {
+                mbsVal.textContent = (scoreData.overall / 10).toFixed(1);
+            }
+        }
+
+        // -- Mini Heatmap (last ~28 days) -----------------------------
+        function renderMiniHeatmap() {
+            const wrap = document.getElementById('mini-heatmap-wrap');
+            if (!wrap) return;
+
+            const HS = HeatmapAggregationService;
+            const C = HS.COLORS;
+
+            const xpByDay = {};
+            let maxXP = 0;
+            for (const l of AppState.logs) {
+                if (l.completed) {
+                    const total = (l.xp_earned || l.score_earned || 0);
+                    xpByDay[l.date] = (xpByDay[l.date] || 0) + total;
+                }
+            }
+            for (const k in xpByDay) {
+                if (xpByDay[k] > maxXP) maxXP = xpByDay[k];
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const todayStr = UI.dateStr(today);
+
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() - 27);
+            while (startDate.getDay() !== 0) startDate.setDate(startDate.getDate() - 1);
+
+            const totalDays = Math.round((today - startDate) / 86400000) + 1;
+            const totalCols = Math.ceil(totalDays / 7);
+
+            const dayLabels = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+            const wkHtml = dayLabels.map(l =>
+                `<div style="display:flex;align-items:center;justify-content:flex-end;font-size:8px;font-weight:700;color:#64748b;text-transform:uppercase;padding-right:4px;">${l}</div>`
+            ).join('');
+
+            const cells = [];
+            for (let i = 0; i < totalDays; i++) {
+                const d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                const dStr = UI.dateStr(d);
+                const xp = xpByDay[dStr] || 0;
+                const bg = C[HS.getIntensity(xp, maxXP)];
+                const isToday = dStr === todayStr;
+                const ring = isToday ? 'outline:1.5px solid #58a6ff;outline-offset:0.5px;' : '';
+                cells.push(`<div class="heatmap-cell" style="border-radius:2px;background:${bg};${ring}transition:transform .12s ease;cursor:pointer;" title="${dStr}&#10;XP: ${xp}"></div>`);
+            }
+
+            // Render fixed 10px grid right-aligned so it doesn't overstretch the card height
+            wrap.innerHTML = `
+                <div style="display:flex;align-items:flex-end;gap:4px;user-select:none;overflow-x:auto;padding-bottom:4px;" class="custom-scrollbar">
+                    <div style="display:grid;grid-template-rows:repeat(7,10px);gap:2px;flex-shrink:0;">${wkHtml}</div>
+                    <div id="mini-hm-grid" style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,10px);grid-auto-columns:10px;gap:2px;">${cells.join('')}</div>
+                </div>`;
+
+            const g = document.getElementById('mini-hm-grid');
+            if (g) {
+                g.addEventListener('mouseover', e => {
+                    if (e.target.classList.contains('heatmap-cell')) e.target.style.transform = 'scale(1.5)';
+                });
+                g.addEventListener('mouseout', e => {
+                    if (e.target.classList.contains('heatmap-cell')) e.target.style.transform = 'scale(1)';
+                });
+            }
+        }
+
+        // -- Tactical Insights (real data) -----------------------------
+        function renderTacticalInsights() {
+            const container = document.getElementById('tactical-insights');
+            if (!container) return;
+
+            const items = [];
+            const activeHabits = AppState.habits.filter(h => !h.is_paused);
+
+            // Insight 1: Streak risk � habits not yet completed today
+            const todayDone = new Set(_todayLogs.filter(l => l.completed).map(l => l.habit_id));
+            const pending = activeHabits.filter(h => !todayDone.has(h.id));
+            if (pending.length > 0) {
+                const streak = Streak.calcGlobalStreak(AppState.logs, activeHabits);
+                if (streak > 0) {
+                    items.push({
+                        color: 'bg-red-500', title: 'Risco de Streak',
+                        msg: `${pending.length} hábito(s) pendentes hoje. Streak de <span class="text-red-500 font-bold">${streak} dias</span> em risco.`
+                    });
+                } else {
+                    items.push({
+                        color: 'bg-amber-500', title: 'Hábitos Pendentes',
+                        msg: `${pending.map(h => `<span class="font-bold">${h.name}</span>`).slice(0, 2).join(', ')} ainda não concluídos.`
+                    });
+                }
+            } else if (activeHabits.length > 0) {
+                items.push({
+                    color: 'bg-emerald-500', title: 'Protocolo Completo',
+                    msg: `Todos os hábitos concluídos hoje! <span class="text-emerald-500 font-bold">Streak protegido.</span>`
+                });
+            }
+
+            // Insight 2: 7-day efficiency trend
+            const snaps = Engine.buildDayEfficiencySnapshots(AppState.logs, activeHabits, 7);
+            const pdl = Engine.calcCompetitivePDL(snaps);
+            if (pdl > 0) {
+                const trend = pdl >= 70 ? 'acima da média' : pdl >= 40 ? 'em desenvolvimento' : 'abaixo da meta';
+                const color = pdl >= 70 ? 'text-emerald-500' : pdl >= 40 ? 'text-primary' : 'text-amber-500';
+                items.push({
+                    color: pdl >= 70 ? 'bg-emerald-500' : 'bg-primary', title: 'Eficiência 7 Dias',
+                    msg: `PDL competitivo de <span class="${color} font-bold">${Math.round(pdl)}%</span> você está ${trend}.`
+                });
+            }
+
+            if (items.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 italic">Nenhum dado suficiente ainda. Continue completando seus h�bitos.</p>';
+                return;
+            }
+
+            container.innerHTML = items.map(item => `
+                <div class="flex gap-4">
+                    <div class="size-2 mt-1.5 rounded-full ${item.color} flex-shrink-0 shadow-lg"></div>
+                    <div>
+                        <p class="text-xs font-black uppercase tracking-tight">${item.title}</p>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">${item.msg}</p>
+                    </div>
+                </div>`).join('');
+        }
+
+        // -- Milestone Card (real data) ----------------------------------
+        function renderMilestoneCard() {
+            const card = document.getElementById('milestone-card');
+            if (!card) return;
+
+            const activeHabits = AppState.habits.filter(h => !h.is_paused);
+            const streak = Streak.calcGlobalStreak(AppState.logs, activeHabits);
+
+            // Milestones at 7, 30, 100, 365 days
+            const targets = [7, 30, 100, 365];
+            const next = targets.find(t => t > streak) || 365;
+            const prev = targets[targets.indexOf(next) - 1] || 0;
+            const pct = next > prev ? Math.min(100, Math.round(((streak - prev) / (next - prev)) * 100)) : 100;
+            const daysLeft = next - streak;
+            const bars = Math.round((pct / 100) * 7);
+
+            card.innerHTML = `
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="size-12 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-2xl">emoji_events</span>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Milestone Pr�ximo</p>
+                        <p class="font-black text-lg">${next} Dias de Streak</p>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed mb-6">
+                    ${daysLeft > 0
+                    ? `Mantenha o protocolo por mais <span class="text-slate-900 dark:text-white font-black">${daysLeft} dia${daysLeft > 1 ? 's' : ''}</span> para alcançar o próximo marco.`
+                    : `<span class="text-emerald-500 font-bold">Marco atingido!</span> Continue para o próximo nível.`
+                }
+                </p>
+                <div class="flex gap-2">
+                    ${Array.from({ length: 7 }, (_, i) =>
+                    `<div class="h-1.5 flex-1 rounded-full ${i < bars
+                        ? 'bg-primary shadow-[0_0_8px_rgba(13,89,242,0.4)]'
+                        : 'bg-slate-200 dark:bg-slate-700'
+                    }"></div>`
+                ).join('')}
+                </div>`;
+        }
+
+
+        // -- Sign Out --------------------------------------------------
+
+        async function handleSignOut() {
+            try {
+                await Auth.signOut();
+            } catch (e) {
+                UI.toast('Erro ao sair.', 'error');
+            }
+        }
+
+        // -- Boot ------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            // Modal backdrop
+            document.getElementById('goal-modal').addEventListener('click', e => {
+                if (e.target === document.getElementById('goal-modal')) closeGoalModal();
+            });
+            // Start the dashboard
+            init();
         });
 
-        init();
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-chart-line mb-1 text-lg"></i>
+            <span>Dash</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item">
+            <i class="fa-solid fa-layer-group mb-1 text-lg"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="agenda.html" class="bottom-nav-item">
+            <i class="fa-solid fa-calendar-check mb-1 text-lg"></i>
+            <span>Tarefas</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-pie mb-1 text-lg"></i>
+            <span>Análise</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <i class="fa-solid fa-user mb-1 text-lg"></i>
+            <span>Perfil</span>
+        </a>
+    </nav>
 </body>
 
 </html>

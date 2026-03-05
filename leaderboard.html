@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+
+<head>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#101622" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW registered:', reg);
+                }).catch(err => console.log('SW reg failed:', err));
+            });
+        }
+    </script>
+    <title>VitaAscend — Arena Competitiva</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: { "display": ["Inter"] }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 4px;
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+
+        .rank-row-user {
+            background: linear-gradient(90deg, rgba(13, 89, 242, 0.05) 0%, transparent 100%);
+            border-left: 4px solid #0d59f2;
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+
+        <header
+            class="hidden md:flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-primary cursor-pointer"
+                    onclick="window.location.href='dashboard.html'">
+                    <span class="material-symbols-outlined text-3xl font-bold">change_history</span>
+                    <h2 class="text-xl font-bold tracking-tight">VitaAscend</h2>
+                </div>
+                <nav class="hidden md:flex ml-10 gap-6 text-sm font-medium">
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="dashboard.html">Dashboard</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="habits.html">Execução</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="analytics.html">Análises</a>
+                    <a class="text-primary font-bold border-b-2 border-primary pb-1" href="#">Leaderboard</a>
+                </nav>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='profile.html'">
+                    <div class="hidden sm:flex flex-col text-right">
+                        <p class="text-sm font-bold leading-none" id="nav-user-name">Carregando...</p>
+                        <p class="text-[10px] font-black uppercase text-primary tracking-widest" id="nav-user-rank">
+                            Elite
+                            Tier</p>
+                    </div>
+                    <div
+                        class="size-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center overflow-hidden">
+                        <i class="fa-solid fa-user text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-full max-w-5xl mx-auto w-full p-6 lg:p-10 space-y-8">
+
+            <div class="flex flex-col lg:flex-row justify-between items-end gap-6 animate-slide-up">
+                <div class="space-y-2">
+                    <h1 class="text-4xl font-black tracking-tight">Arena Global</h1>
+                    <p class="text-slate-500 dark:text-slate-400 max-w-lg">Sincronização em tempo real com 1.2M de
+                        operadores. Classificação baseada em consistência e volume de XP.</p>
+                </div>
+                <div
+                    class="flex items-center gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="text-right">
+                        <p class="text-[10px] uppercase font-black text-slate-500 mb-1">Próxima Atualização</p>
+                        <div class="font-mono text-xl font-black text-primary" id="sync-timer">04:22:15</div>
+                    </div>
+                    <span class="material-symbols-outlined text-primary text-3xl font-bold">cycle</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-slide-up" style="animation-delay: 100ms">
+                <div
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Rank PDL</p>
+                    <h3 class="text-3xl font-black" id="current-rank-label">Elite I</h3>
+                    <div class="flex items-center gap-1 mt-2 text-emerald-500 font-bold text-xs italic">
+                        <span class="material-symbols-outlined text-sm">trending_up</span> Top 2% dos usuários
+                    </div>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 border-b-primary border-b-4">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">PDL Score</p>
+                    <h3 class="text-3xl font-black tracking-tight" id="pdl-score-label">2,840</h3>
+                    <p class="text-emerald-500 text-[10px] font-black uppercase mt-2">+120 pts hoje</p>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-200 dark:border-slate-800">
+                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Posição Global</p>
+                    <h3 class="text-3xl font-black" id="global-pos-label">#42</h3>
+                    <div class="flex items-center gap-1 mt-2 text-primary font-bold text-xs uppercase tracking-tighter">
+                        Subindo no ranking
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                <div class="lg:col-span-8 space-y-6 animate-slide-up" style="animation-delay: 200ms">
+                    <div
+                        class="bg-white dark:bg-slate-800/40 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <div
+                            class="px-8 py-6 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-800/60">
+                            <div>
+                                <h3 class="font-black text-lg tracking-tight">Classificação Ativa</h3>
+                                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Top Global Ops
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-4 w-full sm:w-auto">
+                                <div class="relative w-full sm:w-64">
+                                    <input type="text" id="user-search" placeholder="Buscar operador..."
+                                        class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-xl px-10 py-2 text-xs focus:ring-primary focus:border-primary">
+                                    <i
+                                        class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-[10px]"></i>
+                                </div>
+                                <div class="flex bg-slate-100 dark:bg-slate-900 p-1 rounded-xl shrink-0">
+                                    <button id="btn-daily"
+                                        class="px-5 py-2 text-[10px] font-black uppercase text-slate-500 hover:text-primary transition-all">Diário</button>
+                                    <button id="btn-global"
+                                        class="px-5 py-2 text-[10px] font-black uppercase rounded-lg bg-white dark:bg-slate-700 shadow-sm transition-all">Global</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr
+                                        class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-200 dark:border-slate-800">
+                                        <th class="px-8 py-4 text-center">Pos</th>
+                                        <th class="px-8 py-4">Operador</th>
+                                        <th class="px-8 py-4 text-right">PDL Score</th>
+                                        <th class="px-8 py-4 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/50" id="leaderboard-body">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 space-y-6 animate-slide-up" style="animation-delay: 300ms">
+
+                    <div
+                        class="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3
+                            class="text-sm font-black uppercase tracking-widest mb-8 flex items-center gap-2 text-primary">
+                            <span class="material-symbols-outlined text-lg">bolt</span> Atividade Global
+                        </h3>
+                        <div class="space-y-6" id="activity-feed">
+                            <!-- Dynamic Feed -->
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group border border-slate-800">
+                        <div
+                            class="absolute -right-6 -top-6 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                            <span class="material-symbols-outlined text-8xl">groups</span>
+                        </div>
+                        <div class="relative z-10">
+                            <h4 class="font-black text-lg tracking-tight italic mb-1">Seu Squad</h4>
+                            <p class="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-8"
+                                id="squad-name">Operação Ascensão</p>
+
+                            <div class="space-y-4" id="squad-list">
+                                <!-- Dynamic Friends List -->
+                            </div>
+                            <button
+                                class="w-full mt-8 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all">Command
+                                Center do Squad</button>
+                        </div>
+                    </div>
+
+                    <div
+                        class="bg-white dark:bg-slate-800/50 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-sm font-black uppercase tracking-widest">Velocity Trend</h3>
+                            <div
+                                class="bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded text-[10px] font-black italic">
+                                +2.4% Méd.</div>
+                        </div>
+                        <div class="h-24 flex items-end justify-between gap-1.5 px-1" id="trend-bars">
+                            <!-- Dynamic Bars -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-12 border-t border-slate-200 dark:border-slate-800 py-10 text-center opacity-40">
+            <p class="text-[10px] font-black tracking-[0.5em] uppercase">Arena Competitiva • VitaAscend v4.2.0</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/engine.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/pdl.js"></script>
+
+    <script>
+        async function init() {
+            UI.ensureToastStyles();
+            const ok = await Router.init();
+            if (!ok) return;
+
+            console.log("Arena Operacional.");
+            await Leaderboard.init();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-line mb-1 text-lg"></i>
+            <span>Dash</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item">
+            <i class="fa-solid fa-layer-group mb-1 text-lg"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="agenda.html" class="bottom-nav-item">
+            <i class="fa-solid fa-calendar-check mb-1 text-lg"></i>
+            <span>Tarefas</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-pie mb-1 text-lg"></i>
+            <span>Análise</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <i class="fa-solid fa-user mb-1 text-lg"></i>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
+</body>
+
+</html>

@@ -7,9 +7,14 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0a0a0f",
-  "theme_color": "#6366f1",
+  "theme_color": "#000000",
   "lang": "pt-BR",
-  "categories": ["health", "fitness", "lifestyle", "productivity"],
+  "categories": [
+    "health",
+    "fitness",
+    "lifestyle",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -29,13 +34,23 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "url": "./dashboard.html",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Hábitos",
       "short_name": "Hábitos",
       "url": "./habits.html",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

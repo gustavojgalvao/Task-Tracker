@@ -83,6 +83,20 @@ const Habits = (() => {
     const COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6', '#a855f7', '#f97316', '#06b6d4'];
 
     /**
+     * Fetch all habit categories
+     */
+    async function getCategories() {
+        const { data: { user } } = await db().auth.getUser();
+        const { data, error } = await window.supabaseClient
+            .from('habit_categories')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('name');
+        if (error) throw error;
+        return data || [];
+    }
+
+    /**
      * Create a new habit
      */
     async function create(data) {
@@ -93,7 +107,9 @@ const Habits = (() => {
                 user_id: user.id,
                 name: data.name,
                 weight: data.weight || 1,
+                difficulty_weight: data.difficulty_weight || 1.0,
                 frequency: data.frequency || 'daily',
+                category_id: data.category_id,
                 days_of_week: data.days_of_week || null,
                 ideal_time: data.ideal_time || null,
                 strict_mode: data.strict_mode || false,
@@ -122,7 +138,9 @@ const Habits = (() => {
             .update({
                 name: data.name,
                 weight: data.weight,
+                difficulty_weight: data.difficulty_weight,
                 frequency: data.frequency,
+                category_id: data.category_id,
                 days_of_week: data.days_of_week,
                 ideal_time: data.ideal_time,
                 strict_mode: data.strict_mode,
@@ -274,7 +292,7 @@ const Habits = (() => {
         return data;
     }
 
-    return { create, update, remove, pause, resume, getAll, getAllIncludingPaused, getForDate, getById, ICONS, COLORS };
+    return { create, update, remove, pause, resume, getAll, getAllIncludingPaused, getForDate, getById, getCategories, ICONS, COLORS };
 })();
 
 window.Habits = Habits;

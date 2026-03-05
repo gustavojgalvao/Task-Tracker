@@ -1,56 +1,231 @@
 /* ============================================================
-   ASCEND — Dashboard CSS
+   VITAASCEND — Dashboard CSS v2
+   Layout, stat cards, habits section, and sidebar widgets
    ============================================================ */
 
+/* ── Page Layout ─────────────────────────────────────────────── */
 .dashboard-page {
-    padding: calc(var(--nav-height) + var(--space-8)) 0 var(--space-12);
+    padding: calc(var(--nav-height) + var(--sp-8)) 0 var(--sp-12);
 }
 
 @media (max-width: 768px) {
     .dashboard-page {
-        padding: var(--space-5) 0 var(--space-12);
+        padding: var(--sp-5) 0 var(--sp-12);
     }
 }
 
-/* ── Dashboard Grid ───────────────────────────────────────────── */
-.dashboard-grid {
+/* ── Page Header ─────────────────────────────────────────────── */
+.dash-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+    flex-wrap: wrap;
+}
+
+.dash-page-title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.dash-page-subtitle {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    margin-top: var(--sp-1);
+}
+
+.dash-page-subtitle strong {
+    color: var(--accent-light);
+    font-weight: 600;
+}
+
+.dash-header-badges {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+}
+
+.dash-streak-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px var(--sp-3);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--gold);
+    white-space: nowrap;
+}
+
+.dash-date-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px var(--sp-3);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-med);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* ─ Stats Row (4 cards matching reference image) ───────── */
+.dash-stats-row {
     display: grid;
-    grid-template-columns: 1fr 320px;
-    gap: var(--space-6);
-    align-items: start;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-5);
+    margin-bottom: var(--sp-6);
 }
 
-.dashboard-main {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-6);
-}
-
-.dashboard-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    position: sticky;
-    top: calc(var(--nav-height) + var(--space-8));
-}
-
-@media (max-width: 768px) {
-    .dashboard-sidebar {
-        position: static;
-        top: auto;
+@media (max-width: 1024px) {
+    .dash-stats-row {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* ── Score Hero ───────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .dash-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--sp-3);
+    }
+}
+
+/* Stat card inner layout */
+.dash-stat-label {
+    font-size: var(--text-2xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: var(--sp-3);
+}
+
+.dash-stat-headline {
+    font-family: var(--font-display);
+    font-size: var(--text-5xl);
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    line-height: 1;
+}
+
+.dash-stat-headline.blue {
+    color: var(--accent-light);
+}
+
+.dash-stat-headline.green {
+    color: var(--green);
+}
+
+.dash-stat-headline.gold {
+    color: var(--gold);
+}
+
+.dash-stat-sub {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-top: var(--sp-1);
+}
+
+.dash-stat-sub .positive {
+    color: var(--green);
+    font-weight: 600;
+}
+
+.dash-stat-sub .negative {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.dash-stat-footer {
+    margin-top: var(--sp-3);
+}
+
+/* Progress ring card */
+.dash-ring-card {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+}
+
+.dash-ring-info {
+    flex: 1;
+}
+
+.dash-ring-label {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.dash-ring-pct {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-5xl);
+    color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -0.03em;
+}
+
+/* Stat card with progress bars (completion ratios) */
+.dash-completion-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-3);
+}
+
+.dash-completion-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.dash-completion-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dash-completion-row-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.dash-completion-row-val {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* ── Rank & Score Card ─────────────────────────────────────────── */
 .score-hero {
-    background: rgba(99, 102, 241, 0.05);
-    border: 1px solid var(--border-bright);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.07) 0%, rgba(13, 20, 38, 0.2) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.18);
     border-radius: var(--radius-xl);
-    padding: var(--space-6) var(--space-8);
+    padding: var(--sp-6) var(--sp-6);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--space-6);
+    gap: var(--sp-6);
+    margin-bottom: var(--sp-6);
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    transition: box-shadow var(--dur-base) var(--ease), border-color var(--dur-base) var(--ease);
+}
+
+.score-hero:hover {
+    border-color: rgba(59, 130, 246, 0.28);
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .score-hero-left {
@@ -58,39 +233,39 @@
 }
 
 .score-date {
-    font-size: 0.8rem;
-    font-weight: 500;
+    font-size: var(--text-xs);
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.10em;
     color: var(--text-muted);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--sp-2);
 }
 
 .score-headline {
-    font-size: clamp(1rem, 3vw, 1.2rem);
+    font-size: clamp(var(--text-base), 2.5vw, var(--text-xl));
     color: var(--text-secondary);
-    margin-bottom: var(--space-4);
+    margin-bottom: var(--sp-4);
+    font-weight: 400;
 }
 
 .score-value-big {
     font-family: var(--font-display);
-    font-weight: 700;
-    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 800;
+    font-size: clamp(2.5rem, 5vw, 4rem);
     line-height: 1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
 }
 
 .score-sublabel {
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
     color: var(--text-muted);
-    margin-top: var(--space-2);
+    margin-top: var(--sp-2);
 }
 
 .score-hero-right {
     flex-shrink: 0;
 }
 
-/* ── Progress Ring ────────────────────────────────────────────── */
 .progress-ring-container {
     position: relative;
     display: inline-flex;
@@ -106,121 +281,81 @@
 
 .progress-ring-pct {
     font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.6rem;
+    font-weight: 800;
+    font-size: 1.5rem;
     display: block;
     line-height: 1;
 }
 
 .progress-ring-sub {
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
-@media (max-width: 768px) {
-    .progress-ring-container svg {
-        width: 88px;
-        height: 88px;
-    }
+/* ── Daily Execution Section ──────────────────────────────────── */
+.daily-section-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: var(--text-3xl);
+    color: var(--text-primary);
+    letter-spacing: -0.03em;
+    margin-bottom: var(--sp-5);
+    line-height: 1.1;
+}
 
-    .progress-ring-pct {
-        font-size: 1.3rem;
-    }
+/* ── Dashboard Grid ───────────────────────────────────────────── */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr var(--sidebar-width);
+    gap: var(--sp-6);
+    align-items: start;
+}
+
+.dashboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-6);
+}
+
+.dashboard-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-4);
+    position: sticky;
+    top: calc(var(--nav-height) + var(--sp-6));
 }
 
 /* ── Habits Section ───────────────────────────────────────────── */
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: var(--space-4);
-}
-
-.section-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-/* ── Date Navigator ───────────────────────────────────────────── */
-.date-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-full);
-    padding: 6px 12px;
-}
-
-.date-nav-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-full);
-    transition: background 0.15s, color 0.15s;
-    font-size: 0.85rem;
-}
-
-.date-nav-btn:hover:not(:disabled) {
-    background: var(--accent);
-    color: #fff;
-}
-
-.date-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.date-nav-label {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: var(--text-primary);
-    min-width: 100px;
-    text-align: center;
-}
-
 .habits-list {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--sp-2);
 }
 
-/* Skeleton habit row */
-.habit-skeleton {
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: var(--space-4) var(--space-5);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
+.habits-count-chip {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
 }
 
-/* ── Identity Card ────────────────────────────────────────────── */
+/* ── Identity / XP Card ──────────────────────────────────────── */
 .identity-card {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(34, 197, 94, 0.04) 100%);
-    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.07) 0%, rgba(13, 20, 38, 0) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.15);
     border-radius: var(--radius-lg);
-    padding: var(--space-5);
+    padding: var(--sp-5);
 }
 
 .identity-quote {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.05rem;
-    line-height: 1.3;
-    margin-bottom: var(--space-4);
+    font-size: var(--text-base);
+    line-height: 1.4;
+    margin-bottom: var(--sp-4);
     color: var(--text-primary);
 }
 
@@ -228,37 +363,37 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
     color: var(--text-muted);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--sp-2);
 }
 
 .identity-pct {
     font-weight: 700;
-    color: var(--accent-bright);
-    font-size: 0.9rem;
+    color: var(--accent-light);
+    font-size: var(--text-sm);
 }
 
 .identity-edit-btn {
     width: 100%;
-    margin-top: var(--space-4);
-    font-size: 0.8rem;
+    margin-top: var(--sp-4);
+    font-size: var(--text-xs);
     padding: 8px;
     border-radius: var(--radius-sm);
 }
 
-/* ── Streak Widget ────────────────────────────────────────────── */
+/* ── Streak Widget ─────────────────────────────────────────────── */
 .streak-widget {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--space-3);
+    gap: var(--sp-3);
 }
 
 .streak-item {
     background: var(--bg-raised);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: var(--space-4);
+    padding: var(--sp-4);
     text-align: center;
 }
 
@@ -276,7 +411,7 @@
 }
 
 .streak-label {
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -285,14 +420,14 @@
 
 /* ── Mini Heatmap ─────────────────────────────────────────────── */
 .mini-heatmap {
-    padding: var(--space-5);
+    padding: var(--sp-5);
 }
 
 .mini-heatmap-grid {
     display: grid;
     grid-template-columns: repeat(28, 1fr);
     gap: 3px;
-    margin-top: var(--space-3);
+    margin-top: var(--sp-3);
 }
 
 .mini-heatmap-cell {
@@ -300,39 +435,119 @@
     border-radius: 2px;
 }
 
-/* ── Score Summary ────────────────────────────────────────────── */
+/* ── Score Summary (3 mini stats) ─────────────────────────────── */
 .score-summary {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-3);
+    gap: var(--sp-3);
 }
 
 .score-summary-item {
     background: var(--bg-raised);
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
-    padding: var(--space-4);
+    padding: var(--sp-4);
     text-align: center;
 }
 
 .score-summary-val {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.5rem;
+    font-size: var(--text-3xl);
     line-height: 1;
 }
 
 .score-summary-label {
-    font-size: 0.7rem;
+    font-size: var(--text-2xs);
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-top: 4px;
 }
 
-/* ── Responsive ──────────────────────────────────────────── */
+/* ── Bottom 2-column section (chart + insights) ─────────────── */
+.dash-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sp-6);
+    align-items: start;
+}
 
-/* Tablet: sidebar vira coluna única embaixo */
+
+.dash-chart-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.dash-chart-subtitle {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+
+.dash-insights-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    transition: color var(--dur-fast) var(--ease);
+    cursor: pointer;
+}
+
+.dash-insights-link:hover {
+    color: var(--accent-light);
+}
+
+/* ── Efficiency Trend Chip ─────────────────────────────────────── */
+#efficiency-trend-chip {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+}
+
+/* ── Semantic Utility Classes (replaced inline styles) ─────────── */
+.rank-level-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: var(--sp-2);
+    flex-wrap: wrap;
+}
+
+.score-sub-level {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+}
+
+.score-trend-wrap {
+    margin-top: var(--sp-2);
+}
+
+.identity-status-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    margin-top: var(--sp-1);
+}
+
+/* ── Rank Emblem in nav/header ─────────────────────────────────── */
+#rank-emblem {
+    margin-top: var(--sp-2);
+}
+
+/* ── Responsive ───────────────────────────────────────────────── */
 @media (max-width: 1024px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
@@ -343,20 +558,23 @@
         top: auto;
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-4);
+        gap: var(--sp-4);
+    }
+
+    .dash-bottom-row {
+        grid-template-columns: 1fr;
     }
 }
 
-/* Mobile puro */
 @media (max-width: 768px) {
+    .dashboard-sidebar {
+        grid-template-columns: 1fr;
+    }
 
-    /* Score hero: layout mais compacto — score + ring lado a lado */
     .score-hero {
         flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        padding: var(--space-5) var(--space-5);
-        gap: var(--space-4);
+        padding: var(--sp-5);
+        gap: var(--sp-4);
     }
 
     .score-hero-left {
@@ -364,70 +582,53 @@
         min-width: 0;
     }
 
-    .score-hero-right {
-        flex-shrink: 0;
-    }
-
     .score-value-big {
-        font-size: clamp(2.5rem, 14vw, 4rem);
+        font-size: clamp(2rem, 12vw, 3rem);
     }
 
     .score-headline {
-        font-size: 0.85rem;
-        margin-bottom: var(--space-2);
+        font-size: var(--text-base);
+        margin-bottom: var(--sp-2);
     }
 
-    /* Sidebar: coluna única no mobile */
-    .dashboard-sidebar {
-        grid-template-columns: 1fr;
-    }
-
-    /* Score summary: 3 colunas compactas */
     .score-summary {
         grid-template-columns: repeat(3, 1fr);
-        gap: var(--space-2);
+        gap: var(--sp-2);
     }
 
     .score-summary-item {
-        padding: var(--space-3) var(--space-2);
+        padding: var(--sp-3) var(--sp-2);
     }
 
     .score-summary-val {
-        font-size: 1.25rem;
+        font-size: var(--text-2xl);
     }
 
     .score-summary-label {
-        font-size: 0.65rem;
+        font-size: 0.6rem;
     }
 
-    .section-header {
-        flex-wrap: nowrap;
-        gap: var(--space-3);
-        align-items: center;
-    }
-
-    /* Mini heatmap: conter dentro da tela */
-    .mini-heatmap-grid {
-        overflow: hidden;
-    }
-
-    /* Identity edit button */
-    .identity-edit-btn {
-        min-height: 44px;
+    .dash-stats-row {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
-/* Telas bem pequenas */
-@media (max-width: 400px) {
-    .score-summary {
-        grid-template-columns: repeat(3, 1fr);
+@media (max-width: 480px) {
+    .dash-page-header {
+        flex-direction: column;
+        gap: var(--sp-3);
     }
 
-    .streak-widget {
-        grid-template-columns: 1fr 1fr;
+    .dash-page-title {
+        font-size: var(--text-3xl);
     }
 
-    .score-value-big {
-        font-size: clamp(2rem, 16vw, 3rem);
+    .progress-ring-container svg {
+        width: 80px;
+        height: 80px;
+    }
+
+    .progress-ring-pct {
+        font-size: 1.25rem;
     }
 }

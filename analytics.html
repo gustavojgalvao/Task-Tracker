@@ -1,262 +1,368 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="dark" lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ascend — Análises</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#6366f1" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#101622" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Ascend" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW registered:', reg);
+                }).catch(err => console.log('SW reg failed:', err));
+            });
+        }
+    </script>
+    <title>VitaAscend — Inteligência Performance</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/pages/analytics.css" />
-    <meta name="description"
-        content="Ascend Analytics — Deep performance dashboards with trend projections and habit intelligence." />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: { "display": ["Inter"] }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        canvas {
+            filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+        }
+
+        .chart-radar {
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+    </style>
 </head>
 
-<body>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
 
-    <nav class="nav">
-        <div class="nav-inner">
-            <a href="dashboard.html" class="nav-logo">
-                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
-                <span>Ascend</span>
-            </a>
-            <div class="nav-links">
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
-                <a href="habits.html" class="nav-link">Hábitos</a>
-                <a href="tasks.html" class="nav-link">Tarefas</a>
-                <a href="agenda.html" class="nav-link">Agenda</a>
-                <a href="analytics.html" class="nav-link active">Análises</a>
-                <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
-            </div>
-        </div>
-    </nav>
+        <header
+            class="hidden md:flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
 
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-primary cursor-pointer"
+                    onclick="window.location.href='dashboard.html'">
+                    <span class="material-symbols-outlined text-3xl font-bold">change_history</span>
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">VitaAscend</h2>
+                </div>
 
-
-    <div class="page-wrapper analytics-page">
-        <div class="container">
-
-            <div class="analytics-header animate-slide-up">
-                <h1>Análises</h1>
-                <p>Constância visível em dados.</p>
+                <nav class="hidden md:flex ml-10 gap-6 text-sm font-medium">
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="dashboard.html">Dashboard</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="habits.html">Hábitos</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="agenda.html">Agenda</a>
+                    <a class="text-primary font-bold border-b-2 border-primary pb-1" href="analytics.html">Análises</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors"
+                        href="leaderboard.html">Leaderboard</a>
+                </nav>
             </div>
 
-            <!-- Top Stats -->
-            <div class="analytics-stats animate-slide-up delay-100">
-                <div class="card analytics-stat-card stat-box">
-                    <div class="stat-label">Score total</div>
-                    <div class="stat-value gradient-text" id="stat-total">0</div>
+            <div class="flex items-center gap-4">
+
+                <div id="nav-streak-badge"
+                    class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-fire text-[10px]"></i> <span id="nav-streak-val">0</span>
                 </div>
-                <div class="card analytics-stat-card stat-box">
-                    <div class="stat-label">Média diária</div>
-                    <div class="stat-value" id="stat-avg">0</div>
-                </div>
-                <div class="card analytics-stat-card stat-box">
-                    <div class="stat-label">Melhor dia</div>
-                    <div class="stat-value gradient-text-gold" id="stat-best">0</div>
-                </div>
-                <div class="card analytics-stat-card stat-box">
-                    <div class="stat-label">Dias ativos</div>
-                    <div class="stat-value" id="stat-active">0</div>
-                </div>
-                <!-- PDL card -->
-                <div class="card analytics-stat-card stat-box" style="border-color:rgba(99,102,241,0.3);">
-                    <div class="stat-label">PDL (30 dias)</div>
-                    <div class="stat-value gradient-text" id="stat-pdl">0.00</div>
-                    <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">Performance Discipline Level
+
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='profile.html'">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold leading-none text-slate-900 dark:text-white" id="nav-user-name">
+                            Carregando...</p>
+                        <p class="text-[10px] font-black uppercase text-primary tracking-widest" id="nav-user-rank">
+                            Elite Tier</p>
                     </div>
-                </div>
-            </div>
-
-            <!-- Streak Collapse Warning Card -->
-            <div id="streak-warning-card" class="card animate-slide-up delay-150"
-                style="display:none;border-color:rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);margin-bottom:0;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <i class="fa-solid fa-triangle-exclamation" style="color:var(--red);font-size:1.2rem;"></i>
-                    <div>
-                        <div style="font-weight:700;color:var(--red);font-family:var(--font-display);">Alerta de colapso
-                            de streak</div>
-                        <div id="streak-warning-msg"
-                            style="font-size:0.82rem;color:var(--text-secondary);margin-top:2px;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Rank Progress Card -->
-            <div class="card animate-slide-up delay-175" id="rank-progress-card" style="margin-bottom:24px;"></div>
-
-            <!-- Annual Heatmap -->
-            <div class="card heatmap-card animate-slide-up delay-200" style="margin-bottom:24px;">
-                <div class="card-header">
-                    <span class="card-title">Heatmap Anual <span id="heatmap-year"></span></span>
-                    <div class="badge badge-accent" id="heatmap-max-note">Calculando...</div>
-                </div>
-                <div id="heatmap-container"></div>
-            </div>
-
-            <!-- Charts -->
-            <div class="charts-grid animate-slide-up delay-300">
-
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <span class="card-title">Score Mensal</span>
-                        <select class="form-select" id="month-select" onchange="renderMonthChart()"
-                            style="width:auto;padding:6px 12px;font-size:0.8rem;"></select>
-                    </div>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="chart-monthly"></canvas>
+                    <div
+                        class="size-10 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center overflow-hidden">
+                        <i class="fa-solid fa-user text-primary"></i>
                     </div>
                 </div>
 
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <span class="card-title">Desempenho Semanal</span>
-                        <span class="badge badge-green">Últimas 12 semanas</span>
-                    </div>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="chart-weekly"></canvas>
-                    </div>
-                </div>
-
-                <!-- Rolling 7-day Average Chart -->
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <span class="card-title">Média Móvel 7 dias</span>
-                        <span id="volatility-badge" class="badge badge-accent" style="display:none;"></span>
-                    </div>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="chart-rolling"></canvas>
-                    </div>
-                </div>
-
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <span class="card-title">Cumprimento por Hábito</span>
-                    </div>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="chart-habits"></canvas>
-                    </div>
-                </div>
-
-                <div class="card chart-card">
-                    <div class="card-header">
-                        <span class="card-title">Tendência Mensal</span>
-                        <span class="badge badge-accent">Score médio/dia</span>
-                    </div>
-                    <div class="chart-canvas-wrapper">
-                        <canvas id="chart-trend"></canvas>
-                    </div>
-                </div>
+                <button class="text-xs font-bold text-red-500 hover:text-red-400 transition-colors ml-2"
+                    onclick="handleSignOut()">
+                    Sair
+                </button>
 
             </div>
+        </header>
 
-            <!-- Habit breakdown table -->
-            <div class="card habit-table-card animate-slide-up delay-400">
-                <div class="card-header">
-                    <span class="card-title">Detalhamento por Hábito</span>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <span class="text-sm text-muted">Últimos 30 dias</span>
-                        <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Exportar dados">
-                            <i class="fa-solid fa-download"></i> Exportar
-                        </button>
-                    </div>
+        <main class="flex-1 max-w-full max-w-5xl mx-auto w-full p-4 md:p-8 space-y-8">
+
+            <section class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 animate-slide-up">
+                <div>
+                    <h1 class="text-slate-900 dark:text-white text-4xl font-black leading-tight tracking-tight">
+                        Analytics Dashboard</h1>
+                    <p class="text-slate-500 dark:text-slate-400 text-lg">Métricas de performance e insights
+                        estratégicos do sistema.</p>
                 </div>
-                <table class="habit-table" id="habit-table">
-                    <thead>
-                        <tr>
-                            <th>Hábito</th>
-                            <th>Concluídos</th>
-                            <th>Streak atual</th>
-                            <th>Pontos totais</th>
-                            <th>Cumprimento</th>
-                        </tr>
-                    </thead>
-                    <tbody id="habit-table-body">
-                        <tr>
-                            <td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
-                                Carregando...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                <div class="flex gap-2 bg-slate-200 dark:bg-slate-800 p-1 rounded-lg">
+                    <button id="btn-tf-7" onclick="setTimeFilter(7)"
+                        class="tf-btn px-4 py-2 text-xs font-bold rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all text-slate-500">7
+                        DIAS</button>
+                    <button id="btn-tf-30" onclick="setTimeFilter(30)"
+                        class="tf-btn px-4 py-2 text-xs font-bold rounded-md bg-white dark:bg-slate-700 shadow-sm transition-all text-slate-900 dark:text-white">30
+                        DIAS</button>
+                    <button id="btn-tf-90" onclick="setTimeFilter(90)"
+                        class="tf-btn px-4 py-2 text-xs font-bold rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all text-slate-500">90
+                        DIAS</button>
+                    <button id="btn-tf-all" onclick="setTimeFilter('all')"
+                        class="tf-btn px-4 py-2 text-xs font-bold rounded-md hover:bg-white/50 dark:hover:bg-slate-700/50 transition-all text-slate-500">TUDO</button>
+                </div>
+            </section>
 
-            <!-- ── XP Gain Graph ─────────────────────────────────── -->
-            <div class="card analytics-chart-card animate-slide-up delay-400" style="margin-top:var(--space-8,32px);">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 animate-slide-up"
+                style="animation-delay: 100ms">
                 <div
-                    style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:var(--space-5,20px);">
-                    <div>
-                        <h2 style="font-size:1.05rem;font-weight:700;margin:0;">
-                            <i class="fa-solid fa-chart-line" style="color:var(--accent);margin-right:8px;"></i>XP
-                            Diário
-                        </h2>
-                        <p style="font-size:0.78rem;color:var(--text-muted);margin:3px 0 0;">Últimos 30 dias — hábitos +
-                            tarefas combinados</p>
+                    class="bg-white dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Lifetime XP</p>
+                    <p class="text-2xl font-black text-primary" id="stat-total">0</p>
+                    <p class="text-emerald-500 text-[10px] font-bold flex items-center gap-1 mt-2">
+                        <span class="material-symbols-outlined text-xs">trending_up</span> +12% este mês
+                    </p>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Média Eficiência</p>
+                    <p class="text-2xl font-black" id="stat-avg">0%</p>
+                    <p class="text-emerald-500 text-[10px] font-bold flex items-center gap-1 mt-2">
+                        <span class="material-symbols-outlined text-xs">speed</span> Estável
+                    </p>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Melhor Dia</p>
+                    <p class="text-2xl font-black text-amber-500" id="stat-best">0</p>
+                </div>
+                <div
+                    class="bg-white dark:bg-slate-800/40 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Dias Ativos</p>
+                    <p class="text-2xl font-black text-emerald-500" id="stat-active">0</p>
+                </div>
+                <div
+                    class="bg-primary p-5 rounded-2xl border border-primary shadow-lg shadow-primary/20 flex flex-col justify-between">
+                    <p class="text-[10px] font-black text-white/60 uppercase tracking-widest" id="stat-pdl-label">PDL
+                        Index</p>
+                    <p class="text-3xl font-black text-white" id="stat-pdl">0.00</p>
+                    <p class="text-white/60 text-[10px] font-bold uppercase tracking-tighter mt-1" id="stat-rank-text">
+                        Iniciante</p>
+                </div>
+            </div>
+
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up" style="animation-delay: 200ms">
+                <div
+                    class="lg:col-span-1 flex flex-col gap-4 rounded-3xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h3 class="text-slate-900 dark:text-white text-lg font-black italic">Habit Balanced Score</h3>
+                    <div class="flex-1 flex items-center justify-center p-2 relative h-full">
+                        <canvas id="radar-chart" class="w-full h-full"></canvas>
                     </div>
-                    <button id="btn-toggle-avg" class="btn btn-ghost btn-sm" onclick="toggleXPAverage()"
-                        title="Ativar/desativar média de 7 dias">
-                        <i class="fa-solid fa-chart-area"></i> Média 7 dias
+                </div>
+
+                <div
+                    class="lg:col-span-2 rounded-2xl p-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-center mb-3">
+                        <div>
+                            <h3 class="text-slate-900 dark:text-white text-base font-black">Consistência Anual</h3>
+                            <p class="text-[11px] text-slate-500" id="heatmap-max-note"></p>
+                        </div>
+                        <select id="heatmap-year-select"
+                            class="text-[11px] font-bold text-slate-400 bg-transparent border border-slate-700 rounded-lg px-2 py-1 cursor-pointer focus:outline-none focus:border-primary"></select>
+                    </div>
+                    <div id="heatmap-container"></div>
+                </div>
+            </section>
+
+            <section id="ai-insight-container"
+                class="bg-gradient-to-r from-primary to-blue-700 rounded-3xl p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 overflow-hidden relative animate-slide-up">
+                <div class="absolute top-0 right-0 p-8 opacity-10">
+                    <span class="material-symbols-outlined text-[140px]">psychology</span>
+                </div>
+                <div class="relative z-10 flex flex-col gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">auto_awesome</span>
+                        <span class="text-[10px] font-black tracking-[0.2em] uppercase opacity-80">Strategic AI
+                            Insight</span>
+                    </div>
+                    <h3 id="ai-insight-title" class="text-2xl font-black leading-tight tracking-tighter">Sincronizando
+                        com Gemini AI...</h3>
+                    <p id="ai-insight-text" class="text-white/80 max-w-xl text-sm leading-relaxed">A IA estruturará um
+                        plano logístico de alta performance para os próximos 7 dias baseado no seu PDL recente.</p>
+                </div>
+                <button id="btn-ai-generate" onclick="generateAIInsight()"
+                    class="relative z-10 bg-white text-primary px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:scale-105 transition-all shadow-xl">
+                    Gerar Insight
+                </button>
+            </section>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 animate-slide-up" style="animation-delay: 300ms">
+                <!-- XP 30 days -->
+                <div
+                    class="flex flex-col gap-6 rounded-3xl p-8 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-slate-900 dark:text-white text-lg font-black tracking-tight">Acúmulo de XP (30d)
+                        </h3>
+                        <button onclick="toggleXPAverage()" id="btn-toggle-avg"
+                            class="px-3 py-1 bg-slate-100 dark:bg-slate-900 rounded-lg text-[10px] font-black uppercase hover:bg-primary transition-all">Média
+                            Móvel</button>
+                    </div>
+                    <div class="h-64 relative" id="xp-graph-wrap">
+                        <canvas id="xp-chart"></canvas>
+                    </div>
+                    <div id="xp-graph-empty" class="hidden h-64 items-center justify-center text-slate-500 italic">Sem
+                        registros suficientes.</div>
+                </div>
+
+                <!-- Rolling Avg -->
+                <div
+                    class="flex flex-col gap-6 rounded-3xl p-8 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-slate-900 dark:text-white text-lg font-black italic">PDL Index Volatility</h3>
+                        <span id="volatility-badge"
+                            class="text-[10px] font-black px-2 py-1 bg-emerald-500/10 text-emerald-500 rounded-lg uppercase tracking-tighter">Estável</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="chart-rolling"></canvas>
+                        <div
+                            class="absolute bottom-4 right-4 bg-primary/10 border border-primary/20 p-3 rounded-xl backdrop-blur-md">
+                            <p class="text-[9px] font-black text-primary uppercase tracking-widest">Próximo Milestone
+                            </p>
+                            <p class="text-sm font-black">Mastery Level 4</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Chart 1: XP por Categoria -->
+                <div
+                    class="flex flex-col gap-6 rounded-3xl p-8 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-slate-900 dark:text-white text-lg font-black tracking-tight">XP por Categoria
+                            (30d)</h3>
+                    </div>
+                    <div class="h-64 relative flex items-center justify-center">
+                        <canvas id="chart-category"></canvas>
+                    </div>
+                </div>
+
+                <!-- New Chart 2: Success Rate by Day -->
+                <div
+                    class="flex flex-col gap-6 rounded-3xl p-8 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-slate-900 dark:text-white text-lg font-black tracking-tight">Consistência por
+                            Dia (30d)</h3>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="chart-weekday"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rank Progression Section -->
+            <section
+                class="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-200 dark:border-slate-800 p-8 animate-slide-up"
+                style="animation-delay: 350ms">
+                <div class="flex items-center justify-between mb-8">
+                    <div>
+                        <h3 class="text-slate-900 dark:text-white text-xl font-black">Progressão de Liga</h3>
+                        <p class="text-xs text-slate-500">Métricas baseadas em performance competitiva (7 dias).</p>
+                    </div>
+                    <div class="px-4 py-2 bg-primary/10 rounded-xl">
+                        <span class="text-[10px] font-black text-primary uppercase tracking-widest">Status Atual:</span>
+                        <span class="text-sm font-black ml-2" id="rank-breakdown-current">---</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="rank-breakdown-container">
+                    <!-- Tiers will be injected here -->
+                </div>
+            </section>
+
+            <section
+                class="bg-white dark:bg-slate-800/40 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-slide-up"
+                style="animation-delay: 400ms">
+                <div
+                    class="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20">
+                    <h3 class="font-black text-lg">Métricas por Protocolo</h3>
+                    <button onclick="exportData()"
+                        class="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-lg">download</span> Exportar Dados
                     </button>
                 </div>
-                <!-- Chart container -->
-                <div id="xp-graph-wrap" style="position:relative;height:240px;">
-                    <canvas id="xp-chart"></canvas>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Protocolo</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                                    Frequência</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                                    Streak</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+                                    Score</th>
+                                <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                    Cumprimento</th>
+                            </tr>
+                        </thead>
+                        <tbody id="habit-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                        </tbody>
+                    </table>
                 </div>
-                <!-- Empty state (hidden when data exists) -->
-                <div id="xp-graph-empty" style="display:none;text-align:center;padding:48px 0;color:var(--text-muted);">
-                    <i class="fa-solid fa-chart-line fa-2x" style="margin-bottom:12px;opacity:0.3;"></i>
-                    <p style="font-size:0.9rem;">Nenhum XP registrado nos últimos 30 dias.<br>Complete hábitos ou
-                        tarefas para visualizar o gráfico.</p>
-                </div>
-                <!-- Summary row -->
-                <div id="xp-graph-summary" style="display:flex;gap:24px;margin-top:16px;flex-wrap:wrap;display:none;">
-                    <div style="font-size:0.8rem;color:var(--text-muted);">
-                        Total: <strong id="xp-sum-total" style="color:var(--text-primary);">0 XP</strong>
-                    </div>
-                    <div style="font-size:0.8rem;color:var(--text-muted);">
-                        Melhor dia: <strong id="xp-sum-peak" style="color:var(--gold);">0 XP</strong>
-                    </div>
-                    <div style="font-size:0.8rem;color:var(--text-muted);">
-                        Média diária: <strong id="xp-sum-avg" style="color:var(--accent-bright);">0 XP</strong>
-                    </div>
-                </div>
-            </div>
+            </section>
+        </main>
 
-        </div>
+        <footer
+            class="border-t border-slate-200 dark:border-slate-800 p-8 text-center text-slate-500 text-[10px] font-black uppercase tracking-widest opacity-60">
+            <p>© 2026 VitaAscend • Intelligence Data Center • Performance Optimal</p>
+        </footer>
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="bottom-nav">
-        <a href="dashboard.html" class="bottom-nav-item">
-            <i class="fa-solid fa-gauge"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="habits.html" class="bottom-nav-item">
-            <i class="fa-solid fa-bolt"></i>
-            <span>Hábitos</span>
-        </a>
-        <a href="tasks.html" class="bottom-nav-item">
-            <i class="fa-solid fa-list-check"></i>
-            <span>Tarefas</span>
-        </a>
-        <a href="agenda.html" class="bottom-nav-item">
-            <i class="fa-solid fa-calendar-check"></i>
-            <span>Agenda</span>
-        </a>
-        <a href="analytics.html" class="bottom-nav-item active">
-            <i class="fa-solid fa-chart-bar"></i>
-            <span>Análises</span>
-        </a>
-    </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase.js"></script>
@@ -264,593 +370,783 @@
     <script src="js/router.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/engine.js"></script>
+    <script src="js/ai.js"></script>
     <script src="js/habits.js"></script>
     <script src="js/logs.js"></script>
     <script src="js/score.js"></script>
     <script src="js/streak.js"></script>
-    <script src="js/heatmap.js"></script>
-    <script src="js/charts.js"></script>
+    <script src="js/identity.js"></script>
+    <script src="js/app.js"></script>
+
     <script>
-        let allHabits = [];
-        let yearLogs = [];
+        let _habits = [];
+        let _yearLogs = [];
+        let _xpChartInstance = null;
+        let _rollingChartInstance = null;
+        let _radarChartInstance = null;
+        let _categoryChartInstance = null;
+        let _weekdayChartInstance = null;
+        let _showRollingAverage = false;
+        let _timeFilter = 30; // 7, 30, 90, or 'all'
 
-        const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-
-        function renderIcon(icon) {
-            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
-            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
-            return icon;
-        }
-
+        // ── Init ──────────────────────────────────────────────────────
         async function init() {
+            UI.ensureToastStyles();
             const ok = await Router.init();
             if (!ok) return;
 
-            document.getElementById('heatmap-year').textContent = new Date().getFullYear();
+            try {
+                const [habits, logs, profile] = await Promise.all([
+                    Habits.getAllIncludingPaused(),
+                    Logs.getThisYear(),
+                    Identity.getProfile(),
+                ]);
+                _habits = habits.filter(h => h.is_active);
+                _yearLogs = logs;
+                AppState.habits = _habits;
+                AppState.logs = logs;
+                AppState.profile = profile;
 
-            const [habits, logs] = await Promise.all([
-                Habits.getAll(),
-                Logs.getRange(UI.getStartOfYear(), new Date())
-            ]);
+                AppUI.renderNav(window._unifiedData);
+                renderStats();
+                initHeatmapYearSelector();
+                renderHeatmap();
+                loadXPGraph();
+                renderRollingAvgChart();
+                renderRadarChart();
+                renderCategoryChart();
+                renderWeekdayChart();
+                renderHabitTable();
+                renderRankBreakdown();
 
-            allHabits = habits;
-            yearLogs = logs;
-
-            renderStats();
-            renderHeatmap();
-            buildMonthSelect();
-            renderMonthChart();
-            renderWeeklyChart();
-            renderHabitTable();
-            renderHabitDoughnut();
-            renderTrendChart();
-            renderRollingAvgChart();
-            renderAdvancedAnalytics();
-            renderRankProgress();
-            loadXPGraph(); // ← XP Gain Graph (habits + tasks combined)
-        }
-
-        function renderRankProgress() {
-            const card = document.getElementById('rank-progress-card');
-            if (!card || !window.Engine) return;
-
-            // Level (permanent — derived from cumulative XP)
-            const totalXP = yearLogs.reduce((s, l) => s + (l.xp_earned || 0), 0);
-            const lvl = Engine.getLevelProgress(totalXP);
-
-            // Competitive Rank (dynamic — derived from 7-day weighted PDL)
-            const snapshots = [];
-            for (let i = 6; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                const dateStr = d.toISOString().split('T')[0];
-                const dayLogs = yearLogs.filter(l => l.date === dateStr);
-                const efficiency = dayLogs.length > 0
-                    ? Math.round(dayLogs.reduce((s, l) => s + (l.xp_earned || 0), 0) / Math.max(1, dayLogs.length))
-                    : 0;
-                snapshots.push({ date: dateStr, efficiency: Math.min(100, efficiency) });
+            } catch (err) {
+                console.error('[analytics] sync error:', err);
+                UI.toast('Erro ao carregar dados.', 'error');
             }
-            const competitivePDL = Engine.calcCompetitivePDL(snapshots);
-            const rank = Engine.getRankFromPDL(competitivePDL);
-            const ranks = Engine.COMPETITIVE_RANKS;
-            const currentIdx = ranks.findIndex(r => r.id === rank.id);
-            const nextRank = ranks[currentIdx + 1];
-
-            const tilesHTML = ranks.map((r, i) => {
-                const isActive = r.id === rank.id;
-                const isPast = i < currentIdx;
-                const icon = isActive ? 'shield-halved' : (isPast ? 'check' : 'lock');
-                return `
-                  <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);opacity:${isPast || isActive ? '1' : '0.38'}">
-                    <span class="rank-emblem ${r.id}" style="font-size:0.75rem;padding:3px 9px;">
-                      <i class="fa-solid fa-${icon}"></i> ${r.label}
-                    </span>
-                    <span style="font-size:0.72rem;color:var(--text-muted);margin-left:auto;">
-                      PDL ${r.minPDL}%${r.maxPDL < 100 ? '–' + r.maxPDL + '%' : '+'}
-                    </span>
-                    ${isActive ? `<span class="badge badge-accent" style="font-size:0.65rem;">atual</span>` : ''}
-                  </div>`;
-            }).join('');
-
-            card.innerHTML = `
-              <div class="card-header" style="margin-bottom:16px;">
-                <span class="card-title">Progressão</span>
-              </div>
-
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
-                <!-- Level block -->
-                <div style="background:var(--bg-hover);border-radius:var(--radius-md);padding:12px;">
-                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">
-                    Nível <span style="font-size:0.6rem;opacity:.6;">(permanente)</span>
-                  </div>
-                  <div style="font-family:var(--font-display);font-size:1.6rem;font-weight:800;color:var(--text-primary);line-height:1;">${lvl.level}</div>
-                  <div style="margin-top:8px;">
-                    <div class="xp-bar" style="height:4px;">
-                      <div class="xp-bar-fill" style="width:${lvl.progressPct}%;"></div>
-                    </div>
-                    <div style="font-size:0.68rem;color:var(--text-muted);margin-top:4px;">${lvl.currentLevelXP} / ${lvl.nextLevelXP} XP</div>
-                  </div>
-                </div>
-                <!-- Rank block -->
-                <div style="background:var(--bg-hover);border-radius:var(--radius-md);padding:12px;">
-                  <div style="font-size:0.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">
-                    Rank <span style="font-size:0.6rem;opacity:.6;">(7 dias)</span>
-                  </div>
-                  <span class="rank-emblem ${rank.id}" style="font-size:0.82rem;">
-                    <i class="fa-solid ${rank.icon || 'fa-shield'}"></i> ${rank.label}
-                  </span>
-                  <div style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;">
-                    PDL competitivo: <strong style="color:var(--text-primary);">${competitivePDL}%</strong>
-                  </div>
-                  <div style="font-size:0.68rem;color:var(--text-muted);margin-top:2px;">
-                    ${nextRank ? `→ ${nextRank.label} a partir de ${nextRank.minPDL}%` : '→ Rank máximo'}
-                  </div>
-                </div>
-              </div>
-
-              <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:10px;font-style:italic;">
-                O rank reflete disciplina recente — pode subir ou cair com seu desempenho.
-              </div>
-              <div>${tilesHTML}</div>`;
         }
 
+        // ── Time Filter Helper ────────────────────────────────────────
+        function setTimeFilter(days) {
+            _timeFilter = days;
+            document.querySelectorAll('.tf-btn').forEach(btn => {
+                const target = btn.id.replace('btn-tf-', '');
+                const isActive = target === String(days) || (target === 'all' && days === 'all');
+                if (isActive) {
+                    btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                    btn.classList.remove('hover:bg-white/50', 'dark:hover:bg-slate-700/50', 'text-slate-500');
+                } else {
+                    btn.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'text-slate-900', 'dark:text-white');
+                    btn.classList.add('hover:bg-white/50', 'dark:hover:bg-slate-700/50', 'text-slate-500');
+                }
+            });
+            renderStats();
+            loadXPGraph();
+            renderRollingAvgChart();
+            renderRadarChart();
+            renderCategoryChart();
+            renderWeekdayChart();
+            renderHabitTable();
+            renderRankBreakdown();
+        }
+
+        function getFilteredLogs() {
+            if (_timeFilter === 'all') return _yearLogs;
+            const cutDate = UI.dateStr(UI.getDaysAgo(_timeFilter));
+            return _yearLogs.filter(l => l.date >= cutDate);
+        }
+
+        // ── Stats Row ─────────────────────────────────────────────────
         function renderStats() {
-            const daily = Score.aggregateByDay(yearLogs);
-            const weekly = Score.aggregateByWeek(yearLogs);
-            const monthly = Score.aggregateByMonth(yearLogs);
-            const summary = Score.getSummary(daily, weekly, monthly);
-            UI.animateNumber(document.getElementById('stat-total'), summary.totalAllTime);
-            document.getElementById('stat-avg').textContent = summary.avgDaily.toFixed(1);
-            UI.animateNumber(document.getElementById('stat-best'), summary.bestDay);
-            UI.animateNumber(document.getElementById('stat-active'), summary.activeDays);
+            const activeHabits = _habits.filter(h => !h.is_paused);
+            const logs = getFilteredLogs();
+
+            // Total XP
+            const totalXP = logs.reduce((sum, l) => sum + (l.completed ? (l.xp_earned || l.score_earned || 0) : 0), 0);
+            const el = id => document.getElementById(id);
+            if (el('stat-total')) el('stat-total').textContent = totalXP.toLocaleString('pt-BR');
+
+            // Avg efficiency
+            const dayScores = Score.aggregateByDay(logs);
+            const maxScore = activeHabits.reduce((s, h) => s + h.weight, 0);
+            const effAvg = maxScore > 0 && dayScores.length > 0
+                ? Math.round(dayScores.reduce((s, d) => s + d.score, 0) / (dayScores.length * maxScore) * 100)
+                : 0;
+            if (el('stat-avg')) el('stat-avg').textContent = effAvg + '%';
+
+            // Best day
+            const bestDay = dayScores.length > 0 ? Math.max(...dayScores.map(d => d.score)) : 0;
+            if (el('stat-best')) el('stat-best').textContent = bestDay;
+
+            // Active days
+            const activeDays = new Set(logs.filter(l => l.completed).map(l => l.date)).size;
+            if (el('stat-active')) el('stat-active').textContent = activeDays;
+
+            // Competitive PDL
+            const snaps = Engine.buildDayEfficiencySnapshots(logs, activeHabits, 7); // Always use 7 days for Rank
+            const pdl = Engine.calcCompetitivePDL(snaps);
+            const rank = Engine.getRankFromPDL(pdl);
+
+            const pdlInfo = Engine.getLocalPDL(pdl);
+            if (el('stat-pdl')) el('stat-pdl').textContent = `${pdlInfo.value} / ${pdlInfo.max}`;
+            if (el('stat-rank-text')) el('stat-rank-text').textContent = (`${rank.label} ${rank.division}`).trim();
+            if (el('stat-pdl-label')) el('stat-pdl-label').textContent = `Competitivo (7d)`;
+
+            // Streak note on heatmap
+            const streak = Streak.calcGlobalStreak(_yearLogs, activeHabits);
+            const note = el('heatmap-max-note');
+            if (note) note.textContent = `Streak atual: ${streak} dias • ${activeDays} dias ativos no período`;
         }
+
+        // ── AI Insights ───────────────────────────────────────────────
+        async function generateAIInsight() {
+            const titleEl = document.getElementById('ai-insight-title');
+            const textEl = document.getElementById('ai-insight-text');
+            const btnEl = document.getElementById('btn-ai-generate');
+
+            if (!titleEl || !textEl || !btnEl) return;
+
+            // Loading state
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<i class="fa-solid fa-cookie-bite fa-spin"></i> Processando...';
+            titleEl.textContent = 'Analisando Métricas...';
+            textEl.textContent = 'Extraindo vetor de performance do banco de dados...';
+
+            try {
+                // Compile data
+                const activeHabits = _habits.filter(h => !h.is_paused);
+                const dayScores = Score.aggregateByDay(_yearLogs);
+                const maxScore = activeHabits.reduce((s, h) => s + h.weight, 0);
+                const effAvg = maxScore > 0 && dayScores.length > 0
+                    ? Math.round(dayScores.reduce((s, d) => s + d.score, 0) / (dayScores.length * maxScore) * 100)
+                    : 0;
+                const streak = Streak.calcGlobalStreak(_yearLogs, activeHabits);
+
+                const userData = {
+                    habits: activeHabits.map(h => ({ id: h.id, title: h.title, category: h.category, streak: h.current_streak || 0 })),
+                    logs: _yearLogs,
+                    efficiency: effAvg,
+                    streak: streak
+                };
+
+                const insightText = await AI.generateInsight(userData);
+
+                titleEl.textContent = 'Janela de Performance Detectada';
+                textEl.innerHTML = insightText.replace(/\*\*(.*?)\*\*/g, '<span class="text-white font-black">$1</span>'); // Bold formatting
+
+                btnEl.textContent = 'Insight Atualizado';
+                btnEl.classList.remove('bg-white', 'text-primary');
+                btnEl.classList.add('bg-white/20', 'text-white', 'cursor-default');
+                btnEl.onclick = null; // Prevent re-clicking immediately
+
+            } catch (err) {
+                console.error('AI Insight Error:', err);
+                titleEl.textContent = 'Erro de Comunicação';
+                textEl.textContent = err.message || 'Falha ao conectar com o servidor da IA. Tente novamente.';
+
+                btnEl.disabled = false;
+                btnEl.textContent = 'Tentar Novamente';
+            }
+        }
+
+        // ── Rank Breakdown ─────────────────────────────────────────────
+        function renderRankBreakdown() {
+            const container = document.getElementById('rank-breakdown-container');
+            const currentLabel = document.getElementById('rank-breakdown-current');
+            if (!container) return;
+
+            const activeHabits = _habits.filter(h => !h.is_paused);
+            const snaps = Engine.buildDayEfficiencySnapshots(_yearLogs, activeHabits, 7);
+            const currentPDL = Engine.calcCompetitivePDL(snaps);
+            const currentRank = Engine.getRankFromPDL(currentPDL);
+
+            if (currentLabel) {
+                currentLabel.textContent = (`${currentRank.label} ${currentRank.division}`).trim();
+                currentLabel.style.color = currentRank.color;
+            }
+
+            container.innerHTML = Engine.COMPETITIVE_RANKS.map(tier => {
+                const isCurrent = tier.id === currentRank.id;
+                const opacity = currentPDL >= tier.minPDL ? 'opacity-100' : 'opacity-40';
+
+                let progressHtml = '';
+                if (isCurrent) {
+                    const pdlInfo = Engine.getLocalPDL(currentPDL);
+                    progressHtml = `
+                    <div class="mt-2 space-y-1">
+                        <div class="flex justify-between text-[9px] font-black uppercase text-primary">
+                            <span>${currentRank.label} ${currentRank.division}</span>
+                            <span>${pdlInfo.value} / ${pdlInfo.max}</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-primary rounded-full transition-all duration-1000" style="width: ${pdlInfo.pct}%"></div>
+                        </div>
+                    </div>`;
+                }
+
+                // Show divisions overview for this tier
+                const divInfo = tier.id !== 'lenda' ? 'I → II → III' : 'Rank Final';
+
+                return `
+                <div class="relative flex flex-col gap-4 p-5 rounded-2xl border ${isCurrent ? 'border-primary bg-primary/5 shadow-lg shadow-primary/10' : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30'} ${opacity} transition-all">
+                    <div class="flex items-center justify-between">
+                        <div class="size-10 rounded-xl flex items-center justify-center text-lg shadow-sm" style="background: ${tier.color}; color: white; box-shadow: 0 4px 12px ${tier.glow}">
+                            <i class="fa-solid ${tier.icon}"></i>
+                        </div>
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">${divInfo}</span>
+                    </div>
+                    <div>
+                        <p class="font-black text-sm uppercase tracking-tight">${tier.label}</p>
+                        <p class="text-[10px] text-slate-500 font-bold mt-0.5">${isCurrent ? `Sua liga atual — ${currentRank.division}` : currentPDL >= tier.minPDL ? 'Conquistado' : 'Bloqueado'}</p>
+                    </div>
+                    ${progressHtml}
+                </div>`;
+            }).join('');
+        }
+
+        // ── Annual Heatmap ─────────────────────────────────────────────
+        let _heatmapYear = null;
+
+        function initHeatmapYearSelector() {
+            const sel = document.getElementById('heatmap-year-select');
+            if (!sel) return;
+            const cy = new Date().getFullYear();
+            sel.innerHTML = `<option value="">Último ano</option>` +
+                [cy, cy - 1, cy - 2, cy - 3].map(y => `<option value="${y}">${y}</option>`).join('');
+            sel.addEventListener('change', () => {
+                _heatmapYear = sel.value ? +sel.value : null;
+                renderHeatmap();
+            });
+        }
+
+        // Floating tooltip element (created once)
+        let _hmTooltip = null;
+        function _getTooltip() {
+            if (!_hmTooltip) {
+                _hmTooltip = document.createElement('div');
+                _hmTooltip.style.cssText = `
+                    position:fixed;pointer-events:none;z-index:9999;
+                    background:#0f172a;border:1px solid #1e293b;
+                    color:#e2e8f0;border-radius:8px;padding:8px 12px;
+                    font-size:11px;font-weight:600;line-height:1.6;
+                    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+                    opacity:0;transition:opacity .15s ease;
+                    white-space:nowrap;`;
+                document.body.appendChild(_hmTooltip);
+            }
+            return _hmTooltip;
+        }
+
+        function _showTooltip(e, html) {
+            const t = _getTooltip();
+            t.innerHTML = html;
+            t.style.opacity = '1';
+            _posTooltip(e);
+        }
+        function _posTooltip(e) {
+            const t = _getTooltip();
+            const pad = 12;
+            let x = e.clientX + pad, y = e.clientY - 60;
+            if (x + 200 > window.innerWidth) x = e.clientX - 210;
+            if (y < 0) y = e.clientY + pad;
+            t.style.left = x + 'px';
+            t.style.top = y + 'px';
+        }
+        function _hideTooltip() { _getTooltip().style.opacity = '0'; }
 
         function renderHeatmap() {
-            const scoreMap = Logs.buildScoreMap(yearLogs);
-            const maxScore = Math.max(1, ...Object.values(scoreMap));
-            document.getElementById('heatmap-max-note').textContent = `Máx: ${maxScore} pts/dia`;
-            Heatmap.render(document.getElementById('heatmap-container'), scoreMap, new Date().getFullYear());
-        }
+            const container = document.getElementById('heatmap-container');
+            if (!container) return;
 
-        function buildMonthSelect() {
-            const select = document.getElementById('month-select');
-            const now = new Date();
-            for (let m = 0; m <= now.getMonth(); m++) {
-                const opt = document.createElement('option');
-                opt.value = m;
-                opt.textContent = MONTH_NAMES[m];
-                if (m === now.getMonth()) opt.selected = true;
-                select.appendChild(opt);
+            const HS = HeatmapAggregationService;
+            const hm = HS.generateHeatmapData(_heatmapYear);
+            const C = HS.COLORS;
+            const cols = hm.totalCols;
+            const GAP = 3; // px
+
+            // ── Stats note
+            let activeDays = 0, streak = 0, maxStreak = 0, tempStreak = 0;
+            for (const d of hm.grid) {
+                if (d.xp > 0) { activeDays++; tempStreak++; maxStreak = Math.max(maxStreak, tempStreak); }
+                else tempStreak = 0;
+                if (d.isToday) streak = tempStreak;
             }
-        }
+            const note = document.getElementById('heatmap-max-note');
+            if (note) note.textContent = `${activeDays} dias ativos · Streak: ${streak} · Maior: ${maxStreak}`;
 
-        function renderMonthChart() {
-            const month = parseInt(document.getElementById('month-select').value);
-            const year = new Date().getFullYear();
-            const start = new Date(year, month, 1);
-            const end = new Date(year, month + 1, 0);
-            const monthLogs = yearLogs.filter(l => l.date >= UI.dateStr(start) && l.date <= UI.dateStr(end));
-            const daily = Score.aggregateByDay(monthLogs);
-            const allDays = [];
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                const ds = UI.dateStr(new Date(d));
-                const found = daily.find(x => x.date === ds);
-                allDays.push({ date: ds, score: found ? found.score : 0 });
-            }
-            Charts.renderMonthly('chart-monthly', allDays);
-        }
+            // ── Month header row
+            const monthByCol = {};
+            hm.months.forEach(m => monthByCol[m.col] = m.name);
+            const monthCells = Array.from({ length: cols }, (_, i) =>
+                `<div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;position:relative;"><span style="position:absolute;left:0">${monthByCol[i] || ''}</span></div>`
+            ).join('');
 
-        function renderWeeklyChart() {
-            Charts.renderWeekly('chart-weekly', Score.aggregateByWeek(yearLogs));
-        }
+            // ── Day-of-week labels (left column)
+            const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+            const dayLabels = ['', 'Seg', '', 'Qua', '', 'Sex', ''];
+            const dayCells = dayLabels.map(l =>
+                `<div style="display:flex;align-items:center;justify-content:flex-end;font-size:9px;font-weight:700;color:#6b7280;padding-right:4px;text-transform:uppercase;">${l}</div>`
+            ).join('');
 
-        function renderHabitDoughnut() {
-            const logs30 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
-            const rates = Score.calcHabitCompletionRates(allHabits, logs30);
-            if (rates.length > 0) Charts.renderHabitDoughnut('chart-habits', rates);
-        }
+            // ── Build data lookup for tooltips
+            const dataById = {};
+            hm.grid.forEach(d => { dataById[d.date] = d; });
 
-        function renderTrendChart() {
-            Charts.renderTrend('chart-trend', Score.aggregateByMonth(yearLogs));
-        }
-
-        function renderHabitTable() {
-            const logs30 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
-            const rates = Score.calcHabitCompletionRates(allHabits, logs30);
-            const tbody = document.getElementById('habit-table-body');
-
-            if (rates.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">Nenhum dado disponível.</td></tr>`;
-                return;
-            }
-
-            tbody.innerHTML = rates.map(r => {
-                const streak = Streak.calcHabitStreak(r.habit.id, yearLogs);
-                const color = r.habit.color || '#6366f1';
-                return `
-          <tr>
-            <td>
-              <div style="display:flex;align-items:center;gap:10px;">
-                <span style="font-size:1.1rem;color:${color}">${renderIcon(r.habit.icon)}</span>
-                <span style="font-weight:600;color:var(--text-primary);">${r.habit.name}</span>
-                <div class="badge badge-accent" style="background:${color}22;color:${color};border-color:${color}44;">
-                  ${r.habit.weight} pt${r.habit.weight > 1 ? 's' : ''}
-                </div>
-              </div>
-            </td>
-            <td>${r.completedDays} / ${r.totalDays} dias</td>
-            <td>
-              ${streak > 0
-                        ? `<span class="badge badge-streak"><i class="fa-solid fa-fire"></i> ${streak}</span>`
-                        : `<span style="color:var(--text-muted);">—</span>`}
-            </td>
-            <td style="color:var(--text-primary);font-weight:600;">${r.totalScore} pts</td>
-            <td>
-              <div class="completion-bar-cell">
-                <div class="completion-bar-mini">
-                  <div class="completion-bar-fill-mini" style="width:${r.pct}%;background:linear-gradient(90deg,${color},${color}99);"></div>
-                </div>
-                <span class="completion-pct">${r.pct}%</span>
-              </div>
-            </td>
-          </tr>`;
+            // ── Grid cells — use data-date for event delegation
+            const cellsHtml = hm.grid.map(d => {
+                const bg = C[d.intensity];
+                const ring = d.isToday ? 'outline:1.5px solid #58a6ff;outline-offset:0.5px;z-index:1;' : '';
+                return `<div class="hm-cell" data-date="${d.date}" data-xp="${d.xp}" style="border-radius:2px;background:${bg};${ring}cursor:pointer;transition:transform .1s ease;"></div>`;
             }).join('');
+
+            // ── Legend
+            const legendHtml = C.map(c =>
+                `<div style="width:11px;height:11px;border-radius:2px;background:${c};flex-shrink:0;"></div>`
+            ).join('');
+
+            // Render HTML — 2-column outer grid
+            container.innerHTML = `
+                <div style="width:100%;overflow-x:auto;padding-bottom:8px;" class="custom-scrollbar">
+                    <div id="hm-outer" style="display:inline-grid;grid-template-columns:26px max-content;row-gap:0;column-gap:0;">
+                        <!-- Month row -->
+                        <div style="height:14px;"></div>
+                        <div style="display:grid;grid-template-columns:repeat(${cols},11px);gap:${GAP}px;height:14px;margin-bottom:6px;">
+                            ${monthCells}
+                        </div>
+                        <!-- Day labels + grid -->
+                        <div style="display:grid;grid-template-rows:repeat(7,11px);row-gap:${GAP}px;">
+                            ${dayCells}
+                        </div>
+                        <div id="hm-grid" style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);grid-auto-columns:11px;gap:${GAP}px;">
+                            ${cellsHtml}
+                        </div>
+                    </div>
+                </div>
+                <!-- Legend row -->
+                <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:8px;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">
+                    <span>Menos</span>${legendHtml}<span>Mais</span>
+                </div>`;
+
+            // ── Event delegation for tooltips + hover
+            const grid = document.getElementById('hm-grid');
+            if (!grid) return;
+            grid.addEventListener('mouseover', e => {
+                const cell = e.target.closest('.hm-cell');
+                if (!cell) return;
+                cell.style.transform = 'scale(1.5)';
+                const d = dataById[cell.dataset.date];
+                if (!d) return;
+                const parts = (cell.dataset.date || '').split('-');
+                const dateLabel = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : cell.dataset.date;
+                _showTooltip(e, `<div style="color:#94a3b8;margin-bottom:2px;">${dateLabel}</div><div><b style="color:#42a5f5">${d.xp} XP</b></div>`);
+            });
+            grid.addEventListener('mousemove', _posTooltip);
+            grid.addEventListener('mouseout', e => {
+                const cell = e.target.closest('.hm-cell');
+                if (cell) cell.style.transform = 'scale(1)';
+                if (!e.relatedTarget || !e.relatedTarget.closest('.hm-cell')) _hideTooltip();
+            });
         }
 
-        // ── NEW: Rolling Average Chart ─────────────────────────────────
-        function renderRollingAvgChart() {
-            if (!window.Engine) return;
-            const last60 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(60)));
+        // ── 30-Day XP Bar Chart ────────────────────────────────────────
+        function loadXPGraph() {
+            const canvasEl = document.getElementById('xp-chart');
+            if (!canvasEl) return;
 
-            // Build daily efficiency snapshots for last 60 days
-            const snapshots = [];
-            for (let i = 59; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                const dateStr = UI.toBRTDateStr(d);
-                const dow = d.getDay();
-                const applicable = allHabits.filter(h => {
-                    if (h.frequency === 'daily') return true;
-                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
-                    return false;
+            if (_xpChartInstance) { _xpChartInstance.destroy(); _xpChartInstance = null; }
+
+            const today = new Date();
+            const days = [];
+            const xpByDay = {};
+            for (const l of _yearLogs) {
+                if (l.completed) xpByDay[l.date] = (xpByDay[l.date] || 0) + (l.xp_earned || l.score_earned || 0);
+            }
+
+            const limit = _timeFilter === 'all' ? 365 : _timeFilter;
+            const period = Math.min(limit, 90); // Cap drawing at 90 days for UX performance if 'all'
+
+            for (let i = period - 1; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                const dStr = UI.dateStr(d);
+                days.push({ label: d.getDate(), xp: xpByDay[dStr] || 0 });
+            }
+
+            const datasets = [{
+                label: 'XP diário',
+                data: days.map(d => d.xp),
+                backgroundColor: days.map((d, i) => i === 29 ? 'rgba(13,89,242,1)' : 'rgba(13,89,242,0.45)'),
+                borderRadius: 6,
+                borderSkipped: false,
+            }];
+
+            if (_showRollingAverage) {
+                const rolling = days.map((_, i) => {
+                    const slice = days.slice(Math.max(0, i - 6), i + 1);
+                    return +(slice.reduce((s, d) => s + d.xp, 0) / slice.length).toFixed(1);
                 });
-                const dayLogs = last60.filter(l => l.date === dateStr);
-                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
-                snapshots.push({ date: dateStr, efficiency });
+                datasets.push({
+                    label: 'Média 7d',
+                    data: rolling,
+                    type: 'line',
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    tension: 0.4,
+                });
             }
 
-            const rolling = Engine.calcRollingAverage(snapshots, 7);
-            const volatility = Engine.calcVolatility(snapshots.slice(-30));
+            _xpChartInstance = new Chart(canvasEl, {
+                type: 'bar',
+                data: { labels: days.map(d => d.label), datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: _showRollingAverage, labels: { color: '#8895b3', font: { family: 'Inter' } } },
+                        tooltip: {
+                            backgroundColor: '#111827',
+                            cornerRadius: 8,
+                            callbacks: { label: c => `${c.dataset.label}: ${c.raw} XP` },
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8895b3' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8895b3' }, beginAtZero: true },
+                    },
+                }
+            });
+        }
 
-            // Volatility badge
-            const badge = document.getElementById('volatility-badge');
-            if (badge) {
-                badge.style.display = '';
-                const vol = volatility;
-                badge.textContent = vol > 25 ? `⚡ Alta volatilidade (${vol}%)` : vol > 12 ? `~ Volatilidade média (${vol}%)` : `✓ Estável (${vol}%)`;
-                badge.style.background = vol > 25 ? 'rgba(239,68,68,0.12)' : vol > 12 ? 'rgba(245,158,11,0.12)' : 'rgba(34,197,94,0.12)';
-                badge.style.color = vol > 25 ? 'var(--red)' : vol > 12 ? 'var(--gold)' : 'var(--green)';
+        function toggleXPAverage() {
+            _showRollingAverage = !_showRollingAverage;
+            const btn = document.getElementById('btn-toggle-avg');
+            if (btn) {
+                btn.classList.toggle('bg-primary', _showRollingAverage);
+                btn.classList.toggle('text-white', _showRollingAverage);
+            }
+            loadXPGraph();
+        }
+
+        // ── 7-Day Rolling Avg Trend Chart ──────────────────────────────
+        function renderRollingAvgChart() {
+            const canvasEl = document.getElementById('chart-rolling');
+            if (!canvasEl) return;
+
+            if (_rollingChartInstance) { _rollingChartInstance.destroy(); _rollingChartInstance = null; }
+
+            const xpByDay = {};
+            for (const l of _yearLogs) {
+                if (l.completed) xpByDay[l.date] = (xpByDay[l.date] || 0) + (l.xp_earned || l.score_earned || 0);
             }
 
-            // Render with Chart.js
-            const ctx = document.getElementById('chart-rolling');
-            if (!ctx) return;
-            if (window._rollingChart) window._rollingChart.destroy();
-            window._rollingChart = new Chart(ctx, {
+            const limit = _timeFilter === 'all' ? 365 : _timeFilter;
+            const period = Math.min(limit, 90);
+
+            const today = new Date();
+            const days = [];
+            for (let i = period - 1 + 6; i >= 0; i--) { // +6 to have enough data for a 7-day rolling window on day 0
+                const d = new Date(today);
+                d.setDate(today.getDate() - i);
+                days.push({ str: UI.dateStr(d), xp: xpByDay[UI.dateStr(d)] || 0 });
+            }
+
+            const rollingFull = days.map((_, i) => {
+                const slice = days.slice(Math.max(0, i - 6), i + 1);
+                return +(slice.reduce((s, d) => s + d.xp, 0) / slice.length).toFixed(1);
+            });
+
+            // Trim the extra 6 days off the front now that we calculated their trailing rolling avg
+            const displayDays = days.slice(6);
+            const displayRolling = rollingFull.slice(6);
+
+            _rollingChartInstance = new Chart(canvasEl, {
                 type: 'line',
                 data: {
-                    labels: snapshots.map(s => s.date.slice(5)),
-                    datasets: [
-                        {
-                            label: 'Eficiência diária %',
-                            data: snapshots.map(s => s.efficiency),
-                            borderColor: 'rgba(99,102,241,0.4)',
-                            backgroundColor: 'transparent',
-                            borderWidth: 1,
-                            pointRadius: 0,
-                            tension: 0.3,
-                        },
-                        {
-                            label: 'Média Móvel 7d',
-                            data: rolling.map(r => r.rollingAvg),
-                            borderColor: '#818cf8',
-                            backgroundColor: 'rgba(99,102,241,0.08)',
-                            borderWidth: 2.5,
-                            pointRadius: 0,
-                            fill: true,
-                            tension: 0.4,
-                        }
-                    ]
+                    labels: displayDays.map(d => d.str.slice(5)),
+                    datasets: [{
+                        data: displayRolling,
+                        borderColor: '#818cf8',
+                        backgroundColor: 'rgba(99,102,241,0.08)',
+                        borderWidth: 2.5,
+                        pointRadius: 0,
+                        pointHoverRadius: 5,
+                        tension: 0.4,
+                        fill: true,
+                    }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#8895b3', font: { size: 11 } } } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#111827',
+                            cornerRadius: 8,
+                            callbacks: { label: c => `Média: ${c.raw} XP/d` }
+                        }
+                    },
                     scales: {
-                        x: { ticks: { color: '#3d4f6e', maxTicksLimit: 10, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-                        y: { min: 0, max: 100, ticks: { color: '#3d4f6e', callback: v => v + '%', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                        x: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#8895b3', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#8895b3' },
+                            beginAtZero: true
+                        }
                     }
                 }
             });
         }
 
-        // ── Advanced Analytics (PDL + Streak Risk) ─────────────────────
-        function renderAdvancedAnalytics() {
-            if (!window.Engine) return;
-            const last30Logs = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
+        // ── Radar Chart: Habit Balanced Score ──────────────────────────
+        async function renderRadarChart() {
+            const canvasEl = document.getElementById('radar-chart');
+            if (!canvasEl) return;
+            if (_radarChartInstance) { _radarChartInstance.destroy(); _radarChartInstance = null; }
 
-            // Build efficiency snapshots for last 30 days
-            const snaps30 = [];
-            for (let i = 29; i >= 0; i--) {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                const dateStr = UI.toBRTDateStr(d);
-                const dow = d.getDay();
-                const applicable = allHabits.filter(h => {
-                    if (h.frequency === 'daily') return true;
-                    if (h.frequency === 'weekly') return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
-                    return false;
-                });
-                const dayLogs = last30Logs.filter(l => l.date === dateStr);
-                const efficiency = applicable.length > 0 ? Engine.calcDailyEfficiency(dayLogs, applicable) : 0;
-                snaps30.push({ date: dateStr, efficiency, streakQualifies: Engine.dayQualifiesForStreak(efficiency) });
+            const { scores, overall } = await BalancedScoreService.calc(_timeFilter);
+
+            const scoreValues = [
+                scores.focus || 0,
+                scores.energy || 0,
+                scores.mind || 0,
+                scores.body || 0,
+                scores.social || 0
+            ];
+
+            const scoreLabel = document.getElementById('radar-current-score');
+            if (scoreLabel) scoreLabel.innerHTML = `Score: <span class="font-black">${parseFloat(overall).toFixed(1)}</span>`;
+
+            _radarChartInstance = new Chart(canvasEl, {
+                type: 'radar',
+                data: {
+                    labels: ['Focus', 'Energy', 'Mind', 'Body', 'Social'],
+                    datasets: [{
+                        label: 'Score (30d)',
+                        data: scoreValues,
+                        backgroundColor: 'rgba(13, 89, 242, 0.2)',
+                        borderColor: 'rgba(13, 89, 242, 1)',
+                        pointBackgroundColor: 'rgba(13, 89, 242, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(13, 89, 242, 1)',
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(255,255,255,0.1)' },
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            pointLabels: { color: '#8895b3', font: { family: 'Inter', size: 10, weight: 'bold' } },
+                            ticks: { display: false, min: 0, max: 10, stepSize: 2 }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#111827', cornerRadius: 8 }
+                    }
+                }
+            });
+        }
+
+        // ── Doughnut Chart: XP por Categoria ───────────────────────────
+        async function renderCategoryChart() {
+            const canvasEl = document.getElementById('chart-category');
+            if (!canvasEl) return;
+            if (_categoryChartInstance) { _categoryChartInstance.destroy(); _categoryChartInstance = null; }
+
+            const dist = await CategoryAnalyticsService.getDistribution(_timeFilter);
+
+            _categoryChartInstance = new Chart(canvasEl, {
+                type: 'doughnut',
+                data: {
+                    labels: dist.map(d => d.category),
+                    datasets: [{
+                        data: dist.map(d => d.xp),
+                        backgroundColor: dist.map(d => d.color),
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#8895b3', usePointStyle: true, padding: 20 } },
+                        tooltip: { backgroundColor: '#111827', cornerRadius: 8 }
+                    }
+                }
+            });
+        }
+
+        // ── Bar Chart: Taxa de Sucesso por Dia da Semana ───────────────
+        function renderWeekdayChart() {
+            const canvasEl = document.getElementById('chart-weekday');
+            if (!canvasEl) return;
+            if (_weekdayChartInstance) { _weekdayChartInstance.destroy(); _weekdayChartInstance = null; }
+
+            const logs = getFilteredLogs();
+
+            // 0=Sun, 1=Mon, 2=Tue, etc
+            const dayTotals = [0, 0, 0, 0, 0, 0, 0];
+            const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+            for (const l of logs) {
+                const dateObj = UI.parseDate(l.date);
+                if (!dateObj) continue;
+                const d = dateObj.getDay();
+
+                // Max possible score for this log's day is the habit's weight
+                const h = _habits.find(x => x.id === l.habit_id);
+                if (!h) continue;
+
+                dayCounts[d] += h.weight;
+                if (l.completed) dayTotals[d] += h.weight;
             }
 
-            // PDL
-            const pdl = Engine.calcPDL(snaps30);
-            const pdlEl = document.getElementById('stat-pdl');
-            if (pdlEl) pdlEl.textContent = pdl.toFixed(2);
+            // Calculate percentage success by day
+            const rates = dayTotals.map((tot, idx) => {
+                const count = dayCounts[idx];
+                return count > 0 ? +(tot / count * 100).toFixed(1) : 0;
+            });
 
-            // Streak collapse risk
-            const risk = Engine.detectStreakRisk(snaps30.slice(-7));
-            const warnCard = document.getElementById('streak-warning-card');
-            const warnMsg = document.getElementById('streak-warning-msg');
-            if (warnCard && warnMsg && risk.severity !== 'safe') {
-                warnCard.style.display = '';
-                warnCard.style.borderColor = risk.severity === 'critical' ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)';
-                warnCard.style.background = risk.severity === 'critical' ? 'rgba(239,68,68,0.06)' : 'rgba(245,158,11,0.06)';
-                const icon = warnCard.querySelector('i');
-                if (icon) icon.style.color = risk.severity === 'critical' ? 'var(--red)' : 'var(--gold)';
-                const title = warnCard.querySelector('div > div > div:first-child');
-                if (title) title.style.color = risk.severity === 'critical' ? 'var(--red)' : 'var(--gold)';
-                warnMsg.textContent = risk.message;
+            _weekdayChartInstance = new Chart(canvasEl, {
+                type: 'bar',
+                data: {
+                    labels: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+                    datasets: [{
+                        label: 'Consistência (%)',
+                        data: rates,
+                        backgroundColor: 'rgba(13, 89, 242, 0.7)',
+                        hoverBackgroundColor: 'rgba(13, 89, 242, 1)',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#111827', cornerRadius: 8, callbacks: { label: c => `${c.raw}%` } }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            ticks: { color: '#8895b3', callback: v => v + '%' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#8895b3' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── Habit Performance Table ────────────────────────────────────
+        function renderHabitTable() {
+            const logs = getFilteredLogs();
+            const rates = Score.calcHabitCompletionRates(_habits, logs);
+            const tbody = document.getElementById('habit-table-body');
+            if (!tbody) return;
+
+            if (rates.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-10 text-center text-slate-500 italic uppercase font-black text-xs tracking-widest">Sem dados no período</td></tr>`;
+                return;
             }
+
+            tbody.innerHTML = rates.map(r => {
+                const streak = Streak.calcHabitStreak(r.habit.id, _yearLogs);
+                const color = r.habit.color || '#6366f1';
+                const icon = r.habit.icon || 'fa-solid fa-bolt';
+                return `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-3">
+                                <div class="size-9 rounded-xl flex items-center justify-center text-lg" style="background:${color}15; color:${color}">
+                                    <i class="${icon}"></i>
+                                </div>
+                                <span class="font-bold text-sm">${r.habit.name}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-5 text-center text-xs font-semibold text-slate-500">${r.completedDays}/${r.totalDays} dias</td>
+                        <td class="px-6 py-5 text-center">
+                            ${streak > 0
+                        ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 bg-orange-500/10 text-orange-500 rounded-lg font-black text-xs"><i class="fa-solid fa-fire text-[10px]"></i> ${streak}</span>`
+                        : `<span class="text-slate-500 opacity-30">—</span>`}
+                        </td>
+                        <td class="px-6 py-5 text-center font-black text-sm text-primary tabular-nums">${r.totalScore}</td>
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-4">
+                                <div class="flex-1 h-2 bg-slate-100 dark:bg-slate-900 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full" style="width:${r.pct}%; background:${color}"></div>
+                                </div>
+                                <span class="text-[11px] font-black w-10 tabular-nums">${r.pct}%</span>
+                            </div>
+                        </td>
+                    </tr>`;
+            }).join('');
         }
 
         // ── CSV Export ─────────────────────────────────────────────────
         function exportData() {
-            const logs30 = yearLogs.filter(l => l.date >= UI.dateStr(UI.getDaysAgo(30)));
-            const rates = Score.calcHabitCompletionRates(allHabits, logs30);
-
-            const rows = [
-                ['Hábito', 'Peso', 'Dias concluídos', 'Total dias', 'Cumprimento %', 'Streak atual', 'Score total']
-            ];
-            rates.forEach(r => {
-                const streak = Streak.calcHabitStreak(r.habit.id, yearLogs);
-                rows.push([r.habit.name, r.habit.weight, r.completedDays, r.totalDays, r.pct, streak, r.totalScore]);
-            });
-
-            const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+            const rows = [['Data', 'Hábito', 'Concluído', 'XP', 'Score']];
+            for (const l of _yearLogs) {
+                const h = _habits.find(x => x.id === l.habit_id);
+                rows.push([l.date, h?.name || l.habit_id, l.completed ? 'Sim' : 'Não', l.xp_earned || 0, l.score_earned || 0]);
+            }
+            const csv = rows.map(r => r.join(',')).join('\n');
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `ascend-export-${UI.todayStr()}.csv`;
+            a.download = `vitaascend-${UI.todayStr()}.csv`;
             a.click();
             URL.revokeObjectURL(url);
-            if (window.UI) UI.toast('Dados exportados com sucesso!', 'success');
+            UI.toast('Dados exportados!', 'success');
         }
 
-
-
-
-        // ─── XP Gain Graph ──────────────────────────────────────────
-        let _xpChart = null;
-        let _xpShowAvg = false;
-        let _xpDailyData = []; // [{ date, xp }] sorted asc
-
-        /**
-         * Build a YYYY-MM-DD → xp map from an array of objects that each have
-         * a date-like field and an xp_earned field.
-         */
-        function _buildXPMap(records, dateField, xpField) {
-            const map = {};
-            for (const r of records) {
-                if (!r[dateField] || !r[xpField]) continue;
-                const day = String(r[dateField]).substring(0, 10);
-                map[day] = (map[day] || 0) + (parseInt(r[xpField]) || 0);
-            }
-            return map;
+        // ── Sign Out ──────────────────────────────────────────────────
+        async function handleSignOut() {
+            try { await Auth.signOut(); } catch (e) { UI.toast('Erro ao sair.', 'error'); }
         }
 
-        async function loadXPGraph() {
-            try {
-                const { data: { user } } = window.supabaseClient.auth.getUser
-                    ? await window.supabaseClient.auth.getUser()
-                    : { data: { user: null } };
-                if (!user) return;
-
-                // Build last-30-days date list (in BRT)
-                const days = 30;
-                const today = UI.toBRTDateStr(new Date());
-                const dateList = [];
-                for (let i = days - 1; i >= 0; i--) {
-                    const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    dateList.push(UI.toBRTDateStr(d));
-                }
-                const oldest = dateList[0];
-
-                // Fetch habit_logs XP (last 30 days)
-                const { data: habitLogs } = await window.supabaseClient
-                    .from('habit_logs')
-                    .select('date, xp_earned')
-                    .eq('user_id', user.id)
-                    .eq('completed', true)
-                    .gte('date', oldest)
-                    .lte('date', today);
-
-                // Fetch tasks XP (last 30 days by completed_at)
-                const { data: taskRows } = await window.supabaseClient
-                    .from('tasks')
-                    .select('completed_at, xp_earned')
-                    .eq('user_id', user.id)
-                    .eq('status', 'done')
-                    .gte('completed_at', oldest + 'T00:00:00')
-                    .not('xp_earned', 'is', null);
-
-                // Aggregate into day maps
-                const habitMap = _buildXPMap(habitLogs || [], 'date', 'xp_earned');
-                const taskMap = _buildXPMap(taskRows || [], 'completed_at', 'xp_earned');
-
-                // Merge for each day in the 30-day window
-                _xpDailyData = dateList.map(d => ({
-                    date: d,
-                    xp: (habitMap[d] || 0) + (taskMap[d] || 0),
-                }));
-
-                const totalXP = _xpDailyData.reduce((s, r) => s + r.xp, 0);
-                const activeDays = _xpDailyData.filter(r => r.xp > 0);
-                const peakXP = Math.max(0, ...activeDays.map(r => r.xp));
-                const avgXP = activeDays.length > 0 ? Math.round(totalXP / activeDays.length) : 0;
-
-                const hasData = totalXP > 0;
-
-                // Show/hide empty state vs canvas
-                document.getElementById('xp-graph-wrap').style.display = hasData ? 'block' : 'none';
-                document.getElementById('xp-graph-empty').style.display = hasData ? 'none' : 'block';
-                document.getElementById('btn-toggle-avg').style.display = hasData ? '' : 'none';
-
-                const summaryEl = document.getElementById('xp-graph-summary');
-                if (hasData) {
-                    document.getElementById('xp-sum-total').textContent = totalXP + ' XP';
-                    document.getElementById('xp-sum-peak').textContent = peakXP + ' XP';
-                    document.getElementById('xp-sum-avg').textContent = avgXP + ' XP';
-                    summaryEl.style.display = 'flex';
-                } else {
-                    summaryEl.style.display = 'none';
-                }
-
-                if (hasData) _renderXPChart();
-            } catch (e) {
-                console.warn('[XP Graph] Error:', e);
-            }
-        }
-
-        function _calcRolling7(data) {
-            return data.map((_, i) => {
-                const window7 = data.slice(Math.max(0, i - 6), i + 1);
-                return Math.round(window7.reduce((s, r) => s + r.xp, 0) / window7.length);
-            });
-        }
-
-        function _renderXPChart() {
-            const labels = _xpDailyData.map(r => {
-                const [, m, d] = r.date.split('-');
-                return `${d}/${m}`;
-            });
-            const xpValues = _xpDailyData.map(r => r.xp);
-            const avgValues = _calcRolling7(_xpDailyData);
-
-            const canvas = document.getElementById('xp-chart');
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-
-            // Gradient fill
-            const grad = ctx.createLinearGradient(0, 0, 0, 240);
-            grad.addColorStop(0, 'rgba(99,102,241,0.35)');
-            grad.addColorStop(1, 'rgba(99,102,241,0)');
-
-            const datasets = [{
-                label: 'XP Diário',
-                data: xpValues,
-                borderColor: '#6366f1',
-                backgroundColor: grad,
-                borderWidth: 2,
-                pointRadius: xpValues.map(v => v > 0 ? 3 : 0),
-                pointBackgroundColor: '#6366f1',
-                fill: true,
-                tension: 0.4,
-            }];
-
-            if (_xpShowAvg) {
-                datasets.push({
-                    label: 'Média 7 dias',
-                    data: avgValues,
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'transparent',
-                    borderWidth: 1.5,
-                    borderDash: [5, 3],
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0.4,
-                });
-            }
-
-            if (_xpChart) { _xpChart.destroy(); _xpChart = null; }
-
-            _xpChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels, datasets },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(15,15,30,0.95)',
-                            titleColor: '#a78bfa',
-                            bodyColor: '#e2e8f0',
-                            borderColor: 'rgba(99,102,241,0.3)',
-                            borderWidth: 1,
-                            padding: 10,
-                            callbacks: {
-                                title: items => items[0].label,
-                                label: item => ` ${item.dataset.label}: ${item.raw} XP`,
-                            },
-                        },
-                    },
-                    scales: {
-                        x: {
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                            ticks: {
-                                color: '#64748b',
-                                maxTicksLimit: 10,
-                                font: { size: 10 },
-                            },
-                        },
-                        y: {
-                            grid: { color: 'rgba(255,255,255,0.04)' },
-                            ticks: {
-                                color: '#64748b',
-                                font: { size: 10 },
-                                callback: v => v + ' XP',
-                            },
-                            beginAtZero: true,
-                        },
-                    },
-                },
-            });
-        }
-
-        function toggleXPAverage() {
-            _xpShowAvg = !_xpShowAvg;
-            const btn = document.getElementById('btn-toggle-avg');
-            btn.classList.toggle('active-btn', _xpShowAvg);
-            if (_xpDailyData.length) _renderXPChart();
-        }
-
-        // Expose so other pages can call after a completion
-        window.refreshXPGraph = loadXPGraph;
-
-        init();
+        document.addEventListener('DOMContentLoaded', init);
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-line mb-1 text-lg"></i>
+            <span>Dash</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item">
+            <i class="fa-solid fa-layer-group mb-1 text-lg"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="agenda.html" class="bottom-nav-item">
+            <i class="fa-solid fa-calendar-check mb-1 text-lg"></i>
+            <span>Tarefas</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-chart-pie mb-1 text-lg"></i>
+            <span>Análise</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <i class="fa-solid fa-user mb-1 text-lg"></i>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
 </body>
 
 </html>

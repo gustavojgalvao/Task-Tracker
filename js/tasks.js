@@ -197,6 +197,50 @@ const Tasks = (() => {
     }
 
     /**
+     * Revert a task to pending (uncomplete). Deducts XP.
+     * @param {string} taskId
+     * @returns {Promise<object>} updated task
+     */
+    async function uncomplete(taskId) {
+        if (_inFlight.has(taskId)) {
+            throw Object.assign(new Error('Operação em andamento.'), { code: 'DEBOUNCE' });
+        }
+        _inFlight.add(taskId);
+
+        try {
+            const { data: { user } } = await db().auth.getUser();
+
+            const { data: task, error: fetchErr } = await db()
+                .from('tasks')
+                .select('*')
+                .eq('id', taskId)
+                .eq('user_id', user.id)
+                .single();
+
+            if (fetchErr || !task) throw Object.assign(new Error('Tarefa não encontrada.'), { type: 'VALIDATION_ERROR' });
+            if (task.status !== TASK_STATUS.DONE) throw Object.assign(new Error('Tarefa não está concluída.'), { type: 'VALIDATION_ERROR' });
+
+            const { data: updated, error: updateErr } = await db()
+                .from('tasks')
+                .update({
+                    status: TASK_STATUS.PENDING,
+                    completed_at: null,
+                    xp_earned: 0,
+                    lateness_tier: 0,
+                })
+                .eq('id', taskId)
+                .eq('user_id', user.id)
+                .select()
+                .single();
+
+            if (updateErr) throw _wrapError(updateErr);
+            return updated;
+        } finally {
+            _inFlight.delete(taskId);
+        }
+    }
+
+    /**
      * Start a task (set status to in_progress).
      */
     async function start(taskId) {

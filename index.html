@@ -1,313 +1,309 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="dark scroll-smooth" lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ascend — Construa sua identidade através da constância</title>
-    <meta name="description"
-        content="Ascend transforma hábitos diários em métricas visuais de evolução. Cada ação registrada contribui para um score de disciplina. Constância mensurável ao longo do tempo." />
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#6366f1" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Ascend" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>VitaAscend — Command Your Evolution</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/pages/index.css" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-dark": "#05070a",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        .animate-slide-up {
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at 50% 0%, rgba(13, 89, 242, 0.2) 0%, transparent 70%);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, #64748b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .bento-card {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(13, 89, 242, 0.4);
+            background: rgba(13, 89, 242, 0.03);
+        }
+
+        .bottom-nav-dock {
+            border-radius: 24px 24px 0 0;
+            background: rgba(10, 15, 25, 0.8);
+            backdrop-filter: blur(15px);
+        }
+    </style>
 </head>
 
-<body>
+<body class="bg-background-dark font-display text-slate-100 antialiased overflow-x-hidden">
 
-    <!-- Navigation -->
-    <nav class="nav">
-        <div class="nav-inner">
-            <a href="index.html" class="nav-logo">
-                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
-                <span>Ascend</span>
-            </a>
-            <div class="nav-links">
-                <a href="auth.html" class="btn btn-ghost btn-sm" id="nav-login-btn">Entrar</a>
-                <a href="auth.html?tab=signup" class="btn btn-primary btn-sm" id="nav-signup-btn">Criar conta</a>
+    <nav
+        class="fixed top-0 w-full z-[100] border-b border-white/5 bg-background-dark/60 backdrop-blur-xl transition-all">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-2 text-primary font-black text-2xl tracking-tighter cursor-pointer">
+                <span class="material-symbols-outlined font-bold text-3xl">change_history</span>
+                <span class="text-white uppercase">VitaAscend</span>
+            </div>
+
+            <div class="hidden md:flex items-center gap-8" id="nav-auth-links">
+                <a href="#features"
+                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors">Sistema</a>
+                <a href="auth.html"
+                    class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors">Entrar</a>
+                <a href="auth.html?tab=signup"
+                    class="px-6 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all">Iniciar
+                    Operação</a>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-bg">
-            <div class="hero-orb hero-orb-1"></div>
-            <div class="hero-orb hero-orb-2"></div>
-            <div class="hero-grid"></div>
-        </div>
-
-        <div class="container">
-            <div class="hero-content animate-slide-up">
-                <div class="hero-tag">
-                    <div class="hero-tag-dot"></div>
-                    Sistema de Construção de Identidade
-                </div>
-
-                <h1 class="hero-headline">
-                    Você não mede<br />
-                    <span class="gradient-text">metas.</span><br />
-                    Você mede <span class="gradient-text">constância.</span>
-                </h1>
-
-                <p class="hero-sub">
-                    Ascend transforma hábitos diários em métricas visuais de evolução.
-                    Score de disciplina. Streaks. Heatmap anual. Quem você está se tornando,
-                    visível em dados reais.
-                </p>
-
-                <div class="hero-ctas">
-                    <a href="auth.html?tab=signup" class="btn btn-primary btn-lg" id="hero-cta-btn">
-                        <i class="fa-solid fa-chevron-up"></i> Começar agora — grátis
-                    </a>
-                    <a href="#features" class="btn btn-ghost btn-lg">
-                        Como funciona
-                    </a>
-                </div>
-
-                <div class="hero-stats">
-                    <div class="hero-stat animate-slide-up delay-200">
-                        <span class="hero-stat-value gradient-text-gold"><i class="fa-solid fa-infinity"></i></span>
-                        <span class="hero-stat-label">Sem frescuras</span>
-                    </div>
-                    <div class="hero-stat animate-slide-up delay-300">
-                        <span class="hero-stat-value">100%</span>
-                        <span class="hero-stat-label">Seus dados</span>
-                    </div>
-                    <div class="hero-stat animate-slide-up delay-400">
-                        <span class="hero-stat-value gradient-text">0</span>
-                        <span class="hero-stat-label">Desculpas</span>
-                    </div>
-                </div>
+    <section class="relative pt-48 pb-32 overflow-hidden hero-gradient">
+        <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
+            <div
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-white/10 text-primary text-[9px] font-black uppercase tracking-[0.3em] mb-12 animate-slide-up">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                Identity Construction System v4.0
             </div>
-        </div>
-    </section>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="container">
-            <p class="section-tag animate-fade-in">O sistema</p>
-            <h2 class="animate-slide-up">Disciplina que você <span class="gradient-text">consegue ver</span></h2>
+            <h1
+                class="text-6xl md:text-9xl font-black tracking-tighter mb-8 leading-[0.8] text-gradient animate-slide-up">
+                Não meça metas.<br>
+                <span class="text-primary italic">Prove consistência.</span>
+            </h1>
 
-            <div class="features-grid">
-                <div class="feature-card animate-slide-up delay-100">
-                    <span class="feature-icon"><i class="fa-solid fa-fire"></i></span>
-                    <h4 class="feature-title">Sistema de Streak</h4>
-                    <p class="feature-desc">
-                        Dias consecutivos calculados automaticamente. Individual por hábito e geral.
-                        Falhar reinicia. Sem autoengano.
-                    </p>
-                </div>
+            <p class="max-w-2xl mx-auto text-slate-400 text-lg md:text-xl mb-14 leading-relaxed animate-slide-up"
+                style="animation-delay: 100ms">
+                O VitaAscend é um terminal de performance que converte hábitos em métricas brutas de evolução.
+                PDL Score, Heatmaps de densidade e protocolos incorruptíveis.
+            </p>
 
-                <div class="feature-card animate-slide-up delay-200">
-                    <span class="feature-icon"><i class="fa-solid fa-bolt"></i></span>
-                    <h4 class="feature-title">Score de Disciplina</h4>
-                    <p class="feature-desc">
-                        Cada hábito tem peso. Academia vale 3. Leitura vale 1. Score diário, semanal
-                        e mensal calculados em tempo real.
-                    </p>
-                </div>
-
-                <div class="feature-card animate-slide-up delay-300">
-                    <span class="feature-icon"><i class="fa-solid fa-chart-bar"></i></span>
-                    <h4 class="feature-title">Heatmap Anual</h4>
-                    <p class="feature-desc">
-                        Estilo contribuição do GitHub. Cada dia tem intensidade baseada no seu score.
-                        Constância vira visual.
-                    </p>
-                </div>
-
-                <div class="feature-card animate-slide-up delay-400">
-                    <span class="feature-icon"><i class="fa-solid fa-bullseye"></i></span>
-                    <h4 class="feature-title">Sistema de Identidade</h4>
-                    <p class="feature-desc">
-                        Você define sua "versão futura". O sistema calcula o percentual de alinhamento
-                        com ela baseado nos seus hábitos.
-                    </p>
-                </div>
-
-                <div class="feature-card animate-slide-up delay-500">
-                    <span class="feature-icon"><i class="fa-solid fa-shield-halved"></i></span>
-                    <h4 class="feature-title">Modo Rigoroso</h4>
-                    <p class="feature-desc">
-                        Marcar fora do horário ideal perde pontos. Falhar 3 dias consecutivos
-                        zera o streak geral. Zero espaço para ilusão.
-                    </p>
-                </div>
-
-                <div class="feature-card animate-slide-up delay-600">
-                    <span class="feature-icon"><i class="fa-solid fa-globe"></i></span>
-                    <h4 class="feature-title">Perfil Público</h4>
-                    <p class="feature-desc">
-                        Gere seu link público. Mostre seu heatmap e streak para o mundo.
-                        Constância vira reputação.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How it works -->
-    <section class="system-section">
-        <div class="container">
-            <p class="section-tag">Como funciona</p>
-            <h2>Simples de usar. <span class="gradient-text">Difícil de parar.</span></h2>
-
-            <div class="system-grid">
-                <div class="system-steps">
-                    <div class="system-step animate-slide-up delay-100">
-                        <div class="step-num">01</div>
-                        <div>
-                            <div class="step-title">Defina seus hábitos</div>
-                            <p class="step-desc">Crie hábitos com peso, frequência e horário ideal. Academia vale mais
-                                que cafézinho.</p>
-                        </div>
-                    </div>
-
-                    <div class="system-step animate-slide-up delay-200">
-                        <div class="step-num">02</div>
-                        <div>
-                            <div class="step-title">Execute e marque</div>
-                            <p class="step-desc">Todo dia, marque os hábitos concluídos. O sistema acumula seu score
-                                automaticamente.</p>
-                        </div>
-                    </div>
-
-                    <div class="system-step animate-slide-up delay-300">
-                        <div class="step-num">03</div>
-                        <div>
-                            <div class="step-title">Veja sua evolução</div>
-                            <p class="step-desc">Heatmap anual, gráficos semanais e mensais. Você vê exatamente quem
-                                está se tornando.</p>
-                        </div>
-                    </div>
-
-                    <div class="system-step animate-slide-up delay-400">
-                        <div class="step-num">04</div>
-                        <div>
-                            <div class="step-title">Torne-se sua versão futura</div>
-                            <p class="step-desc">O sistema calcula o alinhamento real entre seus hábitos e a identidade
-                                que você quer ter.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mock Dashboard Preview -->
-                <div class="mock-dashboard animate-scale-in delay-300">
-                    <div
-                        style="display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);">
-                        <div
-                            style="width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--green));border-radius:8px;display:grid;place-items:center;">
-                            <i class="fa-solid fa-chevron-up" style="font-size:0.75rem;"></i>
-                        </div>
-                        <div>
-                            <div style="font-weight:700;font-size:0.9rem;">Dashboard</div>
-                            <div style="font-size:0.75rem;color:var(--text-muted);">Hoje, 21 de Fevereiro</div>
-                        </div>
-                        <div class="badge badge-streak" style="margin-left:auto;"><i class="fa-solid fa-fire"></i> 7
-                            dias</div>
-                    </div>
-
-                    <div style="text-align:center;margin-bottom:20px;">
-                        <div style="font-family:var(--font-display);font-weight:800;font-size:3.5rem;line-height:1;"
-                            class="gradient-text">24</div>
-                        <div
-                            style="font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">
-                            Score de hoje</div>
-                    </div>
-
-                    <div style="display:flex;flex-direction:column;gap:8px;">
-                        <div
-                            style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;">
-                            <i class="fa-solid fa-dumbbell" style="color:var(--green)"></i>
-                            <span
-                                style="flex:1;font-size:0.875rem;font-weight:600;text-decoration:line-through;color:var(--text-muted);">Academia</span>
-                            <span class="badge badge-green"><i class="fa-solid fa-check"></i> +3</span>
-                        </div>
-                        <div
-                            style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(34,197,94,0.05);border:1px solid rgba(34,197,94,0.15);border-radius:8px;">
-                            <i class="fa-solid fa-laptop-code" style="color:var(--green)"></i>
-                            <span
-                                style="flex:1;font-size:0.875rem;font-weight:600;text-decoration:line-through;color:var(--text-muted);">Estudo</span>
-                            <span class="badge badge-green"><i class="fa-solid fa-check"></i> +2</span>
-                        </div>
-                        <div
-                            style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-raised);border:1px solid var(--border);border-radius:8px;">
-                            <i class="fa-solid fa-book" style="color:var(--accent)"></i>
-                            <span style="flex:1;font-size:0.875rem;font-weight:600;">Leitura</span>
-                            <span class="badge badge-accent">Pendente</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Final -->
-    <section class="cta-section">
-        <div class="container">
-            <div class="cta-inner">
-                <div class="hero-tag" style="margin:0 auto var(--space-6);">
-                    <div class="hero-tag-dot"></div>
-                    Portfólio de alto nível. Base para SaaS real.
-                </div>
-                <h2 class="cta-title">
-                    Pare de planejar quem você vai ser.<br />
-                    <span class="gradient-text">Comece a provar.</span>
-                </h2>
-                <p class="cta-sub">
-                    Cada dia que passa sem medir é dado perdido.
-                    Comece hoje. Veja a diferença em 30 dias.
-                </p>
-                <a href="auth.html?tab=signup" class="btn btn-primary btn-lg" id="cta-bottom-btn">
-                    <i class="fa-solid fa-chevron-up"></i> Criar conta grátis
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-5 mb-24 animate-slide-up"
+                style="animation-delay: 200ms">
+                <a href="auth.html?tab=signup"
+                    class="w-full sm:w-auto px-12 py-6 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/40 text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+                    CRIAR PROTOCOLO <span class="material-symbols-outlined font-bold">arrow_forward</span>
+                </a>
+                <a href="#features"
+                    class="w-full sm:w-auto px-12 py-6 bg-white/5 text-white font-bold rounded-2xl border border-white/10 hover:bg-white/10 transition-all text-sm uppercase tracking-widest">
+                    Documentação
                 </a>
             </div>
+
+            <div class="relative max-w-5xl mx-auto animate-slide-up" style="animation-delay: 300ms">
+                <div class="absolute inset-0 bg-primary/20 blur-[140px] rounded-full opacity-50"></div>
+                <div class="relative glass rounded-[3rem] p-4 md:p-10 border border-white/10 shadow-3xl">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="p-6 rounded-3xl bg-white/5 border border-white/5 text-left">
+                            <p class="text-[9px] font-black text-primary uppercase tracking-widest mb-3">Vetor de
+                                Performance</p>
+                            <p class="text-5xl font-black tracking-tighter tabular-nums">94.2%</p>
+                            <p class="text-[10px] text-slate-500 font-bold mt-2 italic">Eficiência Operacional Diária
+                            </p>
+                        </div>
+                        <div class="p-6 rounded-3xl bg-white/5 border border-white/5 text-left">
+                            <p class="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-3">Integridade
+                                (Streak)</p>
+                            <p class="text-5xl font-black tracking-tighter tabular-nums">14 <span
+                                    class="text-xl text-slate-600">D</span></p>
+                            <p class="text-[10px] text-slate-500 font-bold mt-2 italic">Dias Ininterruptos</p>
+                        </div>
+                        <div class="p-6 rounded-3xl bg-white/5 border border-white/5 text-left">
+                            <p class="text-[9px] font-black text-emerald-500 uppercase tracking-widest mb-3">Tier de
+                                Operador</p>
+                            <p class="text-4xl font-black tracking-tighter italic uppercase text-white">Elite I</p>
+                            <p class="text-[10px] text-slate-500 font-bold mt-2 italic">Top 2% Global (PDL)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <footer class="footer">
-        <div class="container">
-            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px;">
-                <div class="nav-logo-icon" style="width:24px;height:24px;font-size:0.8rem;"><i
-                        class="fa-solid fa-chevron-up"></i></div>
-                <span style="font-family:var(--font-display);font-weight:700;">Ascend</span>
+    <section id="features" class="py-32 max-w-7xl mx-auto px-6">
+        <div class="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+            <div class="max-w-xl space-y-4">
+                <h2 class="text-4xl md:text-6xl font-black tracking-tighter leading-none italic uppercase">Motor
+                    de<br>Alta Frequência.</h2>
+                <p class="text-slate-500 font-medium">Arquitetura tática desenvolvida para sustentar a mudança de
+                    identidade através de dados incorruptíveis.</p>
             </div>
-            <p>Construído com disciplina. © 2026</p>
+            <span
+                class="text-[10px] font-black text-primary border border-primary/30 px-4 py-2 rounded-full uppercase tracking-[0.3em]">Operational
+                Modules</span>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <div class="md:col-span-8 bento-card glass p-10 rounded-[3rem] space-y-6">
+                <div class="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl font-bold">analytics</span>
+                </div>
+                <h4 class="text-3xl font-black italic tracking-tighter uppercase">PDL Analytics</h4>
+                <p class="text-slate-400 leading-relaxed max-w-md">O Performance Distribution Level não é um número. É
+                    um vetor. Calcule sua média móvel de consistência e visualize sua volatilidade de disciplina em
+                    gráficos de alta precisão.</p>
+            </div>
+            <div class="md:col-span-4 bento-card glass p-10 rounded-[3rem] space-y-6">
+                <div class="size-14 rounded-2xl bg-orange-500/10 text-orange-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl font-bold">local_fire_department</span>
+                </div>
+                <h4 class="text-3xl font-black italic tracking-tighter uppercase">Resiliência</h4>
+                <p class="text-slate-400 leading-relaxed">Streaks globais e por protocolo. Sem perdão: a falha reinicia
+                    a contagem. Zero autoengano.</p>
+            </div>
+            <div class="md:col-span-4 bento-card glass p-10 rounded-[3rem] space-y-6">
+                <div class="size-14 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl font-bold">psychology</span>
+                </div>
+                <h4 class="text-3xl font-black italic tracking-tighter uppercase">Identidade</h4>
+                <p class="text-slate-400 leading-relaxed">Quem você quer ser? O sistema mede o alinhamento real entre
+                    suas ações e sua versão futura.</p>
+            </div>
+            <div class="md:col-span-8 bento-card glass p-10 rounded-[3rem] space-y-6">
+                <div class="size-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-3xl font-bold">timer</span>
+                </div>
+                <h4 class="text-3xl font-black italic tracking-tighter uppercase">Deep Work Sprint</h4>
+                <p class="text-slate-400 leading-relaxed max-w-md">Cronômetros de foco absoluto integrados. Gerencie sua
+                    carga operacional com bônus de XP por sessões de concentração ininterruptas.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-40 px-6 relative">
+        <div
+            class="max-w-6xl mx-auto rounded-[4rem] bg-primary p-16 md:p-32 text-center relative overflow-hidden shadow-[0_0_100px_rgba(13,89,242,0.3)]">
+            <div class="absolute inset-0 opacity-10 pointer-events-none"
+                style="background-image: radial-gradient(#fff 1.5px, transparent 1.5px); background-size: 50px 50px;">
+            </div>
+
+            <div class="relative z-10 space-y-10">
+                <h2 class="text-5xl md:text-8xl font-black text-white leading-[0.85] tracking-tighter uppercase italic">
+                    PARE DE PLANEJAR.<br>COMECE A PROVAR.
+                </h2>
+                <p class="text-white/70 text-xl max-w-xl mx-auto font-medium">
+                    A identidade é o resultado acumulado de micro-vitórias diárias. O VitaAscend é o seu terminal de
+                    comando.
+                </p>
+                <div class="pt-6">
+                    <a href="auth.html?tab=signup"
+                        class="inline-flex items-center gap-4 px-14 py-7 bg-white text-primary font-black rounded-2xl text-xl hover:scale-105 active:scale-95 transition-all shadow-3xl uppercase tracking-widest">
+                        ACESSAR TERMINAL
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-24 border-t border-white/5 text-center">
+        <div
+            class="flex items-center justify-center gap-3 text-primary font-black mb-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500 cursor-default">
+            <span class="material-symbols-outlined font-bold text-4xl">change_history</span>
+            <span class="text-white text-2xl uppercase tracking-tighter">VitaAscend</span>
+        </div>
+        <div class="flex justify-center gap-10 mb-12 text-[10px] font-black uppercase tracking-[0.4em] text-slate-600">
+            <a href="#" class="hover:text-primary transition-colors">Termos</a>
+            <a href="#" class="hover:text-primary transition-colors">Privacidade</a>
+            <a href="#" class="hover:text-primary transition-colors">Security</a>
+        </div>
+        <p class="text-slate-800 text-[9px] font-black uppercase tracking-[0.6em]">
+            SYSTEM OPERATIONAL • ENCRYPTED CONNECTION • © 2026
+        </p>
     </footer>
 
-    <!-- Scripts -->
+    <nav
+        class="md:hidden fixed bottom-6 left-6 right-6 h-[76px] bottom-nav-dock border border-white/10 flex justify-around items-center px-4 z-[100] shadow-2xl">
+        <a href="index.html" class="flex flex-col items-center gap-1 text-primary">
+            <span class="material-symbols-outlined font-bold text-2xl">home</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Início</span>
+        </a>
+        <a href="#features" class="flex flex-col items-center gap-1 text-slate-500">
+            <span class="material-symbols-outlined font-bold text-2xl">bolt</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">SaaS</span>
+        </a>
+        <a href="auth.html" class="flex flex-col items-center gap-1 text-slate-500" id="mobile-dock-login">
+            <span class="material-symbols-outlined font-bold text-2xl">login</span>
+            <span class="text-[8px] font-black uppercase tracking-widest">Acesso</span>
+        </a>
+    </nav>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
     <script>
         Auth.getSession().then(session => {
             if (session) {
-                document.getElementById('nav-login-btn').href = 'dashboard.html';
-                document.getElementById('nav-login-btn').textContent = 'Dashboard';
-                document.getElementById('nav-signup-btn').style.display = 'none';
-                document.getElementById('hero-cta-btn').href = 'dashboard.html';
-                document.getElementById('hero-cta-btn').innerHTML = '<i class="fa-solid fa-chevron-up"></i> Ir para o Dashboard';
-                if (document.getElementById('cta-bottom-btn')) {
-                    document.getElementById('cta-bottom-btn').href = 'dashboard.html';
-                    document.getElementById('cta-bottom-btn').innerHTML = '<i class="fa-solid fa-chevron-up"></i> Ir para o Dashboard';
+                const nav = document.getElementById('nav-auth-links');
+                if (nav) nav.innerHTML = `<a href="dashboard.html" class="px-8 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Ir para Dashboard</a>`;
+
+                const dock = document.getElementById('mobile-dock-login');
+                if (dock) {
+                    dock.href = "dashboard.html";
+                    dock.innerHTML = `<span class="material-symbols-outlined font-bold text-2xl text-primary">dashboard</span><span class="text-[8px] font-black uppercase tracking-widest text-primary">Painel</span>`;
                 }
             }
         });
-    </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animate-slide-up');
+                    entry.target.style.opacity = 1;
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('section, .bento-card').forEach(el => {
+            el.style.opacity = 0;
+            observer.observe(el);
+        });
     </script>
 </body>
 

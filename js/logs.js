@@ -79,11 +79,8 @@ const Logs = (() => {
                 }
             }
 
-            // XP calculation using Engine if available
-            const xpEarned = window.Engine
-                ? Engine.calcHabitXP(habit.weight, penaltyApplied)
-                : scoreEarned;
-
+            // XP is calculated by the DB trigger (process_habit_log_xp).
+            // We only send: habit_id, user_id, date, completed, completed_at, penalty_applied.
             const { data, error } = await db()
                 .from('habit_logs')
                 .upsert({
@@ -93,8 +90,6 @@ const Logs = (() => {
                     completed: true,
                     completed_at: now.toISOString(),
                     penalty_applied: penaltyApplied,
-                    score_earned: scoreEarned,
-                    xp_earned: xpEarned,
                 }, { onConflict: 'habit_id,date' })
                 .select()
                 .single();
@@ -150,10 +145,7 @@ const Logs = (() => {
                 }
             }
 
-            const xpEarned = completed && window.Engine
-                ? Engine.calcHabitXP(habit.weight, penaltyApplied)
-                : 0;
-
+            // XP and score_earned computed by DB trigger — do not send from frontend.
             const { data, error } = await db()
                 .from('habit_logs')
                 .upsert({
@@ -163,8 +155,6 @@ const Logs = (() => {
                     completed,
                     completed_at: completed ? now.toISOString() : null,
                     penalty_applied: penaltyApplied,
-                    score_earned: scoreEarned,
-                    xp_earned: xpEarned,
                     value_logged: valueLogged,
                 }, { onConflict: 'habit_id,date' })
                 .select()

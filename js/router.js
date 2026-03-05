@@ -6,7 +6,7 @@
 const Router = (() => {
 
     // Pages that require authentication
-    const PROTECTED_PAGES = ['dashboard.html', 'habits.html', 'analytics.html'];
+    const PROTECTED_PAGES = ['dashboard.html', 'habits.html', 'analytics.html', 'agenda.html', 'leaderboard.html', 'profile.html'];
     // Pages only for unauthenticated users
     const PUBLIC_ONLY_PAGES = ['auth.html'];
 

@@ -22,12 +22,13 @@ const Engine = (() => {
      *
      * @param {number} weight 1-5
      * @param {boolean} [penaltyApplied] - strict mode late penalty
+     * @param {number} [difficultyWeight=1.0] - multiplier
      * @returns {number} XP earned
      */
-    function calcHabitXP(weight, penaltyApplied = false) {
-        const base = XP_TIERS[Math.min(5, Math.max(1, weight))] ?? 10;
+    function calcHabitXP(weight, penaltyApplied = false, difficultyWeight = 1.0) {
+        const base = (XP_TIERS[Math.min(5, Math.max(1, weight))] ?? 10) * difficultyWeight;
         if (penaltyApplied) return Math.max(1, Math.floor(base * 0.5));
-        return base;
+        return Math.floor(base);
     }
 
     /**
@@ -36,7 +37,11 @@ const Engine = (() => {
      * @returns {number}
      */
     function calcMaxDailyXP(habits) {
-        return habits.reduce((sum, h) => sum + (XP_TIERS[h.weight] ?? 10), 0);
+        return habits.reduce((sum, h) => {
+            const base = XP_TIERS[h.weight] ?? 10;
+            const diff = h.difficulty_weight || 1;
+            return sum + (base * diff);
+        }, 0);
     }
 
     // ── Level System ──────────────────────────────────────────
@@ -111,43 +116,135 @@ const Engine = (() => {
     // Rank CAN fall if recent performance declines.
     // NEVER derived from XP total or level.
     const COMPETITIVE_RANKS = [
-        { id: 'bronze', label: 'Bronze', minPDL: 0, maxPDL: 39, color: '#cd7f32', glow: 'rgba(205,127,50,0.25)', icon: 'fa-shield' },
-        { id: 'prata', label: 'Prata', minPDL: 40, maxPDL: 59, color: '#9ca3af', glow: 'rgba(156,163,175,0.25)', icon: 'fa-shield-halved' },
-        { id: 'ouro', label: 'Ouro', minPDL: 60, maxPDL: 74, color: '#f59e0b', glow: 'rgba(245,158,11,0.25)', icon: 'fa-trophy' },
-        { id: 'platina', label: 'Platina', minPDL: 75, maxPDL: 89, color: '#6366f1', glow: 'rgba(99,102,241,0.25)', icon: 'fa-gem' },
-        { id: 'diamante', label: 'Diamante', minPDL: 90, maxPDL: 100, color: '#22c55e', glow: 'rgba(34,197,94,0.25)', icon: 'fa-diamond' },
+        { id: 'bronze', label: 'Bronze', minPDL: 0, maxPDL: 74, color: '#cd7f32', glow: 'rgba(205,127,50,0.25)', icon: 'fa-bolt-lightning' },
+        { id: 'prata', label: 'Prata', minPDL: 75, maxPDL: 164, color: '#9ca3af', glow: 'rgba(156,163,175,0.25)', icon: 'fa-shield-halved' },
+        { id: 'ouro', label: 'Ouro', minPDL: 165, maxPDL: 272, color: '#f59e0b', glow: 'rgba(245,158,11,0.25)', icon: 'fa-trophy' },
+        { id: 'platina', label: 'Platina', minPDL: 273, maxPDL: 402, color: '#6366f1', glow: 'rgba(99,102,241,0.25)', icon: 'fa-gem' },
+        { id: 'diamante', label: 'Diamante', minPDL: 403, maxPDL: 558, color: '#22c55e', glow: 'rgba(34,197,94,0.25)', icon: 'fa-border-all' },
+        { id: 'mestre', label: 'Mestre', minPDL: 559, maxPDL: 745, color: '#a855f7', glow: 'rgba(168,85,247,0.25)', icon: 'fa-crown' },
+        { id: 'grao-mestre', label: 'Grão-Mestre', minPDL: 746, maxPDL: 969, color: '#ef4444', glow: 'rgba(239,68,68,0.25)', icon: 'fa-dragon' },
+        { id: 'lenda', label: 'Lenda', minPDL: 970, maxPDL: 1000, color: '#fbbf24', glow: 'rgba(251,191,36,0.4)', icon: 'fa-sun' },
     ];
 
     /**
-     * Calculate Competitive PDL — weighted 7-day efficiency average.
-     * Last 3 days carry 2× weight to emphasise recent form.
-     *
-     * @param {Array<{efficiency: number}>} last7Days - sorted oldest first, max 7 items
-     * @returns {number} 0–100 integer competitive PDL
+     * Build day efficiency snapshots for a sliding window.
+     * @param {object[]} logs - all relevant logs
+     * @param {object[]} activeHabits - current active habits
+     * @param {number} days - trailing window size
      */
-    function calcCompetitivePDL(last7Days) {
-        if (!last7Days || last7Days.length === 0) return 0;
-        const n = last7Days.length;
-        let weightedSum = 0;
-        let totalWeight = 0;
-        last7Days.forEach((d, i) => {
-            // Recent 3 days (tail of sorted array) get doubled weight
-            const weight = i >= n - 3 ? 2 : 1;
-            weightedSum += (d.efficiency ?? 0) * weight;
-            totalWeight += weight;
-        });
-        return Math.min(100, Math.max(0, Math.round(weightedSum / totalWeight)));
+    function buildDayEfficiencySnapshots(logs = [], activeHabits = [], days = 7) {
+        const snapshots = [];
+        const today = new Date();
+        for (let i = days - 1; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(today.getDate() - i);
+            const ds = d.toISOString().split('T')[0];
+            const dayLogs = logs.filter(l => l.date === ds);
+            snapshots.push({
+                date: ds,
+                efficiency: calcDailyEfficiency(dayLogs, activeHabits)
+            });
+        }
+        return snapshots;
     }
 
     /**
-     * Get competitive rank tier from PDL score.
-     * @param {number} pdl - 0–100 competitive PDL
-     * @returns {object} { id, label, minPDL, maxPDL, color, glow, icon }
+     * Calculate daily efficiency (0-100) based on weighted habits.
+     */
+    function calcDailyEfficiency(dayLogs, activeHabits) {
+        if (!activeHabits || activeHabits.length === 0) return 0;
+        const max = activeHabits.reduce((s, h) => s + (h.weight || 1), 0);
+        const earned = dayLogs.reduce((s, l) => s + (l.completed ? (l.score_earned || 0) : 0), 0);
+        return Math.min(100, Math.max(0, Math.round((earned / max) * 100)));
+    }
+
+    /**
+     * Calculate Competitive PDL (0-1000 scale) directly from weighted efficiencies.
+     * Last 3 days carry 2x weight. Total max is 100 * 10 = 1000.
+     */
+    function calcCompetitivePDL(snapshots) {
+        if (!snapshots || snapshots.length === 0) return 0;
+        let totalWeighted = 0;
+
+        snapshots.forEach((snap, idx) => {
+            const isRecent = idx < 3;
+            const weight = isRecent ? 2 : 1;
+            totalWeighted += snap.efficiency * weight;
+        });
+
+        return Math.round(totalWeighted);
+    }
+
+    /**
+     * Map a PDL value (0-1000) to its corresponding rank tier and division.
+     * Divisions go I (lowest) → II → III (highest) within each rank.
+     * Each division acts as its own sub-rank with boundaries divMin/divMax.
+     * Returns localMax: 100 for Bronze-Platina, 1.2x scaling from Diamante.
+     * Lenda has no divisions.
      */
     function getRankFromPDL(pdl) {
-        const score = Math.min(100, Math.max(0, pdl ?? 0));
-        return COMPETITIVE_RANKS.find(r => score >= r.minPDL && score <= r.maxPDL)
-            ?? COMPETITIVE_RANKS[0];
+        let current = COMPETITIVE_RANKS[0];
+        for (const r of COMPETITIVE_RANKS) {
+            if (pdl >= r.minPDL && pdl <= r.maxPDL) {
+                current = r;
+                break;
+            }
+            if (pdl > r.maxPDL) current = r;
+        }
+
+        let division = "";
+        let divMin = current.minPDL;
+        let divMax = current.maxPDL;
+        let localMax = 100;
+
+        if (current.id !== 'lenda') {
+            const range = current.maxPDL - current.minPDL + 1;
+            const divSize = Math.floor(range / 3);
+
+            const d1End = current.minPDL + divSize - 1;
+            const d2End = d1End + divSize;
+            let divNum = 0; // 0=I, 1=II, 2=III
+
+            if (pdl <= d1End) {
+                division = "I"; divNum = 0;
+                divMin = current.minPDL;
+                divMax = d1End;
+            } else if (pdl <= d2End) {
+                division = "II"; divNum = 1;
+                divMin = d1End + 1;
+                divMax = d2End;
+            } else {
+                division = "III"; divNum = 2;
+                divMin = d2End + 1;
+                divMax = current.maxPDL;
+            }
+
+            // 1.2x scaling from Diamante onward
+            const SCALING_RANKS = ['diamante', 'mestre', 'grao-mestre'];
+            const scalingIdx = SCALING_RANKS.indexOf(current.id);
+            if (scalingIdx >= 0) {
+                const pos = scalingIdx * 3 + divNum; // 0-8
+                localMax = Math.round(100 * Math.pow(1.2, pos + 1));
+            }
+        }
+
+        return { ...current, division, divMin, divMax, localMax };
+    }
+
+    /**
+     * Get rank-local PDL info for display.
+     * Returns { value, max, pct }:
+     *   value = current progress (0 to max)
+     *   max   = 100 for Bronze-Platina, 120/144/173... for Diamante+
+     *   pct   = fill percentage for the bar (0-100)
+     */
+    function getLocalPDL(rawPDL) {
+        const rank = getRankFromPDL(rawPDL);
+        const range = rank.divMax - rank.divMin;
+        if (range <= 0) return { value: rank.localMax, max: rank.localMax, pct: 100 };
+        const pct = Math.min(100, Math.max(0, ((rawPDL - rank.divMin) / range) * 100));
+        const value = Math.round(pct / 100 * rank.localMax);
+        return { value, max: rank.localMax, pct: Math.round(pct) };
     }
 
     /**
@@ -180,14 +277,14 @@ const Engine = (() => {
         if (maxXP === 0) return 0;
         const earned = logs.reduce((sum, l) => {
             if (!l.completed) return sum;
-            return sum + calcHabitXP(l.weight ?? 1, l.penalty_applied ?? false);
+            return sum + (l.xp_earned ?? l.score_earned ?? 0);
         }, 0);
         return Math.min(100, Math.round((earned / maxXP) * 100));
     }
 
     // ── Streak System (Efficiency-Based) ─────────────────────
     // A day "counts" for streak if daily efficiency >= STREAK_THRESHOLD
-    const STREAK_THRESHOLD = 50; // percent
+    const STREAK_THRESHOLD = 80; // percent
 
     /**
      * Check if a day qualifies for streak continuation.
@@ -261,7 +358,7 @@ const Engine = (() => {
     function buildDaySnapshot(date, logs, habits) {
         const completed = logs.filter(l => l.completed);
         const xpEarned = completed.reduce((sum, l) =>
-            sum + calcHabitXP(l.weight ?? 1, l.penalty_applied ?? false), 0);
+            sum + (l.xp_earned ?? l.score_earned ?? 0), 0);
         const maxXP = calcMaxDailyXP(habits);
         const efficiency = calcDailyEfficiency(logs, habits);
         const habitsTotal = habits.length;
@@ -278,6 +375,54 @@ const Engine = (() => {
             streakQualifies,
             penaltiesApplied: completed.filter(l => l.penalty_applied).length,
         };
+    }
+
+    // ── Day Efficiency Snapshot Builder ──────────────────────
+    // Canonical utility — used by ALL pages for competitive rank calculation.
+    // Guarantees identical PDL inputs across Dashboard and Analytics.
+
+    /**
+     * Build efficiency snapshots for the last N days.
+     * For each day, only habits applicable on THAT day's day-of-week are used
+     * as the denominator, so the efficiency percentage is always accurate.
+     *
+     * Uses BRT (UTC-3) date strings to stay consistent with log storage.
+     *
+     * @param {object[]} allLogs    - All available habit_logs (with .date and .completed)
+     * @param {object[]} allHabits  - All habits (with .frequency, .days_of_week, .weight)
+     * @param {number}   [days=7]   - Number of past days (today included)
+     * @returns {Array<{date: string, efficiency: number}>} sorted oldest-first
+     */
+    function buildDayEfficiencySnapshots(allLogs, allHabits, days = 7) {
+        if (!allLogs || !allHabits) return [];
+        const snapshots = [];
+        for (let i = days - 1; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            // BRT date string: UTC-3  (matches how logs are stored)
+            const brtMs = d.getTime() - 3 * 60 * 60 * 1000;
+            const brtDate = new Date(brtMs);
+            const dateStr = brtDate.toISOString().split('T')[0];
+            const dow = brtDate.getUTCDay(); // day-of-week for THAT past day
+
+            const applicable = allHabits.filter(h => {
+                if (!h.is_active) return false;
+                if (h.frequency === 'daily') return true;
+                if (h.frequency === 'weekly') {
+                    return Array.isArray(h.days_of_week) && h.days_of_week.includes(dow);
+                }
+                // cycle habits: treated as always applicable when active
+                return true;
+            });
+
+            const dayLogs = allLogs.filter(l => l.date === dateStr);
+            const efficiency = applicable.length > 0
+                ? calcDailyEfficiency(dayLogs, applicable)
+                : 0;
+
+            snapshots.push({ date: dateStr, efficiency });
+        }
+        return snapshots;
     }
 
     // ── Rolling Analytics ─────────────────────────────────────
@@ -412,7 +557,7 @@ const Engine = (() => {
     // Base: weight × 20 → weight 1-5 gives 20/40/60/80/100 XP
     // Modifiers applied multiplicatively.
 
-    const TASK_BASE_XP = { 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 };
+    const TASK_BASE_XP = { 1: 10, 2: 25, 3: 50, 4: 75, 5: 100 };
 
     // Lateness tier multipliers
     const LATENESS_MULTS = [1.0, 0.80, 0.55, 0.30]; // tier 0-3
@@ -653,6 +798,8 @@ const Engine = (() => {
         COMPETITIVE_RANKS,
         calcCompetitivePDL,
         getRankFromPDL,
+        getLocalPDL,
+        buildDayEfficiencySnapshots,
         // Rank — Legacy aliases (@deprecated)
         RANKS: COMPETITIVE_RANKS,   // backward compat alias
         getRankFromXP,              // @deprecated

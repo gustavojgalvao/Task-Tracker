@@ -1,713 +1,985 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="dark" lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ascend — Gerenciar Hábitos</title>
-    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
     <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#6366f1" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#101622" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Ascend" />
-    <link rel="apple-touch-icon" href="icons/icon-192.png" />
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('SW registered:', reg);
+                }).catch(err => console.log('SW reg failed:', err));
+            });
+        }
+    </script>
+    <title>VitaAscend — Gestão de Execução</title>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/components.css" />
-    <link rel="stylesheet" href="css/pages/habits.css" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0d59f2",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: { "display": ["Inter"] }
+                },
+            },
+        }
+    </script>
+
+    <style>
+        .tab-active {
+            border-bottom: 3px solid #0d59f2;
+            color: #0d59f2;
+        }
+
+        .animate-slide-up {
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Sprint Overlay Style */
+        .sprint-active {
+            background: radial-gradient(circle at center, #1e293b 0%, #101622 100%);
+        }
+    </style>
 </head>
 
-<body>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
 
-    <nav class="nav">
-        <div class="nav-inner">
-            <a href="dashboard.html" class="nav-logo">
-                <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
-                <span>Ascend</span>
-            </a>
-            <div class="nav-links">
-                <a href="dashboard.html" class="nav-link">Dashboard</a>
-                <a href="habits.html" class="nav-link active">Hábitos</a>
-                <a href="tasks.html" class="nav-link">Tarefas</a>
-                <a href="agenda.html" class="nav-link">Agenda</a>
-                <a href="analytics.html" class="nav-link">Análises</a>
-                <button class="btn btn-ghost btn-sm" onclick="Auth.signOut()" style="margin-left:8px;">Sair</button>
-            </div>
-        </div>
-    </nav>
+        <header
+            class="hidden md:flex items-center justify-between border-b border-slate-200 dark:border-slate-800 px-6 py-4 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-md sticky top-0 z-50">
 
-
-
-    <div class="page-wrapper habits-page">
-        <div class="container">
-
-            <div class="habits-header animate-slide-up">
-                <div class="habits-header-left">
-                    <h1>Seus Hábitos</h1>
-                    <p class="habits-header-sub">Gerencie, ajuste e evolua seus hábitos.</p>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 text-primary cursor-pointer"
+                    onclick="window.location.href='dashboard.html'">
+                    <span class="material-symbols-outlined text-3xl font-bold">change_history</span>
+                    <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">VitaAscend</h2>
                 </div>
-                <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Novo
-                    hábito</button>
+
+                <nav class="hidden md:flex ml-10 gap-6 text-sm font-medium">
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="dashboard.html">Dashboard</a>
+                    <a class="text-primary font-bold border-b-2 border-primary pb-1" href="habits.html">Hábitos</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="agenda.html">Agenda</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors" href="analytics.html">Análises</a>
+                    <a class="text-slate-500 hover:text-primary transition-colors"
+                        href="leaderboard.html">Leaderboard</a>
+                </nav>
             </div>
 
-            <div class="habits-full-list animate-slide-up delay-100" id="habits-full-list">
-                <div class="empty-state">
-                    <div class="spinner"></div>
+            <div class="flex items-center gap-4">
+
+                <div id="nav-streak-badge"
+                    class="px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-xs font-bold flex items-center gap-1">
+                    <i class="fa-solid fa-fire text-[10px]"></i> <span id="nav-streak-val">0</span>
                 </div>
-            </div>
 
-            <!-- Paused habits section -->
-            <div id="paused-section" style="display:none;margin-top:32px;">
-                <div
-                    style="font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;">
-                    <i class="fa-solid fa-pause-circle"></i> Suspensos
-                </div>
-                <div class="habits-full-list" id="paused-habits-list"></div>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Habit Modal -->
-    <div class="modal-overlay" id="habit-modal">
-        <div class="modal">
-            <div class="modal-header">
-                <h3 class="modal-title" id="modal-title">Novo Hábito</h3>
-                <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-
-            <form class="habit-form" onsubmit="event.preventDefault(); saveHabit();">
-                <input type="hidden" id="habit-id" />
-
-                <!-- Name + Icon -->
-                <div class="habit-form-row">
-                    <div class="form-group">
-                        <label class="form-label">Nome<span>*</span></label>
-                        <input class="form-input" type="text" id="habit-name" placeholder="Ex: Academia, Leitura..."
-                            required />
+                <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='profile.html'">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold leading-none text-slate-900 dark:text-white" id="nav-user-name">
+                            Carregando...</p>
+                        <p class="text-[10px] font-black uppercase text-primary tracking-widest" id="nav-user-rank">
+                            Elite Tier</p>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Ícone</label>
-                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            <button type="button" id="selected-icon-btn" class="btn btn-ghost"
-                                style="font-size:1.1rem;width:44px;height:44px;padding:0;" onclick="toggleIconPicker()">
-                                <i class="fa-solid fa-bolt" id="selected-icon-preview"></i>
+                    <div
+                        class="size-10 rounded-full bg-primary/20 border-2 border-primary/40 flex items-center justify-center overflow-hidden">
+                        <i class="fa-solid fa-user text-primary"></i>
+                    </div>
+                </div>
+
+                <button class="text-xs font-bold text-red-500 hover:text-red-400 transition-colors ml-2"
+                    onclick="handleSignOut()">
+                    Sair
+                </button>
+
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-full max-w-5xl mx-auto w-full p-6 lg:p-10 space-y-8">
+
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-slide-up">
+                <div>
+                    <h1 class="text-4xl font-black tracking-tight mb-1">Gestão de Execução</h1>
+                    <p class="text-slate-500 dark:text-slate-400">Equilibre sua rotina diária com objetivos pontuais.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button id="main-add-btn"
+                        class="px-6 py-3 bg-primary text-white rounded-2xl text-sm font-black shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg font-bold">add</span> NOVO REGISTRO
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+
+                <div class="lg:col-span-5 space-y-6 animate-slide-up" style="animation-delay: 100ms">
+                    <div class="flex items-center justify-between">
+                        <div class="space-y-1">
+                            <h3 class="text-xl font-black tracking-tight flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary font-bold">bolt</span> Protocolo de
+                                Identidade
+                            </h3>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Ações Recorrentes</p>
+                        </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="flex max-w-full overflow-x-auto pb-2 scrollbar-none gap-2">
+                        <button onclick="setHabitCatFilter('all')" id="hcat-all"
+                            class="hcat-btn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all bg-primary text-white shadow-md">Todos</button>
+                        <button onclick="setHabitCatFilter('focus')" id="hcat-focus"
+                            class="hcat-btn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 hover:text-primary transition-all shadow-sm">Focus</button>
+                        <button onclick="setHabitCatFilter('energy')" id="hcat-energy"
+                            class="hcat-btn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 hover:text-primary transition-all shadow-sm">Energy</button>
+                        <button onclick="setHabitCatFilter('mind')" id="hcat-mind"
+                            class="hcat-btn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 hover:text-primary transition-all shadow-sm">Mind</button>
+                        <button onclick="setHabitCatFilter('body')" id="hcat-body"
+                            class="hcat-btn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 hover:text-primary transition-all shadow-sm">Body</button>
+                        <button onclick="setHabitCatFilter('social')" id="hcat-social"
+                            class="hcat-btn px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest text-slate-500 bg-slate-100 dark:bg-slate-800 hover:text-primary transition-all shadow-sm">Social</button>
+                    </div>
+
+                    <div id="habits-full-list" class="space-y-4">
+                        <div
+                            class="p-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] text-center opacity-40">
+                            <p class="text-sm font-bold">Carregando protocolos...</p>
+                        </div>
+                    </div>
+
+                    <div id="paused-section" class="mt-8 pt-8 border-t border-slate-200 dark:border-slate-800 hidden">
+                        <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Protocolos em
+                            Hibernação</h4>
+                        <div id="paused-habits-list" class="grid grid-cols-1 gap-3 opacity-60"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 space-y-8 animate-slide-up" style="animation-delay: 200ms">
+
+                    <section
+                        class="bg-gradient-to-br from-slate-900 via-slate-900 to-primary/20 border border-slate-800 p-8 rounded-[2.5rem] relative overflow-hidden group shadow-2xl">
+                        <div class="absolute -right-10 -top-10 size-40 bg-primary/10 blur-[80px] rounded-full"></div>
+                        <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                            <div class="space-y-2 text-center md:text-left">
+                                <div
+                                    class="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary rounded-full mb-2">
+                                    <span class="material-symbols-outlined text-sm font-bold">timer</span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest">Sprint Ativo</span>
+                                </div>
+                                <h3 class="text-2xl font-black text-white italic tracking-tighter">Deep Work Session
+                                </h3>
+                                <p class="text-slate-400 text-sm leading-relaxed max-w-xs">Esmague seu backlog de
+                                    tarefas com foco ininterrupto.</p>
+                            </div>
+                            <button onclick="openSprintPicker()"
+                                class="size-20 rounded-full bg-white text-primary flex items-center justify-center shadow-2xl shadow-white/10 hover:scale-110 active:scale-95 transition-all group/play">
+                                <span
+                                    class="material-symbols-outlined text-4xl font-bold group-hover/play:translate-x-0.5 transition-transform">play_arrow</span>
                             </button>
-                            <div id="icon-picker" class="icon-grid" style="display:none;"></div>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <!-- Weight (slider) -->
-                <div class="form-group">
-                    <label class="form-label">Peso (impacto no score)</label>
-                    <input class="form-range" type="range" id="habit-weight" min="1" max="5" value="1"
-                        oninput="updateWeightDisplay(this.value)" />
-                    <div class="weight-display">
-                        <span id="weight-label">Leve</span>
-                        <span class="weight-points"><span id="weight-val">1</span> ponto por dia</span>
-                    </div>
-                </div>
-
-                <!-- Color -->
-                <div class="form-group">
-                    <label class="form-label">Cor</label>
-                    <div class="color-row" id="color-row"></div>
-                </div>
-
-                <!-- Frequency -->
-                <div class="form-group">
-                    <label class="form-label">Frequência</label>
-                    <select class="form-select" id="habit-frequency" onchange="onFrequencyChange(this.value)">
-                        <option value="daily">Todo dia</option>
-                        <option value="weekly">Dias específicos da semana</option>
-                        <option value="cycle">A cada N dias (ciclo)</option>
-                    </select>
-                </div>
-
-                <!-- Days of week -->
-                <div class="form-group" id="days-group" style="display:none;">
-                    <label class="form-label">Dias da semana</label>
-                    <div class="days-selector" id="days-selector">
-                        <button type="button" class="day-btn" data-day="0">Dom</button>
-                        <button type="button" class="day-btn" data-day="1">Seg</button>
-                        <button type="button" class="day-btn" data-day="2">Ter</button>
-                        <button type="button" class="day-btn" data-day="3">Qua</button>
-                        <button type="button" class="day-btn" data-day="4">Qui</button>
-                        <button type="button" class="day-btn" data-day="5">Sex</button>
-                        <button type="button" class="day-btn" data-day="6">Sáb</button>
-                    </div>
-                </div>
-
-                <!-- Cycle options -->
-                <div class="form-group" id="cycle-group" style="display:none;">
-                    <label class="form-label">Configuração do ciclo</label>
-                    <!-- Cycle type radios -->
-                    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-                        <label style="cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
-                            <input type="radio" name="cycle-type" id="cycle-type-active" value="active" checked
-                                onchange="onCycleTypeChange('active')" style="margin-top:3px;" />
-                            <span>
-                                <span style="font-size:0.85rem;font-weight:500;">Fazer a cada N dias</span>
-                                <p class="settings-sub" style="margin:2px 0 0;">Hábito aparece 1x a cada N dias</p>
-                            </span>
-                        </label>
-                        <label style="cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
-                            <input type="radio" name="cycle-type" id="cycle-type-rest" value="rest"
-                                onchange="onCycleTypeChange('rest')" style="margin-top:3px;" />
-                            <span>
-                                <span style="font-size:0.85rem;font-weight:500;">Descansar a cada N dias</span>
-                                <p class="settings-sub" style="margin:2px 0 0;">Aparece todo dia, exceto a cada N dias
-                                </p>
-                            </span>
-                        </label>
-                        <label style="cursor:pointer;display:flex;align-items:flex-start;gap:8px;">
-                            <input type="radio" name="cycle-type" id="cycle-type-pattern" value="pattern"
-                                onchange="onCycleTypeChange('pattern')" style="margin-top:3px;" />
-                            <span>
-                                <span style="font-size:0.85rem;font-weight:500;">Sequência progressiva de
-                                    descansos</span>
-                                <p class="settings-sub" style="margin:2px 0 0;">Ex: 7, 9, 5 → faz 7 dias, descansa, faz
-                                    9, descansa, faz 5, descansa, repete</p>
-                            </span>
-                        </label>
-                    </div>
-
-                    <!-- Simple N-days input (active / rest) -->
-                    <div id="cycle-simple-inputs" class="habit-form-row">
-                        <div class="form-group" style="margin:0">
-                            <label class="form-label" style="font-size:0.8rem;" id="cycle-days-label">Intervalo
-                                (dias)</label>
-                            <input class="form-input" type="number" id="habit-cycle-days" min="2" max="365" value="7"
-                                placeholder="Ex: 7" />
+                    <section class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="space-y-1">
+                                <h3 class="text-xl font-black tracking-tight flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary font-bold">inventory_2</span>
+                                    Carga Operacional
+                                </h3>
+                                <p class="text-xs text-slate-500 font-bold uppercase tracking-widest">Tarefas Únicas</p>
+                            </div>
+                            <div class="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl shadow-inner">
+                                <button onclick="setTaskFilter('active')" id="task-filter-active"
+                                    class="px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white dark:bg-slate-700 shadow-sm transition-all">Pendentes</button>
+                                <button onclick="setTaskFilter('done')" id="task-filter-done"
+                                    class="px-5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl hover:text-primary transition-all">Finalizadas</button>
+                            </div>
                         </div>
-                        <div class="form-group" style="margin:0">
-                            <label class="form-label" style="font-size:0.8rem;">Data de início</label>
-                            <input class="form-input" type="date" id="habit-cycle-start" />
-                        </div>
-                    </div>
 
-                    <!-- Pattern input (progressive) -->
-                    <div id="cycle-pattern-inputs" style="display:none;">
-                        <label class="form-label" style="font-size:0.8rem;">Sequência de dias ativos (separados por
-                            vírgula)</label>
-                        <input class="form-input" type="text" id="habit-cycle-pattern" placeholder="Ex: 7, 9, 5"
-                            style="margin-top:6px;" />
-                        <p class="settings-sub" style="margin-top:6px;">Informe quantos dias seguidos você faz o hábito
-                            antes de cada descanso.</p>
-                        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-                            <button type="button" class="badge badge-accent" onclick="setPattern('7, 7')">7 · 7</button>
-                            <button type="button" class="badge badge-accent" onclick="setPattern('5, 7, 5')">5 · 7 ·
-                                5</button>
-                            <button type="button" class="badge badge-accent" onclick="setPattern('7, 9, 5')">7 · 9 ·
-                                5</button>
-                            <button type="button" class="badge badge-accent" onclick="setPattern('6, 8, 6, 10')">6 · 8 ·
-                                6 · 10</button>
+                        <div id="tasks-list" class="space-y-4 pt-2">
                         </div>
-                        <div class="form-group" style="margin-top:12px;">
-                            <label class="form-label" style="font-size:0.8rem;">Data de início</label>
-                            <input class="form-input" type="date" id="habit-cycle-pattern-start" />
-                        </div>
-                    </div>
+                    </section>
                 </div>
-
-                <!-- Meta / Goal -->
-                <div class="form-group">
-                    <div class="toggle-wrapper">
-                        <span class="form-label" style="margin:0">Meta quantitativa</span>
-                        <label class="toggle">
-                            <input type="checkbox" id="habit-goal-toggle" onchange="onGoalToggle(this.checked)" />
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
-                    <p class="settings-sub" style="margin-top:4px;">Ex: beber 2 litros, ler 30 páginas</p>
-                </div>
-                <div class="form-group" id="goal-group" style="display:none;">
-                    <div class="habit-form-row">
-                        <div class="form-group" style="margin:0">
-                            <label class="form-label" style="font-size:0.8rem;">Quantidade alvo</label>
-                            <input class="form-input" type="number" id="habit-goal-value" min="1" placeholder="Ex: 2" />
-                        </div>
-                        <div class="form-group" style="margin:0">
-                            <label class="form-label" style="font-size:0.8rem;">Unidade</label>
-                            <input class="form-input" type="text" id="habit-goal-unit"
-                                placeholder="Ex: litros, páginas, km" />
-                        </div>
-                    </div>
-                    <div class="goal-unit-chips" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
-                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('litros')">litros</button>
-                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('ml')">ml</button>
-                        <button type="button" class="badge badge-accent"
-                            onclick="setGoalUnit('páginas')">páginas</button>
-                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('km')">km</button>
-                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('min')">min</button>
-                        <button type="button" class="badge badge-accent" onclick="setGoalUnit('horas')">horas</button>
-                    </div>
-                </div>
-
-                <!-- Ideal time + Strict mode -->
-                <div class="habit-form-row">
-                    <div class="form-group">
-                        <label class="form-label">Horário ideal</label>
-                        <input class="form-input" type="time" id="habit-time" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Modo rigoroso</label>
-                        <div class="toggle-wrapper" style="margin-top:12px;">
-                            <span class="settings-sub">Perde 50% fora do horário</span>
-                            <label class="toggle">
-                                <input type="checkbox" id="habit-strict" />
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn btn-primary" id="btn-save-habit" style="width:100%;margin-top:8px;">
-                    Salvar hábito
-                </button>
-            </form>
-        </div>
+            </div>
+        </main>
     </div>
 
-    <!-- Delete confirm modal -->
-    <div class="modal-overlay" id="delete-modal">
-        <div class="modal" style="max-width:380px;">
-            <div class="modal-header">
-                <h3 class="modal-title">Excluir hábito?</h3>
-                <button class="modal-close" onclick="closeDeleteModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <p style="color:var(--text-secondary);margin-bottom:24px;">
-                O hábito <strong id="delete-habit-name"></strong> e seus dados históricos serão removidos. Esta ação não
-                pode ser desfeita.
-            </p>
-            <div style="display:flex;gap:12px;">
-                <button class="btn btn-ghost" style="flex:1;" onclick="closeDeleteModal()">Cancelar</button>
-                <button class="btn btn-danger" style="flex:1;" id="btn-confirm-delete" onclick="confirmDelete()">
-                    <i class="fa-solid fa-trash"></i> Excluir
-                </button>
-            </div>
-        </div>
+    <div id="sprint-overlay"
+        class="fixed inset-0 z-[100] hidden flex-col items-center justify-center sprint-active text-white p-6 backdrop-blur-xl">
     </div>
 
-    <!-- Bottom Navigation Bar -->
-    <nav class="bottom-nav">
-        <a href="dashboard.html" class="bottom-nav-item">
-            <i class="fa-solid fa-gauge"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="habits.html" class="bottom-nav-item active">
-            <i class="fa-solid fa-bolt"></i>
-            <span>Hábitos</span>
-        </a>
-        <a href="tasks.html" class="bottom-nav-item">
-            <i class="fa-solid fa-list-check"></i>
-            <span>Tarefas</span>
-        </a>
-        <a href="agenda.html" class="bottom-nav-item">
-            <i class="fa-solid fa-calendar-check"></i>
-            <span>Agenda</span>
-        </a>
-        <a href="analytics.html" class="bottom-nav-item">
-            <i class="fa-solid fa-chart-bar"></i>
-            <span>Análises</span>
-        </a>
-    </nav>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/router.js"></script>
     <script src="js/utils.js"></script>
+    <script src="js/engine.js"></script>
     <script src="js/habits.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/tasks.js"></script>
+    <script src="js/identity.js"></script>
+    <script src="js/app.js"></script>
+
     <script>
-        let allHabits = [];
-        let selectedIcon = 'fa-solid fa-bolt';
-        let selectedColor = '#6366f1';
-        let selectedDays = [];
-        let deleteTargetId = null;
+        // ── State ────────────────────────────────────────────────────
+        let _allHabits = [];
+        let _allTasks = [];
+        let _categories = [];
+        let _taskFilter = 'active';
+        let _habitCatFilter = 'all';
+        let _editHabitId = null;
 
-        const WEIGHT_LABELS = ['', 'Leve', 'Moderado', 'Importante', 'Alto', 'Crítico'];
+        // Sprint state
+        let _sprintTimer = null;
+        let _sprintTotalSecs = 25 * 60;
+        let _sprintRemaining = 25 * 60;
+        let _sprintPaused = false;
 
-        function renderIcon(icon) {
-            if (!icon) return '<i class="fa-solid fa-bolt"></i>';
-            if (icon.startsWith('fa-')) return `<i class="${icon}"></i>`;
-            return icon; // legacy emoji fallback
-        }
-
+        // ── Init ─────────────────────────────────────────────────────
         async function init() {
-            const ok = await Router.init();
+            const ok = await AppInit.boot();
             if (!ok) return;
-            buildIconPicker();
-            buildColorPicker();
-            setupDayButtons();
-            await loadHabits();
+
+            // Wire "New" button
+            const addBtn = document.getElementById('main-add-btn');
+            if (addBtn) addBtn.onclick = () => openHabitModal();
+
+            try {
+                _categories = await Habits.getCategories();
+            } catch (e) {
+                console.error("Error loading categories", e);
+            }
+
+            await Promise.all([loadHabits(), loadTasks()]);
+            renderNav();
         }
 
+        async function renderNav() {
+            const summaryData = await window.API.getSummary(UI.todayStr());
+            window._unifiedData = summaryData;
+            AppUI.renderNav(window._unifiedData);
+            const xpEl = document.getElementById('stat-xp-tasks');
+            if (xpEl) {
+                const xp = Tasks.calcTotalTaskXP(_allTasks.filter(t => t.status === 'done'));
+                xpEl.textContent = xp + ' XP Acumulado';
+            }
+        }
+
+        // ── Habits CRUD ───────────────────────────────────────────────
         async function loadHabits() {
-            allHabits = await Habits.getAllIncludingPaused();
+            try {
+                _allHabits = await Habits.getAllIncludingPaused();
+                renderHabits();
+            } catch (e) {
+                UI.toast('Erro ao carregar hábitos.', 'error');
+            }
+        }
+
+        function setHabitCatFilter(cat) {
+            _habitCatFilter = cat;
+            document.querySelectorAll('.hcat-btn').forEach(btn => {
+                const target = btn.id.replace('hcat-', '');
+                if (target === cat) {
+                    btn.classList.add('bg-primary', 'text-white', 'shadow-md');
+                    btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500', 'hover:text-primary', 'shadow-sm');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white', 'shadow-md');
+                    btn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-500', 'hover:text-primary', 'shadow-sm');
+                }
+            });
             renderHabits();
         }
 
-        function buildHabitCard(h, paused = false) {
-            let freqLabel;
-            if (h.frequency === 'daily') freqLabel = 'Todo dia';
-            else if (h.frequency === 'cycle') freqLabel = `A cada ${h.cycle_days || '?'} dias`;
-            else freqLabel = (h.days_of_week || []).map(d => ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][d]).join(', ');
+        function renderHabits() {
+            _allHabits.forEach(h => {
+                const cObj = _categories.find(c => c.id === h.category_id);
+                h.category = cObj ? cObj.name.toLowerCase() : 'focus';
+            });
+            let filteredHabits = _allHabits;
+            if (_habitCatFilter !== 'all') {
+                filteredHabits = _allHabits.filter(h => h.category === _habitCatFilter);
+            }
 
-            const dots = Array.from({ length: 5 }, (_, i) =>
-                `<div class="habit-weight-dot ${i < h.weight ? 'active' : ''}"></div>`
-            ).join('');
+            const active = filteredHabits.filter(h => h.is_active && !h.is_paused);
+            const paused = filteredHabits.filter(h => h.is_active && h.is_paused);
 
-            const goalTag = h.goal_value
-                ? `<span class="habit-manage-tag"><i class="fa-solid fa-bullseye"></i> Meta: ${h.goal_value} ${h.goal_unit || ''}</span>` : '';
+            const activeC = document.getElementById('habits-full-list');
+            const pausedC = document.getElementById('paused-habits-list');
+            const pausedSec = document.getElementById('paused-section');
 
-            const escapedName = h.name.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            const iconColor = paused ? 'var(--text-muted)' : h.color;
+            activeC.innerHTML = active.length === 0
+                ? `<div class="p-10 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] text-center opacity-40">
+                    <p class="text-sm font-bold">Nenhum protocolo ativo</p>
+                    <button onclick="openHabitModal()" class="text-primary text-xs mt-2 inline-block font-bold">Criar primeiro hábito →</button>
+                   </div>`
+                : active.map(h => habitCard(h, false)).join('');
 
-            const pauseBtn = paused
-                ? `<button class="btn btn-icon" style="color:var(--green)" onclick="resumeHabit('${h.id}')" title="Reativar"><i class="fa-solid fa-play"></i></button>`
-                : `<button class="btn btn-icon" onclick="pauseHabit('${h.id}', '${escapedName}')" title="Suspender"><i class="fa-solid fa-pause"></i></button>`;
+            if (paused.length > 0) {
+                pausedSec.classList.remove('hidden');
+                pausedC.innerHTML = paused.map(h => habitCard(h, true)).join('');
+            } else {
+                pausedSec.classList.add('hidden');
+            }
+        }
+
+        function habitCard(h, isPaused) {
+            const dw = h.difficulty_weight || 1.0;
+            const xp = h.xpEarned;
+            const icon = (h.icon || 'fa-solid fa-bolt').startsWith('fa-')
+                ? `<i class="${h.icon || 'fa-solid fa-bolt'}"></i>`
+                : h.icon;
+
+            const catColors = { focus: '#0d59f2', body: '#10b981', mind: '#8b5cf6', energy: '#f59e0b', social: '#ec4899' };
+            const cColor = catColors[h.category || 'focus'] || '#6366f1';
 
             return `
-          <div class="habit-manage-item animate-fade-in ${paused ? 'habit-paused' : ''}" id="hm-${h.id}">
-            <div class="habit-icon" style="background:${h.color}22;color:${iconColor};font-size:1.2rem;width:48px;height:48px;">
-              ${renderIcon(h.icon)}
-            </div>
-            <div class="habit-manage-info">
-              <div class="habit-manage-name">${h.name}</div>
-              <div class="habit-manage-meta">
-                <span class="habit-manage-tag">
-                  <div class="habit-weight">${dots}</div>
-                  ${h.weight} pt${h.weight > 1 ? 's' : ''}
-                </span>
-                <span class="habit-manage-tag"><i class="fa-regular fa-calendar"></i> ${freqLabel}</span>
-                ${h.ideal_time ? `<span class="habit-manage-tag"><i class="fa-regular fa-clock"></i> ${UI.formatTime(h.ideal_time)}</span>` : ''}
-                ${h.strict_mode ? `<span class="habit-manage-tag"><i class="fa-solid fa-shield-halved"></i> Rigoroso</span>` : ''}
-                ${goalTag}
-              </div>
-            </div>
-            <div class="habit-manage-actions">
-              ${!paused ? `<button class="btn btn-icon" onclick="openModal('${h.id}')" title="Editar"><i class="fa-solid fa-pen"></i></button>` : ''}
-              ${pauseBtn}
-              <button class="btn btn-icon" style="color:var(--red,#ef4444)" onclick="openDeleteModal('${h.id}', '${escapedName}')" title="Excluir"><i class="fa-solid fa-trash"></i></button>
-            </div>
-          </div>`;
-        }
-
-        function renderHabits() {
-            const container = document.getElementById('habits-full-list');
-            const active = allHabits.filter(h => !h.is_paused);
-            const paused = allHabits.filter(h => h.is_paused);
-
-            if (allHabits.length === 0) {
-                container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fa-solid fa-bolt fa-2x"></i></div>
-            <div class="empty-title">Nenhum hábito ainda</div>
-            <p class="empty-desc">Crie seu primeiro hábito e comece a medir sua consistência.</p>
-            <button class="btn btn-primary" onclick="openModal()"><i class="fa-solid fa-plus"></i> Criar hábito</button>
-          </div>`;
-                document.getElementById('paused-section').style.display = 'none';
-                return;
-            }
-
-            container.innerHTML = active.length > 0
-                ? active.map(h => buildHabitCard(h, false)).join('')
-                : `<div style="padding:20px;color:var(--text-muted);text-align:center;">Todos os hábitos estão suspensos.</div>`;
-
-            const pausedSection = document.getElementById('paused-section');
-            const pausedList = document.getElementById('paused-habits-list');
-            if (paused.length > 0) {
-                pausedList.innerHTML = paused.map(h => buildHabitCard(h, true)).join('');
-                pausedSection.style.display = 'block';
-            } else {
-                pausedSection.style.display = 'none';
-            }
-        }
-
-        function openModal(habitId = null) {
-            document.getElementById('modal-title').textContent = habitId ? 'Editar Hábito' : 'Novo Hábito';
-            document.getElementById('habit-id').value = habitId || '';
-
-            if (habitId) {
-                const h = allHabits.find(h => h.id === habitId);
-                if (!h) return;
-                document.getElementById('habit-name').value = h.name;
-                document.getElementById('habit-weight').value = h.weight;
-                updateWeightDisplay(h.weight);
-                document.getElementById('habit-time').value = h.ideal_time || '';
-                document.getElementById('habit-strict').checked = h.strict_mode;
-                document.getElementById('habit-frequency').value = h.frequency;
-                onFrequencyChange(h.frequency);
-                selectedIcon = h.icon;
-                selectedColor = h.color;
-                updateIconPreview();
-                selectedDays = h.days_of_week || [];
-                updateDayButtons();
-                updateColorPicker();
-                // Cycle
-                const ctype = h.cycle_type || 'active';
-                document.querySelector(`input[name="cycle-type"][value="${ctype}"]`).checked = true;
-                onCycleTypeChange(ctype);
-                document.getElementById('habit-cycle-days').value = h.cycle_days || 7;
-                document.getElementById('habit-cycle-start').value = h.cycle_start || UI.todayStr();
-                document.getElementById('habit-cycle-pattern').value = h.cycle_pattern || '';
-                document.getElementById('habit-cycle-pattern-start').value = h.cycle_start || UI.todayStr();
-                // Goal
-                const hasGoal = !!(h.goal_value);
-                document.getElementById('habit-goal-toggle').checked = hasGoal;
-                document.getElementById('habit-goal-value').value = h.goal_value || '';
-                document.getElementById('habit-goal-unit').value = h.goal_unit || '';
-                onGoalToggle(hasGoal);
-            } else {
-                document.getElementById('habit-name').value = '';
-                document.getElementById('habit-weight').value = 1;
-                updateWeightDisplay(1);
-                document.getElementById('habit-time').value = '';
-                document.getElementById('habit-strict').checked = false;
-                document.getElementById('habit-frequency').value = 'daily';
-                onFrequencyChange('daily');
-                selectedIcon = 'fa-solid fa-bolt';
-                selectedColor = '#6366f1';
-                updateIconPreview();
-                selectedDays = [];
-                updateDayButtons();
-                updateColorPicker();
-                // Cycle defaults
-                document.getElementById('cycle-type-active').checked = true;
-                onCycleTypeChange('active');
-                document.getElementById('habit-cycle-days').value = 7;
-                document.getElementById('habit-cycle-start').value = UI.todayStr();
-                document.getElementById('habit-cycle-pattern').value = '';
-                document.getElementById('habit-cycle-pattern-start').value = UI.todayStr();
-                // Goal defaults
-                document.getElementById('habit-goal-toggle').checked = false;
-                document.getElementById('habit-goal-value').value = '';
-                document.getElementById('habit-goal-unit').value = '';
-                onGoalToggle(false);
-            }
-            document.getElementById('habit-modal').classList.add('open');
-        }
-
-        function updateIconPreview() {
-            document.getElementById('selected-icon-preview').className = selectedIcon;
-        }
-
-        function closeModal() {
-            document.getElementById('habit-modal').classList.remove('open');
-            document.getElementById('icon-picker').style.display = 'none';
-        }
-
-        async function saveHabit() {
-            const btn = document.getElementById('btn-save-habit');
-            const name = document.getElementById('habit-name').value.trim();
-            if (!name) { UI.toast('Nome é obrigatório.', 'error'); return; }
-            const frequency = document.getElementById('habit-frequency').value;
-            if (frequency === 'weekly' && selectedDays.length === 0) {
-                UI.toast('Selecione ao menos um dia da semana.', 'error'); return;
-            }
-            if (frequency === 'cycle') {
-                const ctype = document.querySelector('input[name="cycle-type"]:checked')?.value || 'active';
-                if (ctype !== 'pattern' && !document.getElementById('habit-cycle-days').value) {
-                    UI.toast('Informe o número de dias do ciclo.', 'error'); return;
+            <div class="bg-white dark:bg-slate-800/60 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 hover:border-primary/40 transition-all group relative">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4">
+                        <div class="size-12 rounded-2xl flex items-center justify-center text-2xl shadow-inner transition-transform group-hover:rotate-6"
+                             style="background:${h.color}15; color:${h.color}">${icon}</div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <h4 class="font-black text-lg tracking-tight">${h.name}</h4>
+                            </div>
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                                ${h.frequency === 'daily' ? 'Diário' : 'Semanal'} • <span style="color:${cColor}">${h.category || 'Focus'}</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onclick="openHabitModal('${h.id}')" class="p-2 text-slate-400 hover:text-primary">
+                            <span class="material-symbols-outlined text-sm font-bold">edit</span>
+                        </button>
+                        ${isPaused
+                    ? `<button onclick="resumeHabit('${h.id}')" class="p-2 text-slate-400 hover:text-emerald-500">
+                                <span class="material-symbols-outlined text-sm font-bold">play_arrow</span></button>`
+                    : `<button onclick="pauseHabit('${h.id}')" class="p-2 text-slate-400 hover:text-amber-500">
+                                <span class="material-symbols-outlined text-sm font-bold">pause</span></button>`
                 }
-                if (ctype === 'pattern' && !document.getElementById('habit-cycle-pattern').value.trim()) {
-                    UI.toast('Informe a sequência de dias do ciclo.', 'error'); return;
-                }
-            }
+                        <button onclick="deleteHabit('${h.id}')" class="p-2 text-slate-400 hover:text-red-500">
+                            <span class="material-symbols-outlined text-sm font-bold">delete</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-6 flex items-center justify-between">
+                    <div class="flex gap-2">
+                        <span class="text-[9px] font-black uppercase text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-lg">Impacto: ${h.weight}</span>
+                        ${dw !== 1.0 ? `<span class="text-[9px] font-black uppercase text-amber-500 border border-amber-500/20 bg-amber-500/10 px-2 py-1 rounded-lg">x${dw}</span>` : ''}
+                    </div>
+                    <span class="text-[9px] font-black text-primary uppercase">+${xp} XP</span>
+                </div>
+            </div>`;
+        }
 
-            const hasGoal = document.getElementById('habit-goal-toggle').checked;
-            const goalValue = hasGoal ? parseFloat(document.getElementById('habit-goal-value').value) : null;
-            const goalUnit = hasGoal ? document.getElementById('habit-goal-unit').value.trim() : null;
-            if (hasGoal && (!goalValue || goalValue <= 0)) {
-                UI.toast('Informe a quantidade alvo da meta.', 'error'); return;
-            }
-
-            const cycleType = frequency === 'cycle' ? (document.querySelector('input[name="cycle-type"]:checked')?.value || 'active') : null;
-            const isPattern = cycleType === 'pattern';
-
-            const data = {
-                name,
-                weight: parseInt(document.getElementById('habit-weight').value),
-                frequency,
-                days_of_week: frequency === 'weekly' ? selectedDays : null,
-                ideal_time: document.getElementById('habit-time').value || null,
-                strict_mode: document.getElementById('habit-strict').checked,
-                icon: selectedIcon,
-                color: selectedColor,
-                goal_value: goalValue,
-                goal_unit: goalUnit,
-                cycle_days: (frequency === 'cycle' && !isPattern) ? parseInt(document.getElementById('habit-cycle-days').value) : null,
-                cycle_start: frequency === 'cycle' ? (
-                    isPattern
-                        ? (document.getElementById('habit-cycle-pattern-start').value || UI.todayStr())
-                        : (document.getElementById('habit-cycle-start').value || UI.todayStr())
-                ) : null,
-                cycle_type: cycleType,
-                cycle_pattern: (frequency === 'cycle' && isPattern)
-                    ? document.getElementById('habit-cycle-pattern').value.trim()
-                    : null,
-            };
-            const id = document.getElementById('habit-id').value;
-            await UI.handleSubmit(btn, async () => {
-                if (id) {
-                    await Habits.update(id, data);
-                    UI.toast('Hábito atualizado!', 'success');
-                } else {
-                    await Habits.create(data);
-                    UI.toast('Hábito criado!', 'success');
-                }
-                closeModal();
+        async function pauseHabit(id) {
+            try {
+                await Habits.pause(id);
+                UI.toast('Protocolo suspenso.', 'info');
                 await loadHabits();
-            });
-        }
-
-        async function pauseHabit(id, name) {
-            await Habits.pause(id);
-            UI.toast(`"${name}" suspenso.`, 'info');
-            await loadHabits();
+            } catch (e) { UI.toast(e.message || 'Erro.', 'error'); }
         }
 
         async function resumeHabit(id) {
-            await Habits.resume(id);
-            UI.toast('Hábito reativado!', 'success');
-            await loadHabits();
+            try {
+                await Habits.resume(id);
+                UI.toast('Protocolo retomado!', 'success');
+                await loadHabits();
+            } catch (e) { UI.toast(e.message || 'Erro.', 'error'); }
         }
 
-        function openDeleteModal(id, name) {
-            deleteTargetId = id;
-            document.getElementById('delete-habit-name').textContent = name;
-            document.getElementById('delete-modal').classList.add('open');
-        }
-
-        function closeDeleteModal() {
-            deleteTargetId = null;
-            document.getElementById('delete-modal').classList.remove('open');
-        }
-
-        async function confirmDelete() {
-            if (!deleteTargetId) return;
-            const btn = document.getElementById('btn-confirm-delete');
-            await UI.handleSubmit(btn, async () => {
-                await Habits.remove(deleteTargetId);
-                closeDeleteModal();
+        async function deleteHabit(id) {
+            if (!confirm('Desativar permanentemente este hábito?')) return;
+            try {
+                await Habits.remove(id);
                 UI.toast('Hábito removido.', 'info');
                 await loadHabits();
+            } catch (e) { UI.toast(e.message || 'Erro.', 'error'); }
+        }
+
+        // ── Habit Modal ───────────────────────────────────────────────
+        function openHabitModal(editId = null) {
+            _editHabitId = editId;
+            let modal = document.getElementById('habit-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'habit-modal';
+                modal.className = 'fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] p-8 shadow-2xl animate-slide-up">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-black" id="habit-modal-title">Novo Protocolo</h3>
+                            <button onclick="closeHabitModal()" class="size-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500 transition-colors">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome do Protocolo</label>
+                                <input id="hm-name" type="text" placeholder="Ex: Leitura matinal"
+                                    class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Impacto (1-5)</label>
+                                    <input id="hm-weight" type="number" min="1" max="5" value="3"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Categoria</label>
+                                    <select id="hm-category"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                        ${_categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Peso de Dificuldade (1-5)</label>
+                                    <input id="hm-difficulty-weight" type="number" min="1" max="5" value="1" step="0.1"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Frequência</label>
+                                    <select id="hm-frequency" onchange="toggleFrequencyOptions()"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                        <option value="daily">Diário</option>
+                                        <option value="weekly">Semanal</option>
+                                        <option value="cycle">Ciclo / Repetição</option>
+                                    </select>
+                                </div>
+                                <div id="hm-weekly-opts" class="col-span-2 hidden bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Dias da Semana</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="0">D</button>
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="1">S</button>
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="2">T</button>
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="3">Q</button>
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="4">Q</button>
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="5">S</button>
+                                        <button type="button" class="hm-dow-btn size-8 rounded-full font-bold text-xs bg-white dark:bg-slate-700 text-slate-500 dark:text-slate-300 transition-colors" data-day="6">S</button>
+                                    </div>
+                                </div>
+                                <div id="hm-cycle-opts" class="col-span-2 hidden bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">A Cada (Dias)</label>
+                                        <input id="hm-cycle-days" type="number" min="1" placeholder="Ex: 3" class="w-full mt-2 bg-white dark:bg-slate-700 rounded-xl px-3 py-2 font-bold border-none outline-none text-slate-900 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Data de Início</label>
+                                        <input id="hm-cycle-start" type="date" class="w-full mt-2 bg-white dark:bg-slate-700 rounded-xl px-3 py-2 font-bold border-none outline-none text-xs text-slate-900 dark:text-white">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Meta Quantitativa (opcional)</label>
+                                    <input id="hm-goal-value" type="number" placeholder="Ex: 10" step="0.5"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Unidade</label>
+                                    <input id="hm-goal-unit" type="text" placeholder="Ex: Páginas, km, min"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cor de Identidade</label>
+                                    <div class="flex gap-2 mt-2 flex-wrap" id="hm-color-picker">
+                                        ${['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#ec4899', '#14b8a6', '#a855f7', '#f97316', '#0d59f2'].map(c =>
+                    `<button type="button" onclick="selectColor('${c}')" class="size-8 rounded-xl border-2 border-transparent hover:scale-110 transition-all hm-color-btn" data-color="${c}" style="background:${c}"></button>`
+                ).join('')}
+                                    </div>
+                                    <input type="hidden" id="hm-color" value="#6366f1">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ícone</label>
+                                    <div class="flex gap-2 mt-2 flex-wrap max-h-32 overflow-y-auto p-1 scrollbar-thin" id="hm-icon-picker">
+                                        ${Habits.ICONS ? Habits.ICONS.map(i =>
+                    `<button type="button" onclick="selectIcon('${i}')" class="size-8 rounded-xl border border-transparent hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hm-icon-btn flex items-center justify-center transition-all" data-icon="${i}"><i class="${i}"></i></button>`
+                ).join('') : ''}
+                                    </div>
+                                    <input type="hidden" id="hm-icon" value="fa-solid fa-bolt">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Horário Ideal (opcional)</label>
+                                <input id="hm-ideal-time" type="time"
+                                    class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                            </div>
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input type="checkbox" id="hm-strict" class="rounded accent-primary w-4 h-4">
+                                <span class="text-sm font-bold">Strict Mode (penalidade por atraso)</span>
+                            </label>
+                        </div>
+                        <div class="flex gap-3 mt-8">
+                            <button onclick="closeHabitModal()"
+                                class="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-sm">Cancelar</button>
+                            <button onclick="saveHabit()" id="hm-save-btn"
+                                class="flex-1 py-4 rounded-2xl bg-primary text-white font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">Salvar</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modal);
+                modal.addEventListener('click', e => { if (e.target === modal) closeHabitModal(); });
+            }
+
+            const h = editId ? _allHabits.find(x => x.id === editId) : null;
+            document.getElementById('habit-modal-title').textContent = h ? 'Editar Protocolo' : 'Novo Protocolo';
+            document.getElementById('hm-name').value = h?.name || '';
+            document.getElementById('hm-weight').value = h?.weight || 3;
+            document.getElementById('hm-difficulty-weight').value = h?.difficulty_weight || 1;
+            document.getElementById('hm-frequency').value = h?.frequency || 'daily';
+            document.getElementById('hm-category').value = h?.category_id || (_categories.length ? _categories[0].id : '');
+            document.getElementById('hm-ideal-time').value = h?.ideal_time || '';
+            document.getElementById('hm-strict').checked = h?.strict_mode || false;
+            document.getElementById('hm-goal-value').value = h?.goal_value || '';
+            document.getElementById('hm-goal-unit').value = h?.goal_unit || '';
+            document.getElementById('hm-cycle-days').value = h?.cycle_days || '';
+            document.getElementById('hm-cycle-start').value = h?.cycle_start || '';
+            selectColor(h?.color || '#6366f1');
+            selectIcon(h?.icon || 'fa-solid fa-bolt');
+
+            toggleFrequencyOptions();
+            document.querySelectorAll('.hm-dow-btn').forEach(btn => {
+                const dayStr = btn.dataset.day;
+                const isSelected = h?.days_of_week?.includes(parseInt(dayStr));
+                if (isSelected) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-500', 'dark:bg-slate-700', 'dark:text-slate-300');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'text-slate-500', 'dark:bg-slate-700', 'dark:text-slate-300');
+                }
+            });
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('hm-name').focus(), 50);
+        }
+
+        function toggleFrequencyOptions() {
+            const freq = document.getElementById('hm-frequency').value;
+            document.getElementById('hm-weekly-opts').classList.toggle('hidden', freq !== 'weekly');
+            document.getElementById('hm-cycle-opts').classList.toggle('hidden', freq !== 'cycle');
+        }
+
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.hm-dow-btn');
+            if (btn) {
+                const isActive = btn.classList.contains('bg-primary');
+                if (!isActive) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-500', 'dark:bg-slate-700', 'dark:text-slate-300');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'text-slate-500', 'dark:bg-slate-700', 'dark:text-slate-300');
+                }
+            }
+        });
+
+        function selectColor(color) {
+            document.getElementById('hm-color').value = color;
+            document.querySelectorAll('.hm-color-btn').forEach(btn => {
+                btn.style.borderColor = btn.dataset.color === color ? '#fff' : 'transparent';
+                btn.style.boxShadow = btn.dataset.color === color ? `0 0 12px ${color}80` : 'none';
             });
         }
 
-        function updateWeightDisplay(val) {
-            document.getElementById('weight-val').textContent = val;
-            document.getElementById('weight-label').textContent = WEIGHT_LABELS[val] || '';
+        function selectIcon(icon) {
+            document.getElementById('hm-icon').value = icon;
+            document.querySelectorAll('.hm-icon-btn').forEach(btn => {
+                const isActive = btn.dataset.icon === icon;
+                if (isActive) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('text-slate-400');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('text-slate-400');
+                }
+            });
         }
 
-        function onFrequencyChange(val) {
-            document.getElementById('days-group').style.display = val === 'weekly' ? 'block' : 'none';
-            document.getElementById('cycle-group').style.display = val === 'cycle' ? 'block' : 'none';
+        function closeHabitModal() {
+            const modal = document.getElementById('habit-modal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+            _editHabitId = null;
         }
 
-        function onCycleTypeChange(type) {
-            const simple = document.getElementById('cycle-simple-inputs');
-            const pattern = document.getElementById('cycle-pattern-inputs');
-            if (type === 'pattern') {
-                simple.style.display = 'none';
-                pattern.style.display = 'block';
-            } else {
-                simple.style.display = '';
-                pattern.style.display = 'none';
+        async function saveHabit() {
+            const name = document.getElementById('hm-name').value.trim();
+            if (!name) { UI.toast('Nome é obrigatório.', 'error'); return; }
+
+            const saveBtn = document.getElementById('hm-save-btn');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
+
+            const freq = document.getElementById('hm-frequency').value;
+            let days_of_week = null;
+            let cycle_days = null;
+            let cycle_start = null;
+
+            if (freq === 'weekly') {
+                days_of_week = Array.from(document.querySelectorAll('.hm-dow-btn.bg-primary')).map(b => parseInt(b.dataset.day));
+                if (days_of_week.length === 0) {
+                    UI.toast('Selecione pelo menos um dia da semana para hábitos semanais.', 'error');
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
+                    return;
+                }
+            } else if (freq === 'cycle') {
+                cycle_days = parseInt(document.getElementById('hm-cycle-days').value);
+                cycle_start = document.getElementById('hm-cycle-start').value;
+                if (!cycle_days || !cycle_start) {
+                    UI.toast('Configure os dias do ciclo e a data de início.', 'error');
+                    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
+                    return;
+                }
+            }
+
+            const data = {
+                name,
+                weight: parseInt(document.getElementById('hm-weight').value) || 3,
+                difficulty_weight: parseFloat(document.getElementById('hm-difficulty-weight').value) || 1,
+                frequency: freq,
+                category_id: document.getElementById('hm-category').value,
+                color: document.getElementById('hm-color').value,
+                ideal_time: document.getElementById('hm-ideal-time').value || null,
+                strict_mode: document.getElementById('hm-strict').checked,
+                goal_value: parseFloat(document.getElementById('hm-goal-value').value) || null,
+                goal_unit: document.getElementById('hm-goal-unit').value.trim() || null,
+                icon: document.getElementById('hm-icon').value || 'fa-solid fa-bolt',
+                days_of_week,
+                cycle_days,
+                cycle_start
+            };
+
+            try {
+                if (_editHabitId) {
+                    await Habits.update(_editHabitId, data);
+                    UI.toast('Protocolo atualizado!', 'success');
+                } else {
+                    await Habits.create(data);
+                    UI.toast('Protocolo criado!', 'success');
+                }
+                closeHabitModal();
+                await loadHabits();
+            } catch (e) {
+                UI.toast(e.message || 'Erro ao salvar.', 'error');
+            } finally {
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
             }
         }
 
-        function setPattern(val) {
-            document.getElementById('habit-cycle-pattern').value = val;
+        // ── Tasks ─────────────────────────────────────────────────────
+        async function loadTasks() {
+            try {
+                _allTasks = await Tasks.getAll();
+                renderTasks();
+                updateTaskHeader();
+            } catch (e) { UI.toast('Erro ao carregar tarefas.', 'error'); }
         }
 
-        function onGoalToggle(enabled) {
-            document.getElementById('goal-group').style.display = enabled ? 'block' : 'none';
+        function setTaskFilter(f) {
+            _taskFilter = f;
+            const active = document.getElementById('task-filter-active');
+            const done = document.getElementById('task-filter-done');
+            if (active && done) {
+                if (f === 'active') {
+                    active.className = 'px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white dark:bg-slate-700 shadow-sm transition-all';
+                    done.className = 'px-5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl hover:text-primary transition-all';
+                } else {
+                    done.className = 'px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-white dark:bg-slate-700 shadow-sm transition-all';
+                    active.className = 'px-5 py-2 text-[10px] font-black uppercase tracking-widest text-slate-500 rounded-xl hover:text-primary transition-all';
+                }
+            }
+            renderTasks();
         }
 
-        function setGoalUnit(unit) {
-            document.getElementById('habit-goal-unit').value = unit;
+        function updateTaskHeader() {
+            const xpEl = document.getElementById('stat-xp-tasks');
+            if (xpEl) {
+                const xp = Tasks.calcTotalTaskXP(_allTasks.filter(t => t.status === 'done'));
+                xpEl.textContent = xp + ' XP Acumulado';
+            }
         }
 
-        function setupDayButtons() {
-            document.querySelectorAll('.day-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const day = parseInt(btn.dataset.day);
-                    if (selectedDays.includes(day)) selectedDays = selectedDays.filter(d => d !== day);
-                    else selectedDays.push(day);
-                    updateDayButtons();
+        function renderTasks() {
+            const container = document.getElementById('tasks-list');
+            if (!container) return;
+
+            const filtered = _taskFilter === 'done'
+                ? _allTasks.filter(t => t.status === 'done')
+                : _allTasks.filter(t => t.status !== 'done');
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="py-14 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[2rem] opacity-30">
+                    <p class="italic text-sm font-bold uppercase tracking-widest">Backlog limpo.</p>
+                </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(t => {
+                const isDone = t.status === 'done';
+                const isOverdue = !isDone && t.deadline && new Date(t.deadline) < new Date();
+                return `
+                <div class="group flex items-center justify-between p-6 rounded-[1.8rem] bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all shadow-sm">
+                    <div class="flex items-center gap-5 min-w-0 flex-1">
+                        <div class="size-4 rounded-full flex-shrink-0 ${isDone
+                        ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+                        : isOverdue ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+                            : 'bg-primary shadow-[0_0_10px_rgba(13,89,242,0.4)] animate-pulse'}"></div>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-black tracking-tight text-lg ${isDone ? 'line-through text-slate-500 opacity-60' : ''}">${t.title}</p>
+                            <div class="flex items-center gap-3 mt-1.5">
+                                <span class="text-[9px] font-black text-primary bg-primary/10 px-2 py-0.5 rounded-full uppercase">Impacto ${t.weight}</span>
+                                <span class="text-[9px] font-black text-slate-400 uppercase">+${t.xpEarned} XP</span>
+                                ${t.deadline ? `<span class="text-[9px] font-black ${isOverdue ? 'text-red-400' : 'text-slate-400'}">📅 ${new Date(t.deadline).toLocaleDateString('pt-BR')}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 ml-4 flex-shrink-0">
+                        ${!isDone ? `
+                            <button onclick="completeTask('${t.id}')"
+                                class="px-5 py-2.5 rounded-xl bg-primary text-white text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/25">
+                                Concluir
+                            </button>` : ''}
+                        <button onclick="deleteTask('${t.id}')" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                            <span class="material-symbols-outlined text-xl">delete</span>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function completeTask(id) {
+            try {
+                const result = await Tasks.complete(id);
+                const xp = result?.xpResult?.xp || 0;
+                UI.toast(`Tarefa concluída! +${xp} XP`, 'success');
+                await loadTasks();
+            } catch (e) { UI.toast(e.message || 'Erro.', 'error'); }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Remover esta tarefa?')) return;
+            try {
+                await Tasks.remove(id);
+                UI.toast('Tarefa removida.', 'info');
+                await loadTasks();
+            } catch (e) { UI.toast(e.message || 'Erro.', 'error'); }
+        }
+
+        // ── New Task Modal ────────────────────────────────────────────
+        function openNewTaskModal() {
+            let modal = document.getElementById('task-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'task-modal';
+                modal.className = 'fixed inset-0 z-[100] hidden items-center justify-center bg-black/70 backdrop-blur-sm p-4';
+                modal.innerHTML = `
+                    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[2rem] p-8 shadow-2xl animate-slide-up">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xl font-black">Nova Tarefa</h3>
+                            <button onclick="closeTaskModal()" class="size-8 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-red-500">
+                                <span class="material-symbols-outlined text-sm">close</span>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Título da Tarefa</label>
+                                <input id="tm-title" type="text" placeholder="O que precisa ser feito?"
+                                    class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Impacto (1-5)</label>
+                                    <input id="tm-weight" type="number" min="1" max="5" value="3"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Prazo (opcional)</label>
+                                    <input id="tm-deadline" type="datetime-local"
+                                        class="w-full mt-2 bg-slate-100 dark:bg-slate-800 rounded-2xl px-4 py-3 font-bold border-none focus:ring-2 focus:ring-primary outline-none transition-all">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 mt-8">
+                            <button onclick="closeTaskModal()"
+                                class="flex-1 py-4 rounded-2xl bg-slate-100 dark:bg-slate-800 font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">Cancelar</button>
+                            <button onclick="saveTask()"
+                                class="flex-1 py-4 rounded-2xl bg-primary text-white font-black text-sm shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all">Criar</button>
+                        </div>
+                    </div>`;
+                document.body.appendChild(modal);
+                modal.addEventListener('click', e => { if (e.target === modal) closeTaskModal(); });
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            setTimeout(() => document.getElementById('tm-title').focus(), 50);
+        }
+
+        function closeTaskModal() {
+            const modal = document.getElementById('task-modal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        async function saveTask() {
+            const title = document.getElementById('tm-title').value.trim();
+            if (!title) { UI.toast('Título é obrigatório.', 'error'); return; }
+            try {
+                await Tasks.create({
+                    title,
+                    weight: parseInt(document.getElementById('tm-weight').value) || 3,
+                    deadline: document.getElementById('tm-deadline').value || null,
                 });
-            });
+                UI.toast('Tarefa criada!', 'success');
+                closeTaskModal();
+                await loadTasks();
+            } catch (e) { UI.toast(e.message || 'Erro ao criar tarefa.', 'error'); }
         }
 
-        function updateDayButtons() {
-            document.querySelectorAll('.day-btn').forEach(btn => {
-                btn.classList.toggle('selected', selectedDays.includes(parseInt(btn.dataset.day)));
-            });
+        // ── "New" button behavior (habits vs tasks context) ───────────
+        function openNewItem() {
+            openHabitModal();
         }
 
-        function buildIconPicker() {
-            const grid = document.getElementById('icon-picker');
-            grid.className = 'icon-grid';
-            Habits.ICONS.forEach(iconClass => {
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'icon-btn';
-                btn.innerHTML = `<i class="${iconClass}"></i>`;
-                btn.onclick = () => {
-                    selectedIcon = iconClass;
-                    updateIconPreview();
-                    document.querySelectorAll('#icon-picker .icon-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                };
-                grid.appendChild(btn);
-            });
+        // ── Sprint Timer ───────────────────────────────────────────────
+        function openSprintPicker() {
+            const rawMins = prompt('Duração do sprint em minutos (padrão: 25):', '25');
+            const mins = parseInt(rawMins) || 25;
+            _sprintTotalSecs = mins * 60;
+            _sprintRemaining = _sprintTotalSecs;
+            _sprintPaused = false;
+
+            const overlay = document.getElementById('sprint-overlay');
+            overlay.innerHTML = `
+                <div class="max-w-md w-full text-center space-y-12">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 bg-primary/20 text-primary rounded-full">
+                            <span class="material-symbols-outlined text-sm">timer</span>
+                            <span class="text-[10px] font-black uppercase tracking-widest">Sprint Ativo</span>
+                        </div>
+                        <h2 class="text-3xl font-black text-white tracking-tight">Deep Work Session</h2>
+                    </div>
+                    <div class="relative size-64 mx-auto flex items-center justify-center">
+                        <svg class="size-full -rotate-90">
+                            <circle cx="128" cy="128" r="120" fill="transparent" stroke="rgba(255,255,255,0.05)" stroke-width="8"></circle>
+                            <circle id="sprint-ring-fill" cx="128" cy="128" r="120" fill="transparent" stroke="#0d59f2"
+                                stroke-width="8" stroke-dasharray="754" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000"></circle>
+                        </svg>
+                        <div class="absolute flex flex-col items-center">
+                            <span id="sprint-timer-display" class="text-6xl font-black tracking-tighter tabular-nums">${String(mins).padStart(2, '0')}:00</span>
+                            <span class="text-xs font-bold text-slate-500 uppercase tracking-[0.3em]">Minutos</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 justify-center">
+                        <button onclick="toggleSprintPause()" id="sprint-pause-btn"
+                            class="px-8 py-3 rounded-2xl border border-white/10 font-bold hover:bg-white/5 transition-all">Pausar</button>
+                        <button onclick="finishSprint(true)"
+                            class="px-8 py-3 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/40">Concluir</button>
+                    </div>
+                    <button onclick="finishSprint(false)"
+                        class="text-red-500 text-xs font-bold uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity">Abandonar Sprint</button>
+                </div>`;
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            startSprintTimer();
         }
 
-        function toggleIconPicker() {
-            const picker = document.getElementById('icon-picker');
-            picker.style.display = picker.style.display === 'none' ? 'grid' : 'none';
+        function startSprintTimer() {
+            if (_sprintTimer) clearInterval(_sprintTimer);
+            _sprintTimer = setInterval(() => {
+                if (_sprintPaused) return;
+                _sprintRemaining--;
+                updateSprintDisplay();
+                if (_sprintRemaining <= 0) finishSprint(true);
+            }, 1000);
         }
 
-        function buildColorPicker() {
-            const row = document.getElementById('color-row');
-            Habits.COLORS.forEach(color => {
-                const swatch = document.createElement('button');
-                swatch.type = 'button';
-                swatch.className = 'color-swatch';
-                swatch.style.background = color;
-                swatch.dataset.color = color;
-                swatch.onclick = () => { selectedColor = color; updateColorPicker(); };
-                row.appendChild(swatch);
-            });
+        function updateSprintDisplay() {
+            const m = Math.floor(_sprintRemaining / 60);
+            const s = _sprintRemaining % 60;
+            const displayEl = document.getElementById('sprint-timer-display');
+            if (displayEl) displayEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+            const pct = 1 - (_sprintRemaining / _sprintTotalSecs);
+            const fill = document.getElementById('sprint-ring-fill');
+            if (fill) fill.setAttribute('stroke-dashoffset', String(754 * (1 - pct)));
         }
 
-        function updateColorPicker() {
-            document.querySelectorAll('.color-swatch').forEach(s => {
-                s.classList.toggle('selected', s.dataset.color === selectedColor);
-            });
+        function toggleSprintPause() {
+            _sprintPaused = !_sprintPaused;
+            const btn = document.getElementById('sprint-pause-btn');
+            if (btn) btn.textContent = _sprintPaused ? 'Retomar' : 'Pausar';
         }
 
-        document.getElementById('habit-modal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) closeModal();
-        });
-        document.getElementById('delete-modal').addEventListener('click', e => {
-            if (e.target === e.currentTarget) closeDeleteModal();
-        });
+        function finishSprint(completed = true) {
+            if (_sprintTimer) clearInterval(_sprintTimer);
+            _sprintTimer = null;
+            const overlay = document.getElementById('sprint-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            overlay.innerHTML = '';
+            UI.toast(completed ? '🏆 Sprint concluído! Ótimo foco.' : 'Sprint encerrado antes do tempo.', completed ? 'success' : 'info');
+        }
 
+        // ── Sign Out ──────────────────────────────────────────────────
+        async function handleSignOut() {
+            try { await Auth.signOut(); } catch (e) { UI.toast('Erro ao sair.', 'error'); }
+        }
 
-
-        init();
+        // ── Boot ─────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', init);
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-    </script>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="dashboard.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-line mb-1 text-lg"></i>
+            <span>Dash</span>
+        </a>
+        <a href="habits.html" class="bottom-nav-item active">
+            <i class="fa-solid fa-layer-group mb-1 text-lg"></i>
+            <span>Hábitos</span>
+        </a>
+        <a href="agenda.html" class="bottom-nav-item">
+            <i class="fa-solid fa-calendar-check mb-1 text-lg"></i>
+            <span>Tarefas</span>
+        </a>
+        <a href="analytics.html" class="bottom-nav-item">
+            <i class="fa-solid fa-chart-pie mb-1 text-lg"></i>
+            <span>Análise</span>
+        </a>
+        <a href="profile.html" class="bottom-nav-item">
+            <i class="fa-solid fa-user mb-1 text-lg"></i>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
 </body>
 
 </html>

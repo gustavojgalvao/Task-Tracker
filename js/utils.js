@@ -233,6 +233,38 @@ const UI = (() => {
     }
 
     /**
+     * Parse a YYYY-MM-DD date string into a local midnight Date object.
+     * BRT-aware: treats the string as a local calendar date.
+     * @param {string} dateStr YYYY-MM-DD
+     * @returns {Date}
+     */
+    function parseDate(dateStr) {
+        const [y, mo, d] = dateStr.split('-').map(Number);
+        return new Date(y, mo - 1, d);
+    }
+
+    /**
+     * Inject minimal toast CSS for pages that don't load base.css.
+     * Safe to call multiple times (idempotent).
+     */
+    function ensureToastStyles() {
+        if (document.getElementById('_ascend-toast-css')) return;
+        const style = document.createElement('style');
+        style.id = '_ascend-toast-css';
+        style.textContent = `
+            .toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;}
+            .toast{display:flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;font-size:0.875rem;font-weight:600;font-family:Inter,sans-serif;pointer-events:auto;box-shadow:0 8px 32px rgba(0,0,0,.35);backdrop-filter:blur(12px);animation:toastIn .25s ease;color:#fff;}
+            .toast.success{background:rgba(34,197,94,.9);}
+            .toast.error{background:rgba(239,68,68,.9);}
+            .toast.info{background:rgba(59,130,246,.9);}
+            .toast.warning{background:rgba(245,158,11,.9);}
+            .toast.fade-out{opacity:0;transform:translateY(8px);transition:all .3s ease;}
+            @keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+        `;
+        document.head.appendChild(style);
+    }
+
+    /**
      * Format time string (HH:MM) to human readable
      */
     function formatTime(timeStr) {
@@ -248,7 +280,8 @@ const UI = (() => {
         formatDatePT, todayStr, dateStr, toBRTDateStr, nowInBRT,
         getStartOfMonth, getEndOfMonth, getStartOfWeek, getDaysAgo, getStartOfYear,
         MONTHS_PT, MONTHS_SHORT, WEEKDAYS_PT,
-        qs, qsa, setText, animateNumber, setProgressRing, show, hide, formatTime
+        qs, qsa, setText, animateNumber, setProgressRing, show, hide, formatTime,
+        parseDate, ensureToastStyles
     };
 })();
 

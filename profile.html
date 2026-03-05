@@ -1,56 +1,134 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html class="dark" lang="pt-BR">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ascend — Perfil</title>
-  <meta name="description" content="Perfil público Ascend — Constância visível." />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" />
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#6366f1" />
-  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#101622" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Ascend" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+          console.log('SW registered:', reg);
+        }).catch(err => console.log('SW reg failed:', err));
+      });
+    }
+  </script>
+  <title>VitaAscend — Perfil Público</title>
+
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/components.css" />
-  <link rel="stylesheet" href="css/pages/habits.css" />
+
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#0d59f2",
+            "background-light": "#f5f6f8",
+            "background-dark": "#101622",
+          },
+          fontFamily: { "display": ["Inter"] }
+        },
+      },
+    }
+  </script>
+
+  <style>
+    .animate-slide-up {
+      animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .profile-glow {
+      box-shadow: 0 0 50px -12px rgba(13, 89, 242, 0.3);
+    }
+  </style>
 </head>
 
-<body>
+<body
+  class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased overflow-x-hidden">
 
-  <nav class="nav">
-    <div class="nav-inner">
-      <a href="index.html" class="nav-logo">
-        <div class="nav-logo-icon"><i class="fa-solid fa-chevron-up"></i></div>
-        <span>Ascend</span>
-      </a>
-      <div class="nav-links" id="nav-auth-links">
-        <a href="auth.html" class="btn btn-ghost btn-sm">Entrar</a>
-        <a href="auth.html?tab=signup" class="btn btn-primary btn-sm">Criar conta</a>
-      </div>
-    </div>
-  </nav>
-
-  <!-- Mobile-only header for profile public page -->
-  <div class="profile-mobile-header">
-    <a href="index.html" class="profile-mobile-back">
-      <div class="nav-logo-icon" style="width:28px;height:28px;font-size:0.85rem;"><i
-          class="fa-solid fa-chevron-up"></i></div>
-      <span style="font-family:var(--font-display);font-weight:800;font-size:1.1rem;">Ascend</span>
-    </a>
-    <a href="auth.html?tab=signup" class="btn btn-primary btn-sm">Criar conta</a>
+  <div
+    class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-full max-w-5xl h-[400px] bg-primary/10 blur-[120px] rounded-full -z-10">
   </div>
 
-  <div class="page-wrapper profile-page">
-    <div class="container" id="profile-content">
-      <div class="empty-state">
-        <div class="spinner" style="width:32px;height:32px;"></div>
+  <div class="relative flex min-h-screen w-full flex-col items-center p-6 lg:p-12">
+
+    <header class="hidden md:flex w-full max-w-full max-w-5xl flex items-center justify-between mb-16 animate-slide-up">
+      <a href="index.html" class="flex items-center gap-2 text-primary font-black tracking-tighter text-xl">
+        <span class="material-symbols-outlined font-bold">change_history</span> VitaAscend
+      </a>
+      <div id="nav-auth-links">
+        <a href="auth.html"
+          class="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl text-xs font-bold transition-all">Entrar</a>
       </div>
-    </div>
+    </header>
+
+    <main id="profile-content" class="w-full max-w-full max-w-5xl space-y-10 pb-32">
+      <div class="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+        <div class="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs font-black uppercase tracking-[0.3em]">Sincronizando Dados...</p>
+      </div>
+    </main>
+
+    <footer class="mt-20 text-center space-y-6 animate-slide-up" style="animation-delay: 400ms">
+      <div class="h-[1px] w-20 bg-slate-800 mx-auto"></div>
+      <p class="text-slate-500 text-sm">Quer construir um perfil de alta performance?</p>
+      <a href="auth.html?tab=signup"
+        class="inline-flex items-center gap-3 px-8 py-4 bg-primary text-white font-black rounded-2xl shadow-2xl shadow-primary/40 hover:scale-[1.05] transition-all tracking-tight">
+        Começar minha jornada <span class="material-symbols-outlined">arrow_forward</span>
+      </a>
+    </footer>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="dashboard.html" class="bottom-nav-item">
+        <i class="fa-solid fa-chart-line mb-1 text-lg"></i>
+        <span>Dash</span>
+      </a>
+      <a href="habits.html" class="bottom-nav-item">
+        <i class="fa-solid fa-layer-group mb-1 text-lg"></i>
+        <span>Hábitos</span>
+      </a>
+      <a href="agenda.html" class="bottom-nav-item">
+        <i class="fa-solid fa-calendar-check mb-1 text-lg"></i>
+        <span>Tarefas</span>
+      </a>
+      <a href="analytics.html" class="bottom-nav-item">
+        <i class="fa-solid fa-chart-pie mb-1 text-lg"></i>
+        <span>Análise</span>
+      </a>
+      <a href="profile.html" class="bottom-nav-item active">
+        <i class="fa-solid fa-user mb-1 text-lg"></i>
+        <span>Perfil</span>
+      </a>
+    </nav>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -62,35 +140,43 @@
   <script src="js/score.js"></script>
   <script src="js/streak.js"></script>
   <script src="js/identity.js"></script>
-  <script src="js/heatmap.js"></script>
+
   <script src="js/engine.js"></script>
+
   <script>
     async function init() {
       const session = await Auth.getSession();
       if (session) {
         document.getElementById('nav-auth-links').innerHTML =
-          `<a href="dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>`;
+          `<a href="dashboard.html" class="px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-black shadow-lg shadow-primary/20">Meu Dashboard</a>`;
       }
 
       const slug = new URLSearchParams(location.search).get('u');
-      if (!slug) { renderNotFound(); return; }
 
       try {
-        const profile = await Identity.getPublicProfile(slug);
+        let profile = null;
+        if (slug) {
+          profile = await Identity.getPublicProfile(slug);
+        } else if (session) {
+          profile = await Identity.getProfile();
+        }
+
         if (!profile) { renderNotFound(); return; }
-        await renderProfile(profile);
+        await renderProfile(profile, session);
       } catch (err) {
+        console.error(err);
+        alert("Erro no Perfil: " + (err.message || err));
         renderNotFound();
       }
     }
 
-    async function renderProfile(profile) {
+    async function renderProfile(profile, session) {
+      // Lógica de dados igual à sua original
       const { data: logs } = await window.supabaseClient
         .from('habit_logs')
         .select('*')
         .eq('user_id', profile.id)
-        .gte('date', new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0])
-        .order('date', { ascending: true });
+        .gte('date', new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]);
 
       const { data: habits } = await window.supabaseClient
         .from('habits')
@@ -100,99 +186,242 @@
 
       const allLogs = logs || [];
       const allHabits = habits || [];
-
-      const scoreMap = Logs.buildScoreMap(allLogs);
       const totalScore = allLogs.reduce((s, l) => s + (l.score_earned || 0), 0);
       const totalXP = allLogs.reduce((s, l) => s + (l.xp_earned || 0), 0);
       const globalStreak = Streak.calcGlobalStreak(allLogs, allHabits);
-      const activeDays = allLogs.filter(l => l.completed).length;
 
-      const rank = typeof Engine !== 'undefined'
-        ? Engine.getRankFromPDL(Math.round((profile.pdl ?? 0) * 100))
-        : null;
+      const scaledPDL = Math.round((profile.pdl_current || 0) * 10);
+      const rank = typeof Engine !== 'undefined' ? Engine.getRankFromPDL(scaledPDL) : null;
       const lvlData = typeof Engine !== 'undefined' ? Engine.getLevelProgress(totalXP) : null;
-
       const name = profile.username || 'Ascender';
-      const initials = name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+      const initials = name.slice(0, 2).toUpperCase();
 
-      document.title = `${name} — Ascend`;
+      const percentage = lvlData ? Math.round((lvlData.xp / lvlData.nextXP) * 100) : 0;
+      const progressToNextRank = rank ? Math.round((scaledPDL / 100) * 100) : 0; // max PDL is 100
+
+      const isOwner = session && session.user && profile.id === session.user.id;
+      const localPDL = Engine.getLocalPDL(scaledPDL);
+      const joinDate = profile.created_at ? new Date(profile.created_at).toLocaleDateString('pt-BR') : 'Desconhecida';
+      const shareUrl = `${window.location.origin}/profile.html?u=${profile.public_slug}`;
 
       document.getElementById('profile-content').innerHTML = `
-        <div class="profile-hero animate-slide-up">
-          <div class="profile-avatar">${initials}</div>
-          <div class="profile-name">${name}</div>
-          ${profile.future_version ? `<div class="profile-version">"${profile.future_version}"</div>` : ''}
-          ${rank ? `
-          <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin:12px 0 4px;">
-            <span class="rank-emblem ${rank.id}"><i class="fa-solid fa-shield"></i> ${rank.label}</span>
-            <span style="font-size:0.78rem;color:var(--text-muted);font-family:var(--font-display);">Nível ${lvlData ? lvlData.level : '—'}</span>
-          </div>` : ''}
-          <div class="profile-stats-row">
-            <div class="profile-stat">
-              <div class="profile-stat-value gradient-text-gold">
-                <i class="fa-solid fa-fire"></i> ${globalStreak}
+                <div class="flex flex-col items-center text-center animate-slide-up w-full">
+                    <div class="relative mb-8 mt-4 portrait-wrapper">
+                        <div class="absolute inset-0 bg-primary/30 blur-2xl rounded-full scale-110"></div>
+                        <div class="relative size-32 rounded-[2rem] bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center text-4xl font-black text-white shadow-2xl profile-glow rotate-3 hover:rotate-0 transition-all duration-500 overflow-hidden ring-4 ring-background-dark">
+                            ${initials}
+                            <div class="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        </div>
+                        <div class="absolute -bottom-3 -right-3 bg-primary text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border-2 border-background-dark shadow-xl rotate-[-6deg]">
+                            LVL ${lvlData?.level || 1}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mb-3">
+                        <h1 class="text-4xl md:text-5xl font-black tracking-tighter text-white drop-shadow-md">${name}</h1>
+                        ${isOwner ? `
+                        <button onclick="editUsername()" class="text-slate-400 hover:text-white transition-colors" title="Editar Nome">
+                            <span class="material-symbols-outlined text-xl">edit</span>
+                        </button>
+                        ` : ''}
+                    </div>
+                    
+                    ${profile.future_version ? `<p class="text-primary/90 font-medium italic mb-8 max-w-lg text-lg">"${profile.future_version}"</p>` : ''}
+                    
+                    <div class="flex flex-wrap items-center justify-center gap-3 mb-12">
+                        <div class="flex items-center gap-3 px-5 py-2.5 glass-card rounded-2xl border border-white/10 shadow-lg cursor-help" title="PDL Absoluto: ${scaledPDL}">
+                            <span class="flex items-center gap-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                                <span class="material-symbols-outlined text-sm">military_tech</span> Rank
+                            </span>
+                            <div class="h-5 w-[1px] bg-white/10"></div>
+                            <span class="text-sm font-black uppercase text-white flex items-center gap-2">
+                               ${rank ? `<i class="fa-solid ${rank.icon}" style="color:${rank.color}; filter: drop-shadow(0 2px 4px ${rank.color}40)"></i>` : ''}
+                               ${rank ? `${rank.label} <span class="text-slate-400">${rank.division}</span>` : 'Iniciante'}
+                            </span>
+                        </div>
+                        
+                        <div class="flex items-center gap-3 px-5 py-2.5 glass-card rounded-2xl border border-white/10 shadow-lg">
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400" title="Pontos de Liga Locais">PDL</span>
+                            <div class="h-5 w-[1px] bg-white/10"></div>
+                            <span class="text-sm font-black text-white">${localPDL.value}</span>
+                        </div>
+
+                        ${isOwner ? `
+                           <button onclick="copyProfileLink('${shareUrl}')" class="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-2xl border border-white/10 text-white text-xs font-bold transition-all shadow-lg active:scale-95">
+                                <span class="material-symbols-outlined text-sm">share</span> Compartilhar
+                           </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 w-full">
+                        <div class="glass-card p-6 rounded-3xl text-center border-orange-500/20 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 relative z-10">Global Streak</p>
+                            <div class="text-4xl font-black text-orange-500 flex items-center justify-center gap-2 relative z-10 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                                <i class="fa-solid fa-fire text-2xl"></i> ${globalStreak}
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-3xl text-center border-primary/20 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 relative z-10">Score XP</p>
+                            <p class="text-4xl font-black text-primary relative z-10 drop-shadow-[0_0_15px_rgba(13,89,242,0.3)]">${totalXP}</p>
+                        </div>
+                        <div class="glass-card p-6 rounded-3xl text-center relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 relative z-10">Hábitos Ativos</p>
+                            <p class="text-4xl font-black text-white relative z-10">${allHabits.length}</p>
+                        </div>
+                        <div class="glass-card p-6 rounded-3xl text-center border-slate-500/20 relative overflow-hidden group">
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 relative z-10">Ascender Desde</p>
+                            <p class="text-lg mt-3 font-black text-slate-300 relative z-10">${joinDate}</p>
+                        </div>
+                    </div>
+
+                    <section class="w-full mt-10 p-8 rounded-[2.5rem] glass-card border-white/10 shadow-2xl animate-slide-up" style="animation-delay: 200ms">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                            <div class="text-left">
+                                <h3 class="font-black text-sm uppercase tracking-[0.15em] text-white">Heatmap de Consistência</h3>
+                                <p class="text-xs text-slate-400 font-medium mt-1">Frequência e intensidade operacional</p>
+                            </div>
+                            <span class="px-3 py-1 rounded-lg bg-white/5 text-[10px] font-black text-slate-300 uppercase letter-spacing-wide border border-white/5">${new Date().getFullYear()}</span>
+                        </div>
+                        <div id="public-heatmap" class="w-full"></div>
+                    </section>
+                </div>
+            `;
+
+      window.AppState = { logs: allLogs }; // Mock AppState for HeatmapAggregationService
+      renderPublicHeatmap(new Date().getFullYear());
+    }
+
+    function copyProfileLink(url) {
+      if (typeof UI !== 'undefined' && UI.toast) {
+        navigator.clipboard.writeText(url).then(() => UI.toast("Link copiado para a área de transferência", "success"));
+      } else {
+        navigator.clipboard.writeText(url).then(() => alert("Link copiado para a área de transferência!"));
+      }
+    }
+
+    async function editUsername() {
+      const currentName = document.querySelector('h1').innerText;
+      const newName = prompt("Digite seu novo nome de operador (máx 20 caracteres):", currentName);
+      if (newName && newName.trim().length > 0 && newName.trim() !== currentName) {
+        try {
+          await Identity.updateUsername(newName.trim().substring(0, 20));
+          window.location.reload();
+        } catch (e) {
+          console.error(e);
+          alert("Falha ao atualizar nome. Tente novamente.");
+        }
+      }
+    }
+
+    function renderPublicHeatmap(year) {
+      const container = document.getElementById('public-heatmap');
+      if (!container) return;
+
+      const HS = HeatmapAggregationService;
+      const hm = HS.generateHeatmapData(year);
+      const C = HS.COLORS;
+      const cols = hm.totalCols;
+      const GAP = 3;
+
+      let activeDays = 0, streak = 0, maxStreak = 0, tempStreak = 0;
+      for (const d of hm.grid) {
+        if (d.xp > 0) { activeDays++; tempStreak++; maxStreak = Math.max(maxStreak, tempStreak); }
+        else tempStreak = 0;
+        if (d.isToday) streak = tempStreak;
+      }
+
+      const monthByCol = {};
+      hm.months.forEach(m => monthByCol[m.col] = m.name);
+      const monthCells = Array.from({ length: cols }, (_, i) =>
+        `<div style="font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;position:relative;"><span style="position:absolute;left:0">${monthByCol[i] || ''}</span></div>`
+      ).join('');
+
+      const dayLabels = ['', 'Seg', '', 'Qua', '', 'Sex', ''];
+      const dayCells = dayLabels.map(l =>
+        `<div style="display:flex;align-items:center;justify-content:flex-end;font-size:9px;font-weight:700;color:#6b7280;padding-right:4px;text-transform:uppercase;">${l}</div>`
+      ).join('');
+
+      const cellsHtml = hm.grid.map(d => {
+        const bg = C[d.intensity];
+        const ring = d.isToday ? 'outline:1.5px solid #58a6ff;outline-offset:0.5px;z-index:1;' : '';
+        return `<div title="${d.date} • ${d.xp} XP" style="border-radius:2px;background:${bg};${ring}cursor:pointer;transition:transform .1s ease;" onmouseover="this.style.transform='scale(1.5)'" onmouseout="this.style.transform='scale(1)'"></div>`;
+      }).join('');
+
+      const legendHtml = C.map(c =>
+        `<div style="width:11px;height:11px;border-radius:2px;background:${c};flex-shrink:0;"></div>`
+      ).join('');
+
+      container.innerHTML = `
+          <div style="display:flex; justify-content: space-between; align-items: flex-end; margin-bottom: 8px;">
+              <span class="text-xs font-bold text-slate-500">${activeDays} dias ativos · Streak: ${streak} · Maior: ${maxStreak}</span>
+          </div>
+          <div style="width:100%;overflow-x:auto;padding-bottom:8px;" class="custom-scrollbar">
+              <div id="hm-outer" style="display:inline-grid;grid-template-columns:26px max-content;row-gap:0;column-gap:0;">
+                  <!-- Month row -->
+                  <div style="height:14px;"></div>
+                  <div style="display:grid;grid-template-columns:repeat(${cols},11px);gap:${GAP}px;height:14px;margin-bottom:6px;">
+                      ${monthCells}
+                  </div>
+                  <!-- Day labels + grid -->
+                  <div style="display:grid;grid-template-rows:repeat(7,11px);row-gap:${GAP}px;">
+                      ${dayCells}
+                  </div>
+                  <div id="hm-grid" style="display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);grid-auto-columns:11px;gap:${GAP}px;">
+                      ${cellsHtml}
+                  </div>
               </div>
-              <div class="profile-stat-label">Streak global</div>
-            </div>
-            <div class="profile-stat">
-              <div class="profile-stat-value gradient-text">${totalScore}</div>
-              <div class="profile-stat-label">Score total</div>
-            </div>
-            <div class="profile-stat">
-              <div class="profile-stat-value">${allHabits.length}</div>
-              <div class="profile-stat-label">Hábitos ativos</div>
-            </div>
-            <div class="profile-stat">
-              <div class="profile-stat-value">${activeDays}</div>
-              <div class="profile-stat-label">Dias com registro</div>
-            </div>
           </div>
-        </div>
-
-        <div class="profile-heatmap-section animate-slide-up delay-200">
-          <div class="card" style="padding:32px;overflow-x:auto;">
-            <div class="card-header">
-              <span class="card-title">Heatmap Anual ${new Date().getFullYear()}</span>
-              <span class="badge badge-green">Constância real</span>
-            </div>
-            <div id="public-heatmap"></div>
-          </div>
-        </div>
-
-        <div style="text-align:center;margin-top:32px;padding:24px;border-top:1px solid var(--border);">
-          <p style="color:var(--text-muted);margin-bottom:16px;">Monitore sua própria constância</p>
-          <a href="auth.html?tab=signup" class="btn btn-primary btn-lg">
-            <i class="fa-solid fa-chevron-up"></i> Criar conta grátis
-          </a>
-        </div>
-      `;
-
-      Heatmap.render(document.getElementById('public-heatmap'), scoreMap, new Date().getFullYear());
+          <!-- Legend row -->
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:8px;font-size:9px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;">
+              <span>Menos</span>${legendHtml}<span>Mais</span>
+          </div>`;
     }
 
     function renderNotFound() {
       document.getElementById('profile-content').innerHTML = `
-        <div class="profile-not-public animate-fade-in">
-          <div style="font-size:3rem;margin-bottom:24px;color:var(--text-muted);">
-            <i class="fa-solid fa-lock"></i>
-          </div>
-          <h2>Perfil não encontrado</h2>
-          <p style="color:var(--text-muted);margin:16px 0 32px;">
-            Este perfil não existe ou não é público.
-          </p>
-          <a href="index.html" class="btn btn-primary">
-            <i class="fa-solid fa-arrow-left"></i> Voltar ao início
-          </a>
-        </div>`;
+                <div class="text-center py-20 animate-slide-up">
+                    <span class="material-symbols-outlined text-6xl text-slate-700 mb-6">lock</span>
+                    <h2 class="text-2xl font-black">Protocolo Privado</h2>
+                    <p class="text-slate-500 mt-2 max-w-xs mx-auto">Este perfil não existe ou o usuário optou por manter sua jornada em modo privado.</p>
+                    <a href="index.html" class="inline-block mt-8 text-primary font-bold border-b border-primary/20 pb-1">Voltar ao Início</a>
+                </div>`;
     }
 
     init();
   </script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js');
-    }
-  </script>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav
+    class="md:hidden fixed bottom-0 left-0 w-full bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 z-50 px-4 py-2 flex justify-between items-center pb-safe">
+    <a href="dashboard.html"
+      class="flex flex-col items-center p-2 text-slate-500 hover:text-primary transition-colors ">
+      <i class="fa-solid fa-chart-line text-lg mb-1"></i>
+      <span class="text-[10px] font-bold">Dash</span>
+    </a>
+    <a href="habits.html" class="flex flex-col items-center p-2 text-slate-500 hover:text-primary transition-colors ">
+      <i class="fa-solid fa-layer-group text-lg mb-1"></i>
+      <span class="text-[10px] font-bold">Hábitos</span>
+    </a>
+    <a href="agenda.html" class="flex flex-col items-center p-2 text-slate-500 hover:text-primary transition-colors ">
+      <i class="fa-solid fa-calendar-check text-lg mb-1"></i>
+      <span class="text-[10px] font-bold">Agenda</span>
+    </a>
+    <a href="analytics.html"
+      class="flex flex-col items-center p-2 text-slate-500 hover:text-primary transition-colors ">
+      <i class="fa-solid fa-chart-pie text-lg mb-1"></i>
+      <span class="text-[10px] font-bold">Análise</span>
+    </a>
+    <a href="leaderboard.html"
+      class="flex flex-col items-center p-2 text-slate-500 hover:text-primary transition-colors ">
+      <i class="fa-solid fa-trophy text-lg mb-1"></i>
+      <span class="text-[10px] font-bold">Ranking</span>
+    </a>
+  </nav>
+
 </body>
 
 </html>
